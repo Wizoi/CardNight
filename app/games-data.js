@@ -124,15 +124,16 @@ const GAMES = [
     before: [],
     setup: `Flip two cards face up for the active player.`,
     gameplay: `The active player may bet up to the full pot that the next card dealt will land between the two shown cards — or pass entirely. Aces are low, Kings are high (a house-specific choice).`,
-    win: `If the next card falls between the two shown cards, the player wins their bet from the pot; if not, their bet goes into the pot. The game only ends once the full deck is consumed and someone wins the entire pot.`,
+    win: `If the next card falls between the two shown cards, the player wins their bet from the pot. If not, their bet goes into the pot — and if that card matches the rank of either shown card ("hitting the post"), they lose double their bet instead. The game only ends once the full deck is consumed and someone wins the entire pot.`,
     keyDecisions: [
       "Bet (and how much, up to the full pot) or pass — based on how wide the spread is",
     ],
     repeats: [
       "Aces are LOW here, Kings are high — not the more common Aces-high default",
+      "\"Hitting the post\" — the next card matching either shown card's rank — costs double the bet, not just the bet",
       "The game runs until the deck is gone, not a fixed number of hands",
     ],
-    script: `Two cards get flipped for you. You can bet up to the whole pot that the next card lands between them, or pass. Aces are low, Kings are high. Win and you take your bet from the pot; lose and it goes in. We go around until the deck runs out and somebody's taken the whole pot.`,
+    script: `Two cards get flipped for you. You can bet up to the whole pot that the next card lands between them, or pass. Aces are low, Kings are high. Win and you take your bet from the pot; lose and it goes in — but if the card matches either of the two shown, that's "hitting the post" and you lose double your bet instead. We go around until the deck runs out and somebody's taken the whole pot.`,
   },
   {
     id: "blind-mans-bluff",

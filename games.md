@@ -100,9 +100,8 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 - **Category:** Other
 - **Deal:** Two cards shown/dealt to the active player.
 - **Play:** Player may bet up to the full pot that the next card dealt will fall between the two shown cards (or pass entirely). Aces are low, Kings are high — a specific house choice; most published rules default to Aces high.
-- **Losing:** If the player loses, their bet goes into the pot.
+- **Losing:** If the player loses, their bet goes into the pot. If the third card matches the rank of either shown card ("hitting the post"), the player loses double their bet instead.
 - **End condition:** Game only ends once the full deck is consumed and a player wins the entire pot.
-- **Variants:** "Hitting the post" — if the third card matches the rank of either shown card, the player typically loses double their bet rather than just the bet. Near-universal elsewhere but not currently part of our rule; dealer's choice whether to add it.
 - **Sources:** ["In Between" – pagat.com](https://www.pagat.com/banking/in-between.html); ["Acey Deucey" – gambiter.com](https://gambiter.com/cards/Acey_deucey_card_game.html)
 
 ## Blind Man's Bluff
