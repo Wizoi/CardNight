@@ -157,7 +157,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 
 - **Category:** Stud-based
 - **Family:** Part of the stud-based games, along with Follow the Queen and Mexican Sweat. Matches the family's usual "2 down, then rest up" default, except the final card here is dealt down again rather than up (see "House rule: the stud family").
-- **Deal:** 7 cards dealt in sequence — 2 down, 4 up (one per round), 1 down — matching the stud family's typical 7-card shape (see "House rule: the stud family"). Even at 7 cards, a full 8-player table needs 56 cards, more than a single deck holds — a fuller table should trim the up-card rounds further rather than force a fixed count.
+- **Deal:** 2 down, then up-card rounds (one per round), then 1 down — matching the stud family's typical shape (see "House rule: the stud family"). Number of up-rounds scales with tonight's player count so the deal stays within a single 52-card deck: 4 up-rounds (7 cards total) at typical table sizes (5–7 players), dropping to 3 up-rounds (6 cards total) at a full 8-player table.
 - **Wipe:** Players can pay to "wipe" (discard and replace) a card. The wipe price escalates as the hand goes on — dealer's choice of scale: $1 / $2 / $3, or a cheaper scale starting at $0.50.
 - **Last round:** Whatever the current wipe price is at that point gets doubled for the final round.
 - **Betting:** Based on highest showing card(s).

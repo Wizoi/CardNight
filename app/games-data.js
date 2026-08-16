@@ -237,11 +237,18 @@ const GAMES = [
     category: "Stud-based",
     isNew: false,
     icon: "🧽",
-    players: { min: 5, max: 8, note: "Even at 7 cards, a full 8-player table needs 56 — more than a deck holds. A fuller table should trim the up-card rounds rather than force a fixed count." },
+    players: { min: 5, max: 8 },
     before: [
       "Choose the wipe price scale for the night: $1/$2/$3, or the cheaper $0.50-start scale",
     ],
-    setup: `Deal 7 cards in sequence — 2 down, 4 up (one per round), 1 down — matching the stud family's typical shape.`,
+    resolvePlayers(n) {
+      const upRounds = Math.min(4, Math.floor(52 / n) - 3);
+      const total = 3 + upRounds;
+      return `With ${n} players: deal ${total} cards each — 2 down, ${upRounds} up (one per round), 1 down.${
+        upRounds < 4 ? " (Trimmed down from the usual 4 up-rounds so the deal fits one deck.)" : ""
+      }`;
+    },
+    setup: `Deal in sequence — 2 down, then up-card rounds (count adjusts to tonight's player count, see above), then 1 down. 7 cards total (4 up-rounds) at typical table sizes, matching the stud family's typical shape.`,
     gameplay: `Anytime, a player can pay to "wipe" (discard and replace) a card — the price escalates as the hand goes on. The final round's wipe price is doubled. Betting is based on the highest showing card(s).`,
     win: `Best hand at showdown wins.`,
     keyDecisions: [
@@ -251,7 +258,7 @@ const GAMES = [
       "Announce the current wipe price each round since it escalates",
       "The last round's wipe price is doubled",
     ],
-    script: `Seven cards — 2 down, 4 up one at a time, 1 down. Anytime, you can pay to wipe a card for a new one — price goes up as the hand goes on. Last round, whatever the wipe price is, it's doubled. Best hand showing bets first; best hand at the end wins.`,
+    script: `Two down, then one up at a time — how many rounds depends on how many of us are playing — then one more down. Anytime, you can pay to wipe a card for a new one — price goes up as the hand goes on. Last round, whatever the wipe price is, it's doubled. Best hand showing bets first; best hand at the end wins.`,
   },
   {
     id: "game-of-life",
