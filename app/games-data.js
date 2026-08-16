@@ -274,7 +274,7 @@ const GAMES = [
   {
     id: "game-of-life",
     name: "Game of Life",
-    category: "Other",
+    category: "Poker Scored",
     isNew: false,
     icon: "⚖️",
     players: { min: 5, max: 8 },
@@ -375,7 +375,7 @@ const GAMES = [
   {
     id: "pair-of-jacks-trips-to-win",
     name: "Pair of Jacks, Trips to Win",
-    category: "Other",
+    category: "Poker Scored",
     isNew: false,
     icon: "🃏",
     players: { min: 5, max: 8 },

@@ -6,6 +6,7 @@
     "Stud-based",
     "Texas Hold'em variant",
     "Baseball",
+    "Poker Scored",
     "Other",
   ];
 

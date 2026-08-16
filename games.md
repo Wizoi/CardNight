@@ -12,9 +12,10 @@ A web research pass (2026-08) cross-referenced each game against published home-
 - **Stud-based:** Follow the Queen, Free Enterprise, Mexican Sweat
 - **Texas Hold'em variant:** Omaha / Seattle / Boise / Jersey Hold'em (New)
 - **Baseball:** Daytime Baseball, Midnight Baseball, Rainy Day Baseball
-- **Other:** 3-33, 5.5-21, 7-27, Acey Ducey, Blind Man's Bluff, Game of Life, Pair of Jacks, Trips to Win
+- **Poker Scored:** Pair of Jacks, Trips to Win; Game of Life
+- **Other:** 3-33, 5.5-21, 7-27, Acey Ducey, Blind Man's Bluff
 
-One of these calls is still judgment-based (marked with `*` in its Category field below) — worth a quick confirm next session: Mexican Sweat is grouped as stud-based for its staged reveal-and-bet structure even though it's not classic poker-hand stud. 7-27 is Other — it's a press-your-luck target game (accept cards or stop to hit 7 or 27), not a staged up/down stud deal. Pair of Jacks (a draw-style game) and the rest of "Other" didn't fit any of the four named buckets.
+One of these calls is still judgment-based (marked with `*` in its Category field below) — worth a quick confirm next session: Mexican Sweat is grouped as stud-based for its staged reveal-and-bet structure even though it's not classic poker-hand stud. 7-27 is Other — it's a press-your-luck target game (accept cards or stop to hit 7 or 27), not a staged up/down stud deal. Pair of Jacks and Game of Life get their own "Poker Scored" bucket since a standard poker-ranked hand decides the win in both (unlike the rest of "Other," which use custom scoring — target numbers, discard-matching, highest single card, etc. — instead of poker hand rankings).
 
 Entries marked **(New)** in their Category field aren't part of our original house list — they surfaced as siblings/relatives during the 2026-08 research pass and are documented here as candidates worth trying, not games we've actually played.
 
@@ -165,7 +166,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 
 ## Game of Life
 
-- **Category:** Other
+- **Category:** Poker Scored
 - **Deal:** 5 cards to each player.
 - **Setup:** Two rows of 5 cards are placed face down on the table — one "good" row (cards can be added to your hand) and one "bad" row (cards are discarded).
 - **Play:** Players take turns flipping a card from either row. Turn order rotates each round, and whichever player goes first in a round gets to choose which side (good or bad) they flip from.
@@ -212,7 +213,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 
 ## Pair of Jacks, Trips to Win
 
-- **Category:** Other
+- **Category:** Poker Scored
 - **Deal:** 5 cards, face down.
 - **Opening:** Only a hand of Jacks-or-better may open the betting. If nobody can open, the hand is redealt.
 - **Draw:** Players may exchange up to 3 cards (4 if holding an Ace) after opening.
