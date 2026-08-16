@@ -266,7 +266,7 @@ const GAMES = [
     category: "Other",
     isNew: false,
     icon: "⚖️",
-    players: { min: 5, max: 8, note: "Tight fit at 8 players — 50 of 52 cards used between hands and the two setup rows." },
+    players: { min: 5, max: 8 },
     before: [],
     setup: `Deal 5 cards to each player. Lay out two rows of 5 cards face down on the table — a "good" row and a "bad" row.`,
     gameplay: `Turn order rotates each round. On your turn, flip a card from either row — good row cards get added to your hand, bad row cards are discarded. Flipping a bad-row card poisons its rank for the rest of the hand: any card of that rank already in a player's hand is discarded (placed on top of the bad card), any card of that rank still face-down in the good row moves over to the bad side instead, and any future flip matching that rank is immediately treated as bad too.`,
