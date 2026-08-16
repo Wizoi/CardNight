@@ -98,10 +98,11 @@ const GAMES = [
     players: { min: 5, max: 8 },
     before: [
       "Confirm the buy-back price scale for the night ($1/$2/$3 default)",
+      "Decide if \"Kitchen Sink\" is on: a hand that's exactly 7 AND exactly 27 at once wins the whole pot outright instead of splitting",
     ],
     setup: `Deal 1 card down, then 1 card up to each player.`,
     gameplay: `Optional extra card each round. Face cards are worth 0.5, Aces are worth 1 or 11 free of charge. A 10 counts as 10 by default — pay $1 and it becomes flexible, worth 0 or 10, your choice. Players may buy back ("down the river") their up-card to hide it again — escalating cost, up to 3 total: $1, then $2, then $3 later — "use it or lose it," must decide the moment it's offered. Going over is allowed and doesn't bust you.`,
-    win: `Closest to 7 wins the low half of the pot, closest to 27 wins the high half — regardless of how many cards a player holds. Ties split evenly.`,
+    win: `Closest to 7 wins the low half of the pot, closest to 27 wins the high half — regardless of how many cards a player holds. Ties split evenly. If Kitchen Sink is on: a hand reading exactly 7 for low and exactly 27 for high at the same time can't be beaten or tied out of either half — it wins the entire pot outright instead of splitting it (same idea as 3-33's "Ultima"). More than one Kitchen Sink at the table splits the pot between them.`,
     keyDecisions: [
       "Buy back your up-card or keep it — decide immediately, no thinking it over",
       "Pay $1 to make a 10 flexible (0 or 10) or leave it fixed at 10",
@@ -111,8 +112,9 @@ const GAMES = [
       "Going over does NOT bust you here — opposite of 5.5-21",
       "Buy-backs are use-it-or-lose-it: decide the instant it's offered",
       "A 10 is worth 10 unless you pay $1 to make it 0-or-10 flexible — aces flip free, tens don't",
+      "If Kitchen Sink is on, announce it — an exact 7-and-27 hand takes the whole pot, no split",
     ],
-    script: `One card down, one up. You can buy your up-card back to hide it again — a dollar the first time, two the second, three later for a third, and you have to decide right when it's offered. Face cards are half a point, aces are 1 or 11 for free — but a ten's stuck at 10 unless you pay a dollar to make it 0-or-10 flexible. Going over doesn't bust you here. Closest to 7 and closest to 27 split the pot.`,
+    script: `One card down, one up. You can buy your up-card back to hide it again — a dollar the first time, two the second, three later for a third, and you have to decide right when it's offered. Face cards are half a point, aces are 1 or 11 for free — but a ten's stuck at 10 unless you pay a dollar to make it 0-or-10 flexible. Going over doesn't bust you here. Closest to 7 and closest to 27 split the pot — unless we're playing Kitchen Sink, where a hand that's exactly 7 and exactly 27 at the same time wins the whole thing outright.`,
   },
   {
     id: "acey-ducey",
