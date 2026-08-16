@@ -12,7 +12,6 @@
 
   const state = {
     category: "All",
-    includeNew: false,
     players: 6,
   };
 
@@ -23,7 +22,6 @@
     emptyState: document.getElementById("empty-state"),
     categoryFilters: document.getElementById("category-filters"),
     playerCount: document.getElementById("player-count"),
-    includeNew: document.getElementById("include-new"),
     pickButton: document.getElementById("pick-for-me"),
     backButton: document.getElementById("back-button"),
     detailContent: document.getElementById("detail-content"),
@@ -36,7 +34,6 @@
   function visibleGames() {
     return GAMES.filter((g) => {
       if (state.category !== "All" && !gameCategories(g).includes(state.category)) return false;
-      if (g.isNew && !state.includeNew) return false;
       return true;
     });
   }
@@ -189,11 +186,6 @@
     // Live-update the detail view if it's currently showing a game that adapts to player count.
     const match = location.hash.match(/^#\/game\/(.+)$/);
     if (match) renderDetail(decodeURIComponent(match[1]));
-  });
-
-  el.includeNew.addEventListener("change", () => {
-    state.includeNew = el.includeNew.checked;
-    renderGrid();
   });
 
   el.pickButton.addEventListener("click", () => {
