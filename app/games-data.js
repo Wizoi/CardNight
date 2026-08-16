@@ -219,6 +219,7 @@ const GAMES = [
       "Losing to the dummy hand still counts as losing",
     ],
     script: `You get cards down, then pass some left and right. Wildcards this hand: [dealer announces scheme]. After passing, everyone secretly decides in or out — best hand among the ins wins, everyone else who was in matches the pot for next hand. We keep going until someone bets and wins it outright.`,
+    anecdote: `Beware adding a dummy hand! Our friend George has lost some great hands to a sneaky Dummy.`,
   },
   {
     id: "follow-the-queen",

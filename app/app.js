@@ -121,6 +121,16 @@
     `;
   }
 
+  function anecdoteBlock(text) {
+    if (!text) return "";
+    return `
+      <div class="detail-section">
+        <h3>Table Lore</h3>
+        <div class="anecdote">🍻 ${text}</div>
+      </div>
+    `;
+  }
+
   function renderDetail(id) {
     const game = gamesById(id);
     if (!game) {
@@ -155,6 +165,7 @@
 
       ${listBlock("Key Decisions", game.keyDecisions)}
       ${listBlock("Don't Forget to Repeat", game.repeats)}
+      ${anecdoteBlock(game.anecdote)}
     `;
   }
 
