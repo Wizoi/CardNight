@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CardNight — Pick a Game</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <h1>🃏 CardNight</h1>
+  <p class="tagline">Pick the game for poker night.</p>
+  <div class="control-group player-count-group">
+    <label for="player-count">Players tonight</label>
+    <input type="number" id="player-count" min="1" max="20" value="6">
+  </div>
+</header>
+
+<main id="list-view" class="view">
+
+  <section class="controls">
+    <div class="control-group filters" id="category-filters" role="group" aria-label="Filter by category">
+      <!-- category buttons injected by app.js -->
+    </div>
+
+    <div class="control-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="include-new">
+        Include "New" (untested) games
+      </label>
+    </div>
+
+    <button id="pick-for-me" class="pick-button">🎲 Pick for me</button>
+  </section>
+
+  <section id="game-grid" class="game-grid"></section>
+
+  <p id="empty-state" class="empty-state" hidden>No games match those filters.</p>
+
+</main>
+
+<main id="detail-view" class="view" hidden>
+  <button id="back-button" class="back-button">← Back to all games</button>
+  <article id="detail-content"></article>
+</main>
+
+<script src="games-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
