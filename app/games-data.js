@@ -61,7 +61,7 @@ const GAMES = [
     before: [],
     setup: `Everyone antes. Deal 3 hole cards to start.`,
     gameplay: `Three escalating rounds. Round 1: 3s wild, decide in/out, reveal, low hand matches the pot, high hand gets paid. Round 2: deal 2 more (5 total), 5s wild, repeat. Round 3: deal 2 more again (7 total), 7s wild, repeat. The pot carries forward across all three rounds — it doesn't reset.`,
-    win: `Pot goes to the last remaining player after round 3 — or early, if one player wins 5 consecutive rounds.`,
+    win: `Pot goes to the last remaining player after round 3. (The source also mentions an early-win rule for winning 5 consecutive rounds, but since a hand only has 3 rounds, that would have to span multiple re-dealt hands — the source never explains how, so treat it as unconfirmed until we've actually played it out.)`,
     keyDecisions: [
       "Fold or stay in, each round, as both the ante requirement and the wild rank escalate",
     ],
@@ -69,7 +69,7 @@ const GAMES = [
       "Wild rank changes every round: 3s → 5s → 7s",
       "The pot carries forward the whole way — it's not reset between rounds",
     ],
-    script: `Three rounds, escalating. Round 1 you get 3 cards, 3s wild. Round 2 two more (5 total), 5s wild. Round 3 two more again (7 total), 7s wild. Before each round: in or out. If you're in and have the low hand, you match the pot; the high hand gets paid. Pot carries the whole way. Win 5 rounds straight and it's yours early — otherwise last one standing after round 3 takes it.`,
+    script: `Three rounds, escalating. Round 1 you get 3 cards, 3s wild. Round 2 two more (5 total), 5s wild. Round 3 two more again (7 total), 7s wild. Before each round: in or out. If you're in and have the low hand, you match the pot; the high hand gets paid. Pot carries the whole way. Last one standing after round 3 takes it.`,
   },
   {
     id: "5-5-21",
