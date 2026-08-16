@@ -35,14 +35,18 @@
 
   function visibleGames() {
     return GAMES.filter((g) => {
-      if (state.category !== "All" && g.category !== state.category) return false;
+      if (state.category !== "All" && !gameCategories(g).includes(state.category)) return false;
       if (g.isNew && !state.includeNew) return false;
       return true;
     });
   }
 
+  function gameCategories(g) {
+    return [g.category, ...(g.extraCategories || [])];
+  }
+
   function buildCategoryFilters() {
-    const categories = ["All", ...CATEGORY_ORDER.filter((c) => GAMES.some((g) => g.category === c))];
+    const categories = ["All", ...CATEGORY_ORDER.filter((c) => GAMES.some((g) => gameCategories(g).includes(c)))];
     el.categoryFilters.innerHTML = "";
     categories.forEach((cat) => {
       const btn = document.createElement("button");
@@ -59,7 +63,7 @@
   }
 
   function cardMarkup(game) {
-    const tags = [`<span class="tag">${game.category}</span>`];
+    const tags = gameCategories(game).map((c) => `<span class="tag">${c}</span>`);
     if (game.isNew) tags.push(`<span class="tag new">New</span>`);
     if (typeof game.resolvePlayers === "function") tags.push(`<span class="tag">adapts to players</span>`);
     return `
@@ -127,7 +131,7 @@
       return;
     }
 
-    const tags = [`<span class="tag">${game.category}</span>`];
+    const tags = gameCategories(game).map((c) => `<span class="tag">${c}</span>`);
     if (game.isNew) tags.push(`<span class="tag new">New — not yet in our rotation</span>`);
     tags.push(`<span class="tag">${game.players.min}–${game.players.max} players</span>`);
 

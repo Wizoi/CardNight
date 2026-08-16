@@ -7,6 +7,7 @@ const GAMES = [
     id: "3-buy-5-5-buy-5",
     name: "3 Buy 5 / 5 Buy 5",
     category: "Guts",
+    extraCategories: ["Poker Scored"],
     isNew: false,
     icon: "💵",
     players: { min: 5, max: 8 },

@@ -12,10 +12,10 @@ A web research pass (2026-08) cross-referenced each game against published home-
 - **Stud-based:** Follow the Queen, Free Enterprise, Mexican Sweat
 - **Texas Hold'em variant:** Omaha / Seattle / Boise / Jersey Hold'em (New)
 - **Baseball:** Daytime Baseball, Midnight Baseball, Rainy Day Baseball
-- **Poker Scored:** Pair of Jacks, Trips to Win; Game of Life
+- **Poker Scored:** Pair of Jacks, Trips to Win; Game of Life; 3 Buy 5 / 5 Buy 5 (also Guts)
 - **Other:** 3-33, 5.5-21, 7-27, Acey Ducey, Blind Man's Bluff
 
-One of these calls is still judgment-based (marked with `*` in its Category field below) — worth a quick confirm next session: Mexican Sweat is grouped as stud-based for its staged reveal-and-bet structure even though it's not classic poker-hand stud. 7-27 is Other — it's a press-your-luck target game (accept cards or stop to hit 7 or 27), not a staged up/down stud deal. Pair of Jacks and Game of Life get their own "Poker Scored" bucket since a standard poker-ranked hand decides the win in both (unlike the rest of "Other," which use custom scoring — target numbers, discard-matching, highest single card, etc. — instead of poker hand rankings).
+One of these calls is still judgment-based (marked with `*` in its Category field below) — worth a quick confirm next session: Mexican Sweat is grouped as stud-based for its staged reveal-and-bet structure even though it's not classic poker-hand stud. 7-27 is Other — it's a press-your-luck target game (accept cards or stop to hit 7 or 27), not a staged up/down stud deal. Pair of Jacks and Game of Life get their own "Poker Scored" bucket since a standard poker-ranked hand decides the win in both (unlike the rest of "Other," which use custom scoring — target numbers, discard-matching, highest single card, etc. — instead of poker hand rankings). 3 Buy 5 / 5 Buy 5 carries both tags — it's structurally a Guts game (ante-only, escalating pot), but within each round the winner is a plain best-poker-hand comparison (just wildcards, no dummy hand or escalating wild ranks like its Guts siblings), so it's "Poker Scored" too.
 
 Entries marked **(New)** in their Category field aren't part of our original house list — they surfaced as siblings/relatives during the 2026-08 research pass and are documented here as candidates worth trying, not games we've actually played.
 
@@ -45,7 +45,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 
 ## 3 Buy 5 / 5 Buy 5
 
-- **Category:** Guts
+- **Category:** Guts, Poker Scored
 - **Deal:** 3 or 5 cards, face down (two variants). (Fine at a full 8-player table — the 5-card version only needs 40 cards, well under a 52-card deck.)
 - **Wildcards:** 5s are always wild, plus optional additional wildcards (dealer's choice).
 - **Buying:** Players can buy/exchange cards for a dealer-set price.
