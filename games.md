@@ -54,7 +54,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 
 - **Category:** Other
 - **Deal:** 3 cards to each player.
-- **Play:** Dealer flips 1 community card per round for 5 rounds total. Any player holding a matching card must discard it.
+- **Play:** Dealer flips 1 community card per round for 5 rounds total. Any player holding a matching card must discard it. If the flipped card's rank has already come up (and been discarded) in an earlier round, it's set aside and a new card is drawn in its place.
 - **Card values:** Aces = 1 or 11, face cards = 10.
 - **Winning:** Best high hand AND best low hand both win (split), or a player wins outright by discarding all of their cards.
 - **Special:** Being dealt AAA — called "Ultima," or just "three aces" — wins the entire pot outright.

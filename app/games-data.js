@@ -37,7 +37,7 @@ const GAMES = [
     players: { min: 5, max: 8 },
     before: [],
     setup: `Deal 3 cards face down to each player.`,
-    gameplay: `Dealer flips 1 community card per round, 5 rounds total. Anyone holding a card matching that rank must discard it. Aces count as 1 or 11, face cards count as 10.`,
+    gameplay: `Dealer flips 1 community card per round, 5 rounds total. Anyone holding a card matching that rank must discard it. Aces count as 1 or 11, face cards count as 10. If a flipped card's rank already came up in an earlier round, it's set aside and a new card is drawn in its place.`,
     win: `Best high hand AND best low hand split the pot — or a player who discards their entire hand wins it outright. Being dealt AAA ("Ultima") wins the whole pot immediately, no flips needed.`,
     keyDecisions: [
       "None really — this one's about the flips and your cards, not player choices",
@@ -45,9 +45,10 @@ const GAMES = [
     repeats: [
       "Three aces off the deal is an instant win",
       "Discarding on a match is mandatory, not optional",
+      "A repeat rank gets swapped for a fresh card instead of flipped again",
       "Emptying your hand first wins outright — ties on that split evenly, it's not a race",
     ],
-    script: `You get 3 cards. I'll flip one community card at a time, 5 flips total — if you're holding that rank, discard it. Aces count 1 or 11, face cards count 10. Best high hand and best low hand split the pot, or whoever empties their hand first wins it all. Three aces off the deal wins on the spot.`,
+    script: `You get 3 cards. I'll flip one community card at a time, 5 flips total — if you're holding that rank, discard it. If the same rank comes up twice, I'll swap it for a new card instead of flipping it again. Aces count 1 or 11, face cards count 10. Best high hand and best low hand split the pot, or whoever empties their hand first wins it all. Three aces off the deal wins on the spot.`,
   },
   {
     id: "3-5-7-guts",
