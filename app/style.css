@@ -306,6 +306,23 @@ main.view {
   line-height: 1.55;
 }
 
+.dealer-script-labeled {
+  margin-bottom: 0.6rem;
+}
+
+.dealer-script-labeled:last-child {
+  margin-bottom: 0;
+}
+
+.dealer-script-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.25rem;
+}
+
 .player-note {
   background: rgba(212, 175, 55, 0.12);
   border: 1px dashed var(--gold);

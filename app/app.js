@@ -91,6 +91,24 @@
     `;
   }
 
+  function scriptBlock(title, script) {
+    if (!script) return "";
+    const body = Array.isArray(script)
+      ? script.map((s) => `
+          <div class="dealer-script-labeled">
+            <div class="dealer-script-label">${s.label}</div>
+            <div class="dealer-script">${s.text}</div>
+          </div>
+        `).join("")
+      : `<div class="dealer-script">${script}</div>`;
+    return `
+      <div class="detail-section">
+        <h3>${title}</h3>
+        ${body}
+      </div>
+    `;
+  }
+
   function textBlock(title, text) {
     if (!text) return "";
     return `
@@ -131,10 +149,7 @@
       ${textBlock("Gameplay", game.gameplay)}
       ${textBlock("How to Win", game.win)}
 
-      <div class="detail-section">
-        <h3>How to Describe It</h3>
-        <div class="dealer-script">${game.script}</div>
-      </div>
+      ${scriptBlock("How to Describe It", game.script)}
 
       ${listBlock("Key Decisions", game.keyDecisions)}
       ${listBlock("Don't Forget to Repeat", game.repeats)}

@@ -332,7 +332,7 @@ const GAMES = [
     ],
     setup: `Deal hole cards face down to each player — 4 for Omaha/Seattle/Boise, 5 for Jersey Hold'em. Standard shared community board.`,
     gameplay: `Standard Texas Hold'em betting rounds — pre-flop, flop, turn, river — with a $0.50 small blind / $1 big blind and no cap on bet size. Hand construction depends on the chosen variant: Omaha uses 2 from hand + 3 from the board; Seattle uses 3 from hand + 2 from the board; Boise and Jersey Hold'em let the player choose 2-and-3 or 3-and-2 at showdown.`,
-    win: `Best 5-card hand, built per the variant's construction rule, wins. If the low split is on, the best qualifying low hand also wins its half.`,
+    win: `Best 5-card hand, built per the variant's construction rule, wins. If hi-lo is on: low hand is five unpaired cards, each 8 or under — straights and flushes don't count against it, only rank matters. Aces count low, so A-2-3-4-5 is the best possible low (and can double as a straight for high). Built with the same hand/board split as high, but not necessarily the same five cards. No qualifying low among anyone, and the high hand takes the whole pot — a hand can also scoop both halves if it's best on both sides.`,
     keyDecisions: [
       "Standard hold'em betting each street",
       "For Boise/Jersey Hold'em: which 2-or-3 split to use — decided at showdown, not before",
@@ -340,8 +340,16 @@ const GAMES = [
     repeats: [
       "Announce exactly which variant (and hand-construction rule) is in play — this is the one thing that changes hand to hand",
       "Boise and Jersey Hold'em choose their split AT showdown, not earlier",
+      "Low hand doesn't have to reuse your high hand's five cards — just the same 2-and-3 split rule",
+      "Straights and flushes don't hurt a low hand — only rank matters (this is why A-2-3-4-5 works as both)",
     ],
-    script: `Hold'em with a twist — you get 4 or 5 hole cards instead of 2. Standard blinds and betting each street. Tonight we're playing [variant] — [construction rule for that variant]. Best 5-card hand wins, [and we're splitting with the best low hand under 8, if that's on].`,
+    script: [
+      { label: "Omaha", text: `You get 4 hole cards face down. Standard blinds, standard betting each street — flop, turn, river. Your hand always uses exactly 2 from your hand plus 3 from the board. Best hand wins.` },
+      { label: "Seattle", text: `You get 4 hole cards face down. Standard blinds and betting each street. Your hand always uses exactly 3 from your hand plus 2 from the board. Best hand wins.` },
+      { label: "Boise", text: `You get 4 hole cards face down. Standard blinds and betting each street. At showdown, you pick your own split — 2 from your hand and 3 from the board, or 3 from your hand and 2 from the board, whichever makes your best hand. Best hand wins.` },
+      { label: "Jersey Hold'em", text: `You get 5 hole cards face down instead of 4. Standard blinds and betting each street. Just like Boise, you pick your split at showdown — 2-and-3 or 3-and-2, whichever's best. Best hand wins.` },
+      { label: "If hi-lo is on, add", text: `For low: five cards, each 8 or lower, no pairs — straights and flushes don't count against you, only rank matters. Aces are low, so A-2-3-4-5 is the best possible low. Same hand/board split as high, but it doesn't have to be the same five cards. No qualifying low among anyone, and the high hand just takes the whole pot.` },
+    ],
   },
   {
     id: "pair-of-jacks-trips-to-win",
