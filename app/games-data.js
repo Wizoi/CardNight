@@ -262,15 +262,16 @@ const GAMES = [
     players: { min: 5, max: 8, note: "Tight fit at 8 players — 50 of 52 cards used between hands and the two setup rows." },
     before: [],
     setup: `Deal 5 cards to each player. Lay out two rows of 5 cards face down on the table — a "good" row and a "bad" row.`,
-    gameplay: `Turn order rotates each round. On your turn, flip a card from either row — good row cards get added to your hand, bad row cards are discarded.`,
+    gameplay: `Turn order rotates each round. On your turn, flip a card from either row — good row cards get added to your hand, bad row cards are discarded. Flipping a bad-row card poisons its rank for the rest of the hand: any card of that rank already in a player's hand is discarded (placed on top of the bad card), any card of that rank still face-down in the good row moves over to the bad side instead, and any future flip matching that rank is immediately treated as bad too.`,
     win: `Best final hand at showdown wins.`,
     keyDecisions: [
       "Which row to flip from — good (grow your hand) or bad (gamble on a discard)",
     ],
     repeats: [
       "Good row cards join your hand for good; bad row cards are gone for good, no changing your mind",
+      "A bad flip poisons its rank for the whole hand — matching cards get pulled from hands, the good row, and any future flip, not just the one card that got flipped",
     ],
-    script: `You get 5 cards to start. There's a good row and a bad row on the table, 5 cards each, face down. On your turn, flip a card from either row — good row joins your hand, bad row gets tossed. Turn order rotates each round. Best hand at the end wins.`,
+    script: `You get 5 cards to start. There's a good row and a bad row on the table, 5 cards each, face down. On your turn, flip a card from either row — good row joins your hand, bad row gets tossed. But watch out: when a bad card comes up, its rank is poisoned for the rest of the hand — if you're holding a card of that rank, it's gone, if one's sitting in the good row it moves to the bad side, and any of that rank flipped later is bad too. Turn order rotates each round. Best hand at the end wins.`,
   },
   {
     id: "mexican-sweat",
