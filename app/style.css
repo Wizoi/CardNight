@@ -80,14 +80,15 @@ main.view {
 }
 
 #player-count {
-  width: 4rem;
+  width: 4.5rem;
   min-height: 44px;
-  padding: 0.35rem 0.4rem;
+  padding: 0.35rem 0.5rem;
   border-radius: 6px;
   border: 1px solid var(--card-border);
   background: var(--felt-dark);
   color: var(--cream);
   font-size: 1rem;
+  cursor: pointer;
 }
 
 .checkbox-label {

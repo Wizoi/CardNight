@@ -178,7 +178,7 @@
     }
   }
 
-  el.playerCount.addEventListener("input", () => {
+  el.playerCount.addEventListener("change", () => {
     const n = parseInt(el.playerCount.value, 10);
     state.players = Number.isFinite(n) && n > 0 ? n : state.players;
     // Live-update the detail view if it's currently showing a game that adapts to player count.
