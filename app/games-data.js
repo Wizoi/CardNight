@@ -61,7 +61,7 @@ const GAMES = [
     before: [],
     setup: `Everyone antes. Deal 3 hole cards to start.`,
     gameplay: `Three escalating rounds. Round 1: 3s wild, decide in/out, reveal, low hand matches the pot, high hand gets paid. Round 2: deal 2 more (5 total), 5s wild, repeat. Round 3: deal 2 more again (7 total), 7s wild, repeat. The pot carries forward across all three rounds — it doesn't reset.`,
-    win: `Pot goes to the last remaining player after round 3. (The source also mentions an early-win rule for winning 5 consecutive rounds, but since a hand only has 3 rounds, that would have to span multiple re-dealt hands — the source never explains how, so treat it as unconfirmed until we've actually played it out.)`,
+    win: `Pot goes to the last remaining player after round 3.`,
     keyDecisions: [
       "Fold or stay in, each round, as both the ante requirement and the wild rank escalate",
     ],
