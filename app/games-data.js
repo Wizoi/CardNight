@@ -312,12 +312,14 @@ const GAMES = [
     keyDecisions: [
       "How far to keep turning cards before you've beaten the board (you must at least try)",
       "Buy the 3 (mandatory) or the 9 to make them wild, or fold",
+      "Buy the bonus card off a 4, or pass on it",
     ],
     repeats: [
       "A betting round happens every time someone stops — whether they beat the board or just ran out",
       "3s and 9s are only wild if bought",
+      "Turning up a 4 lets that player buy a bonus card for $1",
     ],
-    script: `Everything's dealt face down. I'll flip a reference card to start — on your turn, flip your own cards one at a time until you either beat the best hand showing or run out. Either way, once you stop, we bet — even if you ran out and you're eliminated. 3s and 9s are wild if you buy them: $3 mandatory for a three, $2 for a nine. Last one standing with the best hand wins.`,
+    script: `Everything's dealt face down. I'll flip a reference card to start — on your turn, flip your own cards one at a time until you either beat the best hand showing or run out. Either way, once you stop, we bet — even if you ran out and you're eliminated. 3s and 9s are wild if you buy them: $3 mandatory for a three, $2 for a nine. Turn up a 4 and you can buy a bonus card for a buck. Last one standing with the best hand wins.`,
   },
   {
     id: "omaha-seattle-boise-jersey-holdem",
