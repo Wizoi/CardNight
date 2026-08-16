@@ -162,7 +162,14 @@ const GAMES = [
     icon: "☀️",
     players: { min: 5, max: 8 },
     before: [],
-    setup: `Deal 2 cards face down to each player to start, then 1 more card face up each round, going around the table. Final hand size scales with player count.`,
+    resolvePlayers(n) {
+      const upRounds = Math.min(5, Math.floor(52 / n) - 2);
+      const total = 2 + upRounds;
+      return `With ${n} players: ${upRounds} up-card rounds, ${total} cards each.${
+        upRounds < 5 ? " (Trimmed down from the usual 5 up-rounds so the deal fits one deck.)" : ""
+      }`;
+    },
+    setup: `Deal 2 cards face down to each player to start, then 1 more card face up each round, going around the table — number of rounds adjusts to tonight's player count (see above).`,
     gameplay: `3s and 9s are wild — but only if bought: $3 for a 3 (buying it is mandatory to stay in), $2 for a 9. Dealing a 4 lets that player buy an extra card for $1.`,
     win: `Best baseball hand (standard poker rankings, with bought wildcards) wins at showdown.`,
     keyDecisions: [

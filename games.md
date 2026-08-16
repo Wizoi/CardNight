@@ -119,7 +119,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 
 - **Category:** Baseball
 - **Family:** Part of the baseball family, along with Midnight Baseball and Rainy Day Baseball. All three share the same wildcard/extra-card rule (see below); each has its own deal/play twist.
-- **Deal:** 2 cards dealt face down to start, then each round 1 more card is dealt face up, going around the table (same deal structure as Rainy Day Baseball). The number of cards each player ends up using depends on the number of players at the table.
+- **Deal:** 2 cards dealt face down to start, then each round 1 more card is dealt face up, going around the table (same deal structure as Rainy Day Baseball). Number of up-rounds scales with tonight's player count so the deal stays within a single 52-card deck: 5 up-rounds (7 cards total) at typical table sizes (5–7 players), dropping to 4 up-rounds (6 cards total) at a full 8-player table.
 - **Wildcards:** 3s and 9s are wild.
   - A 3 is only wild if the player buys it for $3 — required to stay in the game.
   - A 9 is only wild if the player buys it for $2.
