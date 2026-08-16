@@ -33,6 +33,7 @@
 
   function visibleGames() {
     return GAMES.filter((g) => {
+      if (state.category === "New") return g.isNew;
       if (state.category !== "All" && !gameCategories(g).includes(state.category)) return false;
       return true;
     });
@@ -44,6 +45,7 @@
 
   function buildCategoryFilters() {
     const categories = ["All", ...CATEGORY_ORDER.filter((c) => GAMES.some((g) => gameCategories(g).includes(c)))];
+    if (GAMES.some((g) => g.isNew)) categories.push("New");
     el.categoryFilters.innerHTML = "";
     categories.forEach((cat) => {
       const btn = document.createElement("button");
@@ -158,10 +160,11 @@
       ${listBlock("Before You Deal", game.before)}
       ${playerNote}
       ${textBlock("Setup", game.setup)}
-      ${textBlock("Gameplay", game.gameplay)}
-      ${textBlock("How to Win", game.win)}
 
       ${scriptBlock("How to Describe It", game.script)}
+
+      ${textBlock("Gameplay", game.gameplay)}
+      ${textBlock("How to Win", game.win)}
 
       ${listBlock("Key Decisions", game.keyDecisions)}
       ${listBlock("Don't Forget to Repeat", game.repeats)}

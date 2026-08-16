@@ -16,7 +16,7 @@ const GAMES = [
       "Set the buy price for exchanging cards",
       "Decide if any wildcards beyond 5s are in play",
     ],
-    setup: `Everyone antes. Dealer deals 3 or 5 cards face down to each player, per the chosen variant.`,
+    setup: `Ante only — 50¢ house default, no raises or max bet. Dealer deals 3 or 5 cards face down to each player, per the chosen variant.`,
     gameplay: `5s are always wild. Players may buy/exchange cards for the dealer-set price. After buying, everyone secretly decides whether to play (stay in) or fold — this is a guts game, so it's ante only, no raises.`,
     win: `Best hand among the players who stayed in wins the pot. Anyone who stayed in but didn't have the best hand must match the pot to play again. Repeats until one player bets and wins outright.`,
     keyDecisions: [
@@ -37,7 +37,7 @@ const GAMES = [
     icon: "🅰️",
     players: { min: 5, max: 8 },
     before: [],
-    setup: `Deal 3 cards face down to each player.`,
+    setup: `Ante 50¢ (house default) to start. Deal 3 cards face down to each player.`,
     gameplay: `Dealer flips 1 community card per round, 5 rounds total. Anyone holding a card matching that rank must discard it. Aces count as 1 or 11, face cards count as 10. If a flipped card's rank already came up in an earlier round, it's set aside and a new card is drawn in its place.`,
     win: `Best high hand AND best low hand split the pot — or a player who discards their entire hand wins it outright. Being dealt AAA ("Ultima") wins the whole pot immediately, no flips needed.`,
     keyDecisions: [
@@ -59,7 +59,7 @@ const GAMES = [
     icon: "🔥",
     players: { min: 5, max: 8, note: "At a full table, round 3's 7-card hands can exceed a single deck — trim round 3 down (and shift its wild rank to match) rather than dealing a fixed 7." },
     before: [],
-    setup: `Everyone antes. Deal 3 hole cards to start.`,
+    setup: `Ante only — 50¢ house default, no raises or max bet. Deal 3 hole cards to start.`,
     gameplay: `Three escalating rounds. Round 1: 3s wild, decide in/out, reveal, low hand matches the pot, high hand gets paid. Round 2: deal 2 more (5 total), 5s wild, repeat. Round 3: deal 2 more again (7 total), 7s wild, repeat. The pot carries forward across all three rounds — it doesn't reset.`,
     win: `Pot goes to the last remaining player after round 3.`,
     keyDecisions: [
@@ -79,7 +79,7 @@ const GAMES = [
     icon: "🎯",
     players: { min: 5, max: 8 },
     before: [],
-    setup: `Deal 1 card face down to each player.`,
+    setup: `Ante 50¢ (house default) to start. Deal 1 card face down to each player.`,
     gameplay: `Each round, take another card or pass. Face cards are worth 0.5, Aces are worth 1. You CANNOT go over either target — going over busts you out of that half. Once a full round passes with nobody taking a card, one more complete no-taker round is required before dealing ends.`,
     win: `Best hand closest to 5.5 wins half the pot; best hand closest to 21 wins the other half. Tie-breaker: the tied player holding the fewest cards wins that side.`,
     keyDecisions: [
@@ -102,7 +102,7 @@ const GAMES = [
       "Confirm the buy-back price scale for the night ($1/$2/$3 default)",
       "Decide if \"Kitchen Sink\" is on: a hand that's exactly 7 AND exactly 27 at once wins the whole pot outright instead of splitting",
     ],
-    setup: `Deal 1 card down, then 1 card up to each player.`,
+    setup: `Ante 25¢ to start — half the usual 50¢ house default. Deal 1 card down, then 1 card up to each player.`,
     gameplay: `Optional extra card each round. Face cards are worth 0.5, Aces are worth 1 or 11 free of charge. A 10 counts as 10 by default — pay $1 and it becomes flexible, worth 0 or 10, your choice. Players may buy back ("down the river") their up-card to hide it again — escalating cost, up to 3 total: $1, then $2, then $3 later — "use it or lose it," must decide the moment it's offered. Going over is allowed and doesn't bust you.`,
     win: `Closest to 7 wins the low half of the pot, closest to 27 wins the high half — regardless of how many cards a player holds. Ties split evenly. If Kitchen Sink is on: a hand reading exactly 7 for low and exactly 27 for high at the same time can't be beaten or tied out of either half — it wins the entire pot outright instead of splitting it (same idea as 3-33's "Ultima"). More than one Kitchen Sink at the table splits the pot between them.`,
     keyDecisions: [
@@ -126,7 +126,7 @@ const GAMES = [
     icon: "↔️",
     players: { min: 5, max: 8 },
     before: [],
-    setup: `Flip two cards face up for the active player.`,
+    setup: `Ante 50¢ (house default) to start. Flip two cards face up for the active player.`,
     gameplay: `The active player may bet up to the full pot that the next card dealt will land between the two shown cards — or pass entirely. Aces are low, Kings are high (a house-specific choice).`,
     win: `If the next card falls between the two shown cards, the player wins their bet from the pot. If not, their bet goes into the pot — and if that card matches the rank of either shown card ("hitting the post"), they lose double their bet instead. The game only ends once the full deck is consumed and someone wins the entire pot.`,
     keyDecisions: [
@@ -147,7 +147,7 @@ const GAMES = [
     icon: "🙈",
     players: { min: 5, max: 8 },
     before: [],
-    setup: `Deal 1 card face down to each player.`,
+    setup: `Ante 50¢ (house default) to start. Deal 1 card face down to each player.`,
     gameplay: `Without looking, place your card on your forehead — you can see everyone else's card, never your own. Betting continues in rounds until no more raises are made.`,
     win: `Highest exposed card wins the pot outright at showdown.`,
     keyDecisions: [
@@ -174,7 +174,7 @@ const GAMES = [
         upRounds < 5 ? " (Trimmed down from the usual 5 up-rounds so the deal fits one deck.)" : ""
       }`;
     },
-    setup: `Deal 2 cards face down to each player to start, then 1 more card face up each round, going around the table — number of rounds adjusts to tonight's player count (see above).`,
+    setup: `Ante 50¢ (house default) to start. Deal 2 cards face down to each player to start, then 1 more card face up each round, going around the table — number of rounds adjusts to tonight's player count (see above).`,
     gameplay: `3s and 9s are wild — but only if bought: $3 for a 3 (buying it is mandatory to stay in), $2 for a 9. Dealing a 4 lets that player buy an extra card for $1.`,
     win: `Best baseball hand (standard poker rankings, with bought wildcards) wins at showdown.`,
     keyDecisions: [
@@ -207,7 +207,7 @@ const GAMES = [
         dummyFits ? "" : " A dummy hand won't fit at this size and player count — drop it or knock the deal down further."
       }`;
     },
-    setup: `Deal 6 or 7 cards face down — whichever version fits tonight's player count (see above). Pass 1 left / 1 right (6-card version) or 2 left / 1 right (7-card version).`,
+    setup: `Ante only — 50¢ house default, no raises or max bet. Deal 6 or 7 cards face down — whichever version fits tonight's player count (see above). Pass 1 left / 1 right (6-card version) or 2 left / 1 right (7-card version).`,
     gameplay: `Guts round after passing — ante only, no raises, no max bet. The chosen wildcard scheme applies for the hand.`,
     win: `Best hand among players who stayed in wins the pot. Anyone who stayed in and lost — including losing to a dummy hand — must match the pot to play again. Ends only when one player bets and wins outright.`,
     keyDecisions: [
@@ -231,7 +231,7 @@ const GAMES = [
     before: [
       "Decide whether Low Chicago is on as a companion side-pot",
     ],
-    setup: `Deal 6 cards in sequence — 2 up, 3 down, 1 up.`,
+    setup: `Ante 50¢ (house default) to start. Deal 6 cards in sequence — 2 up, 3 down, 1 up.`,
     gameplay: `Queens are wild. The card immediately after an exposed Queen is also wild — but only the one following the MOST RECENTLY shown Queen. When a later Queen is exposed, the earlier "follow" wildcard is cancelled; only the new one counts going forward. Highest showing hand starts the betting each round.`,
     win: `Best hand at showdown wins the main pot. If Low Chicago is on, the best concealed (hole-card) low spade wins that side pot separately — ties on it split evenly.`,
     keyDecisions: [
@@ -261,7 +261,7 @@ const GAMES = [
         upRounds < 4 ? " (Trimmed down from the usual 4 up-rounds so the deal fits one deck.)" : ""
       }`;
     },
-    setup: `Deal in sequence — 2 down, then up-card rounds (count adjusts to tonight's player count, see above), then 1 down. 7 cards total (4 up-rounds) at typical table sizes, matching the stud family's typical shape.`,
+    setup: `Ante 50¢ (house default) to start. Deal in sequence — 2 down, then up-card rounds (count adjusts to tonight's player count, see above), then 1 down. 7 cards total (4 up-rounds) at typical table sizes, matching the stud family's typical shape.`,
     gameplay: `Anytime, a player can pay to "wipe" (discard and replace) a card — the price escalates as the hand goes on. The final round's wipe price is doubled. Betting is based on the highest showing card(s).`,
     win: `Best hand at showdown wins.`,
     keyDecisions: [
@@ -281,7 +281,7 @@ const GAMES = [
     icon: "⚖️",
     players: { min: 5, max: 8 },
     before: [],
-    setup: `Deal 5 cards to each player. Lay out two rows of 5 cards face down on the table — a "good" row and a "bad" row.`,
+    setup: `Ante 50¢ (house default) to start. Deal 5 cards to each player. Lay out two rows of 5 cards face down on the table — a "good" row and a "bad" row.`,
     gameplay: `Turn order rotates each round. On your turn, flip a card from either row — good row cards get added to your hand, bad row cards are discarded. Flipping a bad-row card poisons its rank for the rest of the hand: any card of that rank already in a player's hand is discarded (placed on top of the bad card), any card of that rank still face-down in the good row moves over to the bad side instead, and any future flip matching that rank is immediately treated as bad too.`,
     win: `Best final hand at showdown wins.`,
     keyDecisions: [
@@ -307,7 +307,7 @@ const GAMES = [
       const cards = Math.min(7, Math.floor(52 / n));
       return `With ${n} players: deal ${cards} cards each${cards < 7 ? " (trimmed down from the usual 7 so the deal fits one deck)" : ""}.`;
     },
-    setup: `Deal cards face down to each player — count adjusts to tonight's player count (see above), 7 each at typical table sizes. No looking at your own hand!`,
+    setup: `Ante 50¢ (house default) to start. Deal cards face down to each player — count adjusts to tonight's player count (see above), 7 each at typical table sizes. No looking at your own hand!`,
     gameplay: `Each round, everyone simultaneously flips 1 card from their hand face up, then a betting round follows. This simultaneous reveal is a deliberate house choice — it keeps this game distinct from Midnight Baseball's sequential "beat the card" structure.`,
     win: `Best hand at showdown (once the whole hand is eventually revealed) wins.`,
     keyDecisions: [
@@ -327,7 +327,7 @@ const GAMES = [
     icon: "🌙",
     players: { min: 5, max: 8 },
     before: [],
-    setup: `Deal all cards face down to each player — no up cards during the deal itself. Flip an initial reference card that the first player must try to beat.`,
+    setup: `Ante 50¢ (house default) to start. Deal all cards face down to each player — no up cards during the deal itself. Flip an initial reference card that the first player must try to beat.`,
     gameplay: `3s and 9s are wild if bought ($3 mandatory for a 3, $2 for a 9). Dealing a 4 lets you buy an extra card for $1. On your turn, turn your own cards face up one at a time, building your best baseball hand, until you beat the current highest showing hand or run out of cards. Once you stop, everyone bets — even if you ran out without beating the board and are thereby eliminated.`,
     win: `Whoever holds the top hand after everyone's gone through their cards.`,
     keyDecisions: [
@@ -353,7 +353,7 @@ const GAMES = [
       "Pick tonight's variant: Omaha, Seattle, Boise, or Jersey Hold'em (New)",
       "Decide if the hi-lo split (best qualifying low, 8-or-under) is on",
     ],
-    setup: `Deal hole cards face down to each player — 4 for Omaha/Seattle/Boise, 5 for Jersey Hold'em. Standard shared community board.`,
+    setup: `Blinds: $0.50 small / $1 big — no ante. Deal hole cards face down to each player — 4 for Omaha/Seattle/Boise, 5 for Jersey Hold'em. Standard shared community board.`,
     gameplay: `Standard Texas Hold'em betting rounds — pre-flop, flop, turn, river — with a $0.50 small blind / $1 big blind and no cap on bet size. Hand construction depends on the chosen variant: Omaha uses 2 from hand + 3 from the board; Seattle uses 3 from hand + 2 from the board; Boise and Jersey Hold'em let the player choose 2-and-3 or 3-and-2 at showdown.`,
     win: `Best 5-card hand, built per the variant's construction rule, wins. If hi-lo is on: low hand is five unpaired cards, each 8 or under — straights and flushes don't count against it, only rank matters. Aces count low, so A-2-3-4-5 is the best possible low (and can double as a straight for high). Built with the same hand/board split as high, but not necessarily the same five cards. No qualifying low among anyone, and the high hand takes the whole pot — a hand can also scoop both halves if it's best on both sides.`,
     keyDecisions: [
@@ -382,7 +382,7 @@ const GAMES = [
     icon: "🃏",
     players: { min: 5, max: 8 },
     before: [],
-    setup: `Deal 5 cards face down to each player.`,
+    setup: `Ante 50¢ (house default) to start. Deal 5 cards face down to each player.`,
     gameplay: `Only a hand of Jacks-or-better may open the betting — if nobody can open, redeal. After opening, players may draw: exchange up to 3 cards, or 4 if holding an Ace.`,
     win: `Requires trips (three of a kind) or better to win at showdown — opening with Jacks-or-better alone isn't enough to actually take the pot.`,
     keyDecisions: [
@@ -404,7 +404,7 @@ const GAMES = [
     before: [
       "Decide whether the optional \"once you're out, you're out\" rule is in play",
     ],
-    setup: `Deal 2 cards down, 1 up to each player, then a betting round, then 1 more card dealt.`,
+    setup: `Ante 50¢ (house default) to start. Deal 2 cards down, 1 up to each player, then a betting round, then 1 more card dealt.`,
     gameplay: `3s and 9s are wild if bought ($3 mandatory for a 3, $2 for a 9). Dealing a 4 lets you buy an extra card for $1. A red queen rains out (kills) the hand — the pot carries forward to the next hand. The first rain-out triggers on any red queen; a second rain-out in the same hand needs both red queens together.`,
     win: `Best hand at showdown among players who survived any rain-outs. If the hand gets rained out, the pot carries to the next hand.`,
     keyDecisions: [

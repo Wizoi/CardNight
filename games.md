@@ -86,6 +86,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 
 - **Category:** Other
 - **Goal:** Split pot — best hand closest to 7 wins the low half, best hand closest to 27 wins the high half (same split-pot structure as 5.5-21).
+- **Ante:** 25¢ — half the usual 50¢ house default (see "House rule: chips & betting").
 - **Going over:** Players CAN go over either target and still win — going over does not disqualify a hand. (Contrast with 5.5-21, where going over busts you out.)
 - **Deal:** 1 card down, then 1 card up (with the option to buy the up-card back so it's hidden again).
 - **Additional cards:** Optional extra card each round after the initial deal.
@@ -252,6 +253,7 @@ Chip denominations and betting limits are set by the dealer for each hand — no
 - **Standard betting (most games):** 50-cent ante, 25-cent raise increment, $2 max bet per person.
 - **Guts games** (Deep or Double Screw; 3 Buy 5 / 5 Buy 5): Ante only — no raise/max-bet structure applies. The pot escalates hand over hand: any player who loses a hand (including losing against a dummy hand) must match the lost pot to play the next hand. This only ends once a single player bets and wins outright.
 - **Omaha / Seattle / Boise / Jersey Hold'em** (Hold'em variants): $0.50 small blind, $1 big blind, no cap on bet size — standard Texas Hold'em raise rules apply (e.g., minimum raise = size of the previous bet/raise).
+- **7-27:** 25-cent ante — half the standard default (see that entry).
 
 ## House rule: split-pot ties
 
