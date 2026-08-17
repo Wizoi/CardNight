@@ -159,6 +159,7 @@
 
       ${listBlock("Before You Deal", game.before)}
       ${playerNote}
+      ${textBlock("Betting", game.betting)}
       ${textBlock("Setup", game.setup)}
 
       ${scriptBlock("How to Describe It", game.script)}
