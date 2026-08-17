@@ -5,6 +5,7 @@
     "Guts",
     "Stud-based",
     "Texas Hold'em variant",
+    "Community Stud",
     "Baseball",
     "Poker Scored",
     "Other",

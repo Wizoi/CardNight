@@ -146,6 +146,31 @@ const GAMES = [
     script: `Two cards get flipped for you. You can bet up to the whole pot that the next card lands between them, or pass. Aces are low, Kings are high. Win and you take your bet from the pot; lose and it goes in — but if the card matches either of the two shown, that's "hitting the post" and you lose double your bet instead. We go around until the deck runs out and somebody's taken the whole pot.`,
   },
   {
+    id: "anaconda",
+    name: "Anaconda (Pass the Trash)",
+    category: "Stud-based",
+    isNew: true,
+    icon: "🐍",
+    players: { min: 5, max: 8, note: "The full 7-card deal happens all at once before any discarding, so it can't trim like other stud games — at 8 players that's 56 cards, over a deck. Comfortably plays 5–7; a full table needs a second deck or someone sitting out." },
+    before: [
+      "Decide whether to play hi-lo (declare high, low, or both before showdown)",
+    ],
+    betting: `Ante 50¢, 25¢ raise increment, $2 max bet per person (house default).`,
+    setup: `Deal 7 cards face down to each player — the full 7 up front, before any discarding.`,
+    gameplay: `Round 1: discard 3 unwanted cards face down, pass the set to the next active player on your left; bet. Round 2: discard 2 more from what you're now holding, then arrange your remaining 5 in whatever order you want, face down; bet. Then turn over the top card of your stack one at a time — a betting round after each — until all 5 are face up.`,
+    win: `Best 5-card hand wins at showdown. If hi-lo is on, best qualifying low splits the pot with the best high hand instead.`,
+    keyDecisions: [
+      "Which 3 cards to discard and pass first, then which 2 more to discard",
+      "What order to stack your final 5 cards in — you're choosing your own reveal sequence",
+      "If hi-lo is on: declare high, low, or both before showdown",
+    ],
+    repeats: [
+      "You're building your hand from cards passed TO you, not just cards you keep — check what you're handed each round",
+      "Your reveal order is locked in once you stack your 5 cards face down — no changing it later",
+    ],
+    script: `Seven cards to start. First round, ditch 3 you don't want and pass them to your left — everyone does this at once. Bet. Second round, ditch 2 more from what you're holding, then stack your last 5 in whatever order you want, face down. Bet. Now flip your stack one card at a time, betting after each, until all 5 are up. Best hand wins.`,
+  },
+  {
     id: "blind-mans-bluff",
     name: "Blind Man's Bluff",
     category: "Other",
@@ -165,6 +190,54 @@ const GAMES = [
       "Highest card showing wins outright — no hand-building involved",
     ],
     script: `One card each, and don't look at it — stick it on your forehead so everyone else can see it but you can't. Bet on what you think you're holding, based on everyone else's cards and reactions. Highest card showing wins the whole pot.`,
+  },
+  {
+    id: "cincinnati",
+    name: "Cincinnati",
+    category: "Community Stud",
+    isNew: true,
+    icon: "🌉",
+    players: { min: 5, max: 8 },
+    before: [
+      "Decide whether the last-revealed community card (and its rank) is wild — dealer's choice, not in the base game",
+    ],
+    betting: `Ante 50¢, 25¢ raise increment, $2 max bet per person (house default).`,
+    setup: `Deal 5 hole cards face down to each player, plus 5 community cards face down to the table.`,
+    gameplay: `Dealer turns the 5 community cards face up one at a time, with a betting round after each.`,
+    win: `Best 5-card hand using any combination of your hole cards and the community cards wins. High hand only — no hi-lo in the base game.`,
+    keyDecisions: [
+      "Standard betting after each community-card reveal",
+    ],
+    repeats: [
+      "Community cards are shared by everyone — mix and match freely with your own hole cards",
+      "No wildcards unless the dealer's called the last-card-wild variant",
+    ],
+    script: `Five cards down to you, five more face down on the table. I'll flip the table cards one at a time — bet after each. Build your best hand from any mix of your cards and the table cards. Best hand wins.`,
+  },
+  {
+    id: "criss-cross",
+    name: "Criss Cross (Iron Cross)",
+    category: "Community Stud",
+    isNew: true,
+    icon: "✖️",
+    players: { min: 5, max: 8 },
+    before: [
+      "Decide whether the center card (and its rank) is wild — dealer's choice",
+      "Decide whether hi-lo is on",
+    ],
+    betting: `Ante 50¢, 25¢ raise increment, $2 max bet per person (house default).`,
+    setup: `Deal 5 hole cards face down to each player, plus 5 community cards face down to the table in a cross shape — a shared center card, a horizontal arm of 3, and a vertical arm of 3.`,
+    gameplay: `Betting round, then the community cards turn face up one at a time in order, with a betting round after each.`,
+    win: `At showdown, build your best hand from 2 or more of your hole cards plus cards from ONE arm of the cross only — horizontal or vertical, not both. Best hand wins, or splits hi-lo if that's in play (a player declaring both must use the same arm for their high and low hands).`,
+    keyDecisions: [
+      "Which arm — horizontal or vertical — to build your hand from at showdown",
+      "If hi-lo is on: declare high, low, or both",
+    ],
+    repeats: [
+      "You must pick ONE arm of the cross, not mix cards from both",
+      "Declaring \"both\" in hi-lo still means the same single arm for both your high and low hands",
+    ],
+    script: `Five cards down to you. On the table, five more cards face down in a cross — a center card shared by a line of three across and a line of three up-and-down. I'll flip them one at a time, betting after each. At showdown, build your hand from your cards plus ONE arm of that cross — pick horizontal or vertical, not a mix. Best hand wins.`,
   },
   {
     id: "daytime-baseball",
@@ -253,6 +326,31 @@ const GAMES = [
       "Low Chicago only counts concealed (hole-card) spades, not exposed ones",
     ],
     script: `Six cards — 2 up, 3 down, 1 up. Queens are wild, and whatever card shows right after a Queen is wild too — but only after the most recent Queen. If another Queen shows up later, the old follow-wildcard stops being wild and only the new one counts. Highest hand showing bets first each round. If we're playing Low Chicago, best spade in the hole is a separate side pot.`,
+  },
+  {
+    id: "four-two-two",
+    name: "Four-Two-Two",
+    category: "Guts",
+    extraCategories: ["Poker Scored"],
+    isNew: true,
+    icon: "🍀",
+    players: { min: 5, max: 8 },
+    before: [
+      "Decide whether to agree a max loss per deal (e.g. $5) — dealer's choice",
+    ],
+    betting: `Ante only — 50¢ house default. No raises, no max bet.`,
+    setup: `Deal 4 cards face down to each player.`,
+    gameplay: `2s are wild. Everyone declares simultaneously whether they're in (traditionally by holding a coin in a closed fist, opened together on a signal). Players who are in get 2 more cards, dealt face up — still your own private hand, just visible to the table — for 6 cards total.`,
+    win: `Best 5-card hand from your 6 wins among the players who stayed in. Anyone who stayed in and lost must match the pot to play again. Ends only when one player stays in alone and wins outright.`,
+    keyDecisions: [
+      "Stay in (bet the guts) or fold, based on just 4 cards",
+      "If a max-loss cap is agreed, factor that into how loose you play",
+    ],
+    repeats: [
+      "The bonus 2 cards are dealt face up — dealt to you, but everyone can see them",
+      "2s are always wild",
+    ],
+    script: `Four cards down. 2s are wild. Everyone secretly decides in or out — same as our other guts games, coin in a fist works fine. If you're in, you get 2 more cards, but face up this time — everyone sees them, though they're still yours. Best hand among the ins wins; everyone else who was in matches the pot and we go again until someone wins it outright.`,
   },
   {
     id: "free-enterprise",
@@ -433,5 +531,62 @@ const GAMES = [
       "If \"once you're out, you're out\" is on, a rained-out player doesn't return for the rest of that hand",
     ],
     script: `Two down, one up, bet, one more dealt. 3s and 9s are wild if you buy them — $3 mandatory for the three, $2 for the nine. Get a 4, buy a bonus card for a buck. Watch for red queens — the first one rains out the hand and the pot carries forward. After that, it takes both red queens together to rain it out again.`,
+  },
+  {
+    id: "seven-and-what-makes-it",
+    name: "Seven and What Makes It",
+    category: "Stud-based",
+    isNew: true,
+    icon: "➕",
+    players: { min: 5, max: 8 },
+    before: [],
+    resolvePlayers(n) {
+      const upRounds = Math.min(4, Math.floor(52 / n) - 3);
+      const total = 3 + upRounds;
+      return `With ${n} players: deal ${total} cards each — 2 down, ${upRounds} up (one per round), 1 down.${
+        upRounds < 4 ? " (Trimmed down from the usual 4 up-rounds so the deal fits one deck.)" : ""
+      }`;
+    },
+    betting: `Ante 50¢, 25¢ raise increment, $2 max bet per person (house default).`,
+    setup: `Deal 7 cards in sequence — 2 down, 4 up (one per round), 1 down — standard 7-card stud shape, adjusted for tonight's player count (see above).`,
+    gameplay: `Any set of your own cards that adds up to exactly 7 is wild — a lone 7 counts too. Aces count as 1. You can't reuse a card in more than one combination at the same time. Highest showing hand bets first each round.`,
+    win: `Best 5-card hand at showdown, using your self-determined wildcards. Best possible hand is five Aces.`,
+    keyDecisions: [
+      "Track which of your own cards combine to make 7 — it can change as you're dealt more cards",
+      "Standard stud betting each round",
+    ],
+    repeats: [
+      "Wildness is self-determined from YOUR OWN hand — not a fixed rank like other games",
+      "A card can only be part of one 7-combo at a time, not double-counted",
+    ],
+    script: `Seven-card stud — two down, four up one at a time, one down. Here's the twist: any of your own cards that add up to seven are wild — even a lone seven counts. Aces count as one, and you can't reuse a card in two different combos at once. Highest hand showing bets first each round. Best hand wins — five aces is as good as it gets.`,
+  },
+  {
+    id: "good-bad-ugly",
+    name: "The Good, the Bad and the Ugly",
+    category: "Stud-based",
+    isNew: true,
+    icon: "🤠",
+    players: { min: 5, max: 8 },
+    before: [],
+    resolvePlayers(n) {
+      const withFinalDown = 7 * n + 3 <= 52;
+      return withFinalDown
+        ? `With ${n} players: full 7-card deal (2 down, 4 up, 1 down) plus the 3 table cards fits fine.`
+        : `With ${n} players: skip the final down card — 2 down, 4 up (6 cards) plus the 3 table cards, so it still fits one deck. The Good/Bad/Ugly triggers land on the up-cards, so they're unaffected.`;
+    },
+    betting: `Ante 50¢, 25¢ raise increment, $2 max bet per person (house default).`,
+    setup: `Deal 2 down and 1 up to each player to start (standard stud), plus 3 separate cards face down to the table — these are NOT shared community cards, just reveal triggers (see above for how the deal adjusts to tonight's player count).`,
+    gameplay: `After everyone's 4th card, flip the first table card — "The Good": every card of that rank in anyone's hand becomes wild. After the 5th card, flip the second — "The Bad": every card of that rank must be discarded. After the 6th card, flip the third — "The Ugly": anyone with an UP card of that rank must fold immediately.`,
+    win: `Best 7-card-stud hand at showdown among whoever survived The Ugly.`,
+    keyDecisions: [
+      "Whether to keep betting into a hand that could get wrecked by The Bad or The Ugly before showdown",
+      "Track your own cards' ranks against each table-card reveal as it lands",
+    ],
+    repeats: [
+      "The three table cards are NOT shared/community cards — you can't use them in your hand, they only trigger effects",
+      "Reveal order is always Good (wild) → Bad (discard) → Ugly (instant fold)",
+    ],
+    script: `Standard stud start — two down, one up. There's also three cards face down on the table, but those aren't yours to use — they just trigger things. After your 4th card, I flip the first one: that's the Good — matching cards in your hand go wild. After your 5th card, the second one: the Bad — matching cards get discarded. After your 6th, the third: the Ugly — if your up card matches, you're out, right then. Whoever's left standing plays out the hand and best hand wins.`,
   },
 ];

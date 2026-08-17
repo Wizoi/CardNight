@@ -8,14 +8,15 @@ A web research pass (2026-08) cross-referenced each game against published home-
 
 ## Game Categories
 
-- **Guts:** Deep or Double Screw, 3 Buy 5 / 5 Buy 5, 3-5-7 Guts (New)
-- **Stud-based:** Follow the Queen, Free Enterprise, Mexican Sweat
+- **Guts:** Deep or Double Screw, 3 Buy 5 / 5 Buy 5, 3-5-7 Guts (New), Four-Two-Two (New)
+- **Stud-based:** Follow the Queen, Free Enterprise, Mexican Sweat, Anaconda (New), Seven and What Makes It (New), The Good, the Bad and the Ugly (New)
 - **Texas Hold'em variant:** Omaha / Seattle / Boise / Jersey Hold'em (New)
 - **Baseball:** Daytime Baseball, Midnight Baseball, Rainy Day Baseball
-- **Poker Scored:** Pair of Jacks, Trips to Win; Game of Life; 3 Buy 5 / 5 Buy 5 (also Guts)
+- **Community Stud:** Cincinnati (New), Criss Cross (New)
+- **Poker Scored:** Pair of Jacks, Trips to Win; Game of Life; 3 Buy 5 / 5 Buy 5 (also Guts); Four-Two-Two (also Guts)
 - **Other:** 3-33, 5.5-21, 7-27, Acey Ducey, Blind Man's Bluff
 
-One of these calls is still judgment-based (marked with `*` in its Category field below) — worth a quick confirm next session: Mexican Sweat is grouped as stud-based for its staged reveal-and-bet structure even though it's not classic poker-hand stud. 7-27 is Other — it's a press-your-luck target game (accept cards or stop to hit 7 or 27), not a staged up/down stud deal. Pair of Jacks and Game of Life get their own "Poker Scored" bucket since a standard poker-ranked hand decides the win in both (unlike the rest of "Other," which use custom scoring — target numbers, discard-matching, highest single card, etc. — instead of poker hand rankings). 3 Buy 5 / 5 Buy 5 carries both tags — it's structurally a Guts game (ante-only, escalating pot), but within each round the winner is a plain best-poker-hand comparison (just wildcards, no dummy hand or escalating wild ranks like its Guts siblings), so it's "Poker Scored" too.
+One of these calls is still judgment-based (marked with `*` in its Category field below) — worth a quick confirm next session: Mexican Sweat is grouped as stud-based for its staged reveal-and-bet structure even though it's not classic poker-hand stud. 7-27 is Other — it's a press-your-luck target game (accept cards or stop to hit 7 or 27), not a staged up/down stud deal. Pair of Jacks and Game of Life get their own "Poker Scored" bucket since a standard poker-ranked hand decides the win in both (unlike the rest of "Other," which use custom scoring — target numbers, discard-matching, highest single card, etc. — instead of poker hand rankings). 3 Buy 5 / 5 Buy 5 and Four-Two-Two both carry a second tag — structurally Guts games (ante-only, escalating pot), but within each round the winner is a plain best-poker-hand comparison, so they're "Poker Scored" too. **Community Stud** is a new bucket for Cincinnati and Criss Cross — like the Texas Hold'em variants they deal private hole cards against a shared board, but they use ante-and-reveal-one-card-at-a-time stud betting instead of hold'em's blind/street structure, so they didn't fit that bucket either.
 
 Entries marked **(New)** in their Category field aren't part of our original house list — they surfaced as siblings/relatives during the 2026-08 research pass and are documented here as candidates worth trying, not games we've actually played.
 
@@ -29,10 +30,14 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 - [5.5-21](#55-21)
 - [7-27](#7-27)
 - [Acey Ducey](#acey-ducey)
+- [Anaconda (Pass the Trash)](#anaconda-pass-the-trash) *(New)*
 - [Blind Man's Bluff](#blind-mans-bluff)
+- [Cincinnati](#cincinnati) *(New)*
+- [Criss Cross (Iron Cross)](#criss-cross-iron-cross) *(New)*
 - [Daytime Baseball](#daytime-baseball)
 - [Deep or Double Screw](#deep-or-double-screw)
 - [Follow the Queen](#follow-the-queen)
+- [Four-Two-Two](#four-two-two) *(New)*
 - [Free Enterprise](#free-enterprise)
 - [Game of Life](#game-of-life)
 - [Mexican Sweat](#mexican-sweat)
@@ -40,6 +45,8 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 - [Omaha / Seattle / Boise / Jersey Hold'em](#omaha--seattle--boise--jersey-holdem)
 - [Pair of Jacks, Trips to Win](#pair-of-jacks-trips-to-win)
 - [Rainy Day Baseball](#rainy-day-baseball)
+- [Seven and What Makes It](#seven-and-what-makes-it) *(New)*
+- [The Good, the Bad and the Ugly](#the-good-the-bad-and-the-ugly) *(New)*
 
 ---
 
@@ -107,6 +114,16 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 - **End condition:** Game only ends once the full deck is consumed and a player wins the entire pot.
 - **Sources:** ["In Between" – pagat.com](https://www.pagat.com/banking/in-between.html); ["Acey Deucey" – gambiter.com](https://gambiter.com/cards/Acey_deucey_card_game.html)
 
+## Anaconda (Pass the Trash)
+
+- **Category:** Stud-based (New)
+- **Deal:** 7 cards dealt face down to each player, all at once, before any discarding. Needs the full 7 up front, so it doesn't trim the way other stud games do — at a full 8-player table that's 56 cards, more than a deck holds. Comfortably plays 5–7 players; an 8-player table needs a second deck or one player sitting out that hand.
+- **Passing:** Round 1 — everyone discards 3 unwanted cards face down; the sets are passed to the next active player on the left; betting round. Round 2 — everyone discards 2 more unwanted cards from what they're now holding, then arranges their remaining 5 cards in a chosen order, face down; betting round.
+- **Play ("roll your own"):** Turn over the top card of your 5-card stack one at a time, with a betting round after each, until all 5 are face up.
+- **Optional:** Often played hi-lo — before showdown, everyone secretly declares going for high, low, or both.
+- **Winning:** Best 5-card hand wins (or splits hi-lo if that's in play).
+- **Sources:** [Pass the Trash / Anaconda – pagat.com](https://www.pagat.com/poker/variants/passthetrash.html)
+
 ## Blind Man's Bluff
 
 - **Category:** Other (also commonly called "Indian Poker")
@@ -116,6 +133,27 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 - **Winning:** Highest exposed card wins the pot outright at showdown.
 - **Variants:** "Forehead Stud" applies the same hidden-from-owner mechanic to a full stud hand instead of one card.
 - **Sources:** [Wikipedia](https://en.wikipedia.org/wiki/Blind_man's_bluff_(poker)); [gambiter.com](https://gambiter.com/poker/Blind_mans_bluff_poker.html)
+
+## Cincinnati
+
+- **Category:** Community Stud (New)
+- **Deal:** 5 hole cards face down to each player, plus 5 community cards face down to the table. (At 8 players, that's 45 hole cards + 5 community = 50 of 52 — fits comfortably.)
+- **Play:** Dealer turns the 5 community cards face up one at a time, with a betting round after each.
+- **Wildcards:** None in the base game. A common house variant makes the last-revealed community card — and every card of that rank — wild; dealer's choice whether to add it.
+- **Winning:** Best 5-card hand from any combination of hole and community cards. High hand only — no hi-lo split documented for the base game.
+- **Related variants worth knowing about:** "Round the World" is the same game with 4 hole + 4 community cards instead of 5 each. "Lame Brain Pete" deals 3 hole cards with a betting round, then 4 community cards revealed one at a time (bet after each) — its wildcard is whatever the *lowest* of the 4 community cards turns out to be, so it's a mystery wildcard discovered progressively rather than fixed in advance.
+- **Sources:** [Cincinnati – pagat.com](https://www.pagat.com/poker/variants/cincinnati.html)
+
+## Criss Cross (Iron Cross)
+
+- **Category:** Community Stud (New)
+- **Deal:** 5 hole cards face down to each player, plus 5 community cards dealt face down to the table in a cross/plus shape — a center card shared by a horizontal arm of 3 and a vertical arm of 3. (At 8 players, that's 45 hole cards + 5 community = 50 of 52 — fits comfortably.)
+- **Play:** Betting round, then the community cards are turned face up one at a time in order, with a betting round after each.
+- **Hand construction:** At showdown, each player combines 2 or more of their hole cards with cards from ONE arm of the cross only — horizontal or vertical, not mixed.
+- **Wildcards:** Optional — the center card and all cards of that rank may be wild; dealer's choice.
+- **Optional:** Playable hi-lo. A player declaring "both" must use the same single arm for both their high and low hands, not a different arm for each.
+- **Winning:** Best hand (by the arm-restricted construction above) wins; splits hi-lo if that's in play.
+- **Sources:** [Iron Cross / Criss Cross – pagat.com](https://www.pagat.com/poker/variants/ironcross.html)
 
 ## Daytime Baseball
 
@@ -154,6 +192,17 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 - **Tie-breaker:** When played with Low Chicago, ties on that side pot split evenly among the tied players.
 - **Variants:** Some published rules have players declare high/Chicago/both at showdown instead of it being automatic — not something we do.
 - **Sources:** [Chicago/Follow the Queen – pagat.com](https://www.pagat.com/poker/variants/chicago.html)
+
+## Four-Two-Two
+
+- **Category:** Guts, Poker Scored (New)
+- **Deal:** 4 cards dealt face down to each player.
+- **Wildcards:** 2s are wild.
+- **Betting:** Guts game — ante only, no raises. Players declare simultaneously whether they're in (traditionally by holding a coin in a closed fist, revealed together on a signal).
+- **Extra cards:** Players who are in receive 2 more cards, dealt face up — still each player's own private hand, just visible to the table, not shared community cards. Everyone who stayed in now holds 6 cards.
+- **Winning:** Best 5-card poker hand from the 6 held wins, among players who stayed in. Anyone who stayed in and lost must match the pot to play again. Ends only when one player stays in alone and wins outright.
+- **Optional rule:** Dealer's choice to agree a max loss per deal (e.g. $5) — if the pot exceeds that amount, losers only have to pay the capped amount instead of matching the full pot.
+- **Sources:** [Guts variants (Four-Two-Two) – pagat.com](https://www.pagat.com/poker/variants/guts.html)
 
 ## Free Enterprise
 
@@ -235,6 +284,24 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 - **Variants:** Standard/documented version triggers on the Queen of Spades specifically rather than any red queen — our red-queen-with-escalation trigger is the deliberate house twist on the same "rain out" idea.
 - **Sources:** [Baseball (poker) – Wikipedia](https://en.wikipedia.org/wiki/Baseball_(poker))
 
+## Seven and What Makes It
+
+- **Category:** Stud-based (New)
+- **Deal:** 7 cards dealt in sequence — 2 down, 4 up (one per round), 1 down — standard 7-card stud shape. Number of up-rounds scales with tonight's player count so the deal stays within a single 52-card deck: 4 up-rounds (7 cards total) at typical table sizes (5–7 players), dropping to 3 up-rounds (6 cards total) at a full 8-player table.
+- **Wildcards:** Any set of a player's own cards that adds up to exactly 7 is wild — a lone 7 counts too. Aces count as 1. A card can't be used in more than one combination at the same time.
+- **Betting:** Standard stud betting — highest showing hand bets first each round.
+- **Winning:** Best 5-card hand at showdown (using each player's self-determined wildcards). Best possible hand is five Aces.
+- **Sources:** ["Seven and What Makes It" – pagat.com](https://www.pagat.com/poker/variants/invented/stud.html)
+
+## The Good, the Bad and the Ugly
+
+- **Category:** Stud-based (New)
+- **Deal:** 7-card stud shape (2 down, 1 up to start, then up-cards, then a final down card), plus 3 separate cards dealt face down to the table — these are NOT shared/community cards and can't be used to complete a hand. At 5–7 players, the full 7-card shape plus 3 table cards fits one deck. At a full 8-player table, skip the final down card (2 down, 4 up — 6 cards per player) so the deal still fits; the Good/Bad/Ugly triggers are unaffected since they're tied to the up-cards, not the final one.
+- **Reveals:** After each player's 4th card, the dealer turns up the first table card — "The Good": every player's cards matching that rank become wild. After the 5th card, the second table card turns up — "The Bad": every card matching that rank must be discarded. After the 6th card, the third table card turns up — "The Ugly": anyone whose *up* card matches that rank must fold immediately.
+- **Betting:** Standard stud betting, a round after each card and after each of the three reveals.
+- **Winning:** Best 7-card-stud hand at showdown among the players who survived The Ugly.
+- **Sources:** [Baseball / "The Good, the Bad and the Ugly" – pagat.com](https://www.pagat.com/poker/variants/baseball.html)
+
 ---
 
 ## Open questions / to confirm next session
@@ -243,7 +310,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 
 ## House rule: table size
 
-Every game in this doc is designed around a standard single poker table: **5–8 players**. Nobody's capped out of a game for having a full table — instead, a few entries adjust their deal shape to keep total cards dealt within a single 52-card deck (Deep or Double Screw, Free Enterprise, Mexican Sweat, 3-5-7 Guts — see each entry's Deal field). Player count is worth settling before dealing since it decides which version of these games is actually in play.
+Every game in this doc is designed around a standard single poker table: **5–8 players**. Nobody's capped out of a game for having a full table — instead, a few entries adjust their deal shape to keep total cards dealt within a single 52-card deck (Deep or Double Screw, Free Enterprise, Mexican Sweat, 3-5-7 Guts, Seven and What Makes It, The Good the Bad and the Ugly — see each entry's Deal field). Player count is worth settling before dealing since it decides which version of these games is actually in play. **Anaconda is the one exception that can't adapt** — its full 7-card deal happens all at once before any discarding, so it genuinely doesn't fit at 8 players without a second deck; treat it as a 5–7 player game in practice.
 
 ## House rule: chips & betting
 
