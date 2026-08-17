@@ -357,7 +357,7 @@ const GAMES = [
     name: "Free Enterprise",
     category: "Stud-based",
     isNew: false,
-    icon: "🔄",
+    icon: "💸",
     players: { min: 5, max: 8 },
     before: [
       "Choose the wipe price scale for the night: $1/$2/$3, or the cheaper $0.50-start scale",
@@ -492,7 +492,7 @@ const GAMES = [
     name: "Pair of Jacks, Trips to Win",
     category: "Poker Scored",
     isNew: false,
-    icon: "3️⃣",
+    icon: "🎰",
     players: { min: 5, max: 8 },
     before: [],
     betting: `Ante 50¢, 25¢ raise increment, $2 max bet per person (house default).`,
