@@ -120,7 +120,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 - **Deal:** 7 cards dealt face down to each player, all at once, before any discarding. Needs the full 7 up front, so it doesn't trim the way other stud games do — at a full 8-player table that's 56 cards, more than a deck holds. Comfortably plays 5–7 players; an 8-player table needs a second deck or one player sitting out that hand.
 - **Passing:** Round 1 — everyone discards 3 unwanted cards face down; the sets are passed to the next active player on the left; betting round. Round 2 — everyone discards 2 more unwanted cards from what they're now holding, then arranges their remaining 5 cards in a chosen order, face down; betting round.
 - **Play ("roll your own"):** Turn over the top card of your 5-card stack one at a time, with a betting round after each, until all 5 are face up.
-- **Optional:** Often played hi-lo — before showdown, everyone secretly declares going for high, low, or both.
+- **Optional:** Often played hi-lo — before showdown, everyone secretly declares going for high, low, or both. No wildcard by default; dealer's choice to add 1-2 Jokers per "House rule: playing with Jokers."
 - **Winning:** Best 5-card hand wins (or splits hi-lo if that's in play).
 - **Sources:** [Pass the Trash / Anaconda – pagat.com](https://www.pagat.com/poker/variants/passthetrash.html)
 
@@ -221,6 +221,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 - **Setup:** Two rows of 5 cards are placed face down on the table — one "good" row (cards can be added to your hand) and one "bad" row (cards are discarded).
 - **Play:** Players take turns flipping a card from either row. Turn order rotates each round, and whichever player goes first in a round gets to choose which side (good or bad) they flip from.
 - **Bad-card effect:** Flipping a bad-row card poisons its rank for the rest of the hand. Any card of that rank already in a player's hand is discarded — placed on top of the bad card to show it's out of play. Any card of that rank still face-down in the good row also moves over to the bad side instead. From then on, any future flip — from either row — that matches a poisoned rank is immediately treated as bad and discarded rather than added to a hand.
+- **Wildcards:** None by default; dealer's choice to add 1-2 Jokers per "House rule: playing with Jokers."
 - **Sources:** None found for this mechanic — appears to be original to our group. (A same-named-theme game turned up — ["The Good, the Bad and the Ugly" – poker.com](https://poker.com/game/stud-poker-games/good-bad-ugly/), a seven-card stud variant with three community "reveal" cards that trigger wildcards/discards/eliminations — but it's mechanically unrelated to our face-down good/bad row draft.)
 
 ## Mexican Sweat
@@ -319,8 +320,10 @@ Dealer's choice to add 1 or 2 Jokers into the deck as extra wildcards for the ni
 - **Pair of Jacks, Trips to Win** — our one 5-card draw game; a Joker in your dealt hand (or drawn later) is wild like any other card.
 - **Cincinnati** and **Criss Cross** — both build a 5-card hand from hole cards plus a community spread, and neither has a fixed wildcard by default.
 - **Free Enterprise** — its only house twist is the "wipe" mechanic (paying to discard and replace a card); it has no wildcard rule at all, so a Joker fits cleanly.
+- **Anaconda** — no wildcard mechanic at all, just the pass-and-discard structure; a Joker slots in the same way it would in any other no-wild game.
+- **Game of Life** — no wildcard rule (its "bad-card" effect discards/poisons ranks, it doesn't make anything wild); a Joker dealt into your hand or drafted from the good row is wild like any other card.
 
-It doesn't fit games that already have a dedicated wildcard scheme baked in — the Guts games, the Baseball family, Follow the Queen, Mexican Sweat — since stacking a Joker on top would double up rather than cleanly slot in.
+It doesn't fit games that already have a dedicated wildcard scheme baked in — the Guts games, the Baseball family, Follow the Queen, Mexican Sweat — since stacking a Joker on top would double up rather than cleanly slot in. **Omaha / Seattle / Boise / Jersey Hold'em** also has no wildcard rule by default, but it's deliberately left off this list — the strict hand-construction ratios (exactly 2-from-hand-3-from-board, etc.) make a Joker in a hole card awkward to resolve cleanly, unlike the open "best 5 of what you're holding" evaluation the games above use. Worth revisiting if the group actually wants to try it.
 
 ## House rule: chips & betting
 

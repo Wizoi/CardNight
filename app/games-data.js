@@ -154,6 +154,7 @@ const GAMES = [
     players: { min: 5, max: 8, note: "The full 7-card deal happens all at once before any discarding, so it can't trim like other stud games — at 8 players that's 56 cards, over a deck. Comfortably plays 5–7; a full table needs a second deck or someone sitting out." },
     before: [
       "Decide whether to play hi-lo (declare high, low, or both before showdown)",
+      "Decide whether 1-2 Jokers are in the deck as extra wildcards — dealer's choice; this game has no wildcard rule otherwise",
     ],
     betting: `Ante 50¢, 25¢ raise increment, $2 max bet per person (house default).`,
     setup: `Deal 7 cards face down to each player — the full 7 up front, before any discarding.`,
@@ -392,7 +393,9 @@ const GAMES = [
     isNew: false,
     icon: "⚖️",
     players: { min: 5, max: 8 },
-    before: [],
+    before: [
+      "Decide whether 1-2 Jokers are in the deck as extra wildcards — dealer's choice; this game has no wildcard rule otherwise",
+    ],
     betting: `Ante 50¢, 25¢ raise increment, $2 max bet per person (house default).`,
     setup: `Deal 5 cards to each player. Lay out two rows of 5 cards face down on the table — a "good" row and a "bad" row.`,
     gameplay: `Turn order rotates each round. On your turn, flip a card from either row — good row cards get added to your hand, bad row cards are discarded. Flipping a bad-row card poisons its rank for the rest of the hand: any card of that rank already in a player's hand is discarded (placed on top of the bad card), any card of that rank still face-down in the good row moves over to the bad side instead, and any future flip matching that rank is immediately treated as bad too.`,
