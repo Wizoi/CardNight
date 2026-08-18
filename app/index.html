@@ -54,6 +54,17 @@
   <article id="detail-content"></article>
 </main>
 
+<div id="hand-rankings-modal" class="modal-overlay" hidden>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="hand-rankings-title">
+    <div class="modal-header">
+      <h2 id="hand-rankings-title">🏆 Poker Hand Rankings</h2>
+      <button id="close-hand-rankings" class="modal-close" aria-label="Close">✕</button>
+    </div>
+    <p class="modal-subtitle">Best to worst, 5-card hands. Whatever's wild for the game you're playing can stand in for any card below — the ranking order itself never changes.</p>
+    <div id="hand-rankings-list" class="hand-rankings-list"></div>
+  </div>
+</div>
+
 <script src="games-data.js"></script>
 <script src="app.js"></script>
 </body>

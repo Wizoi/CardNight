@@ -26,7 +26,16 @@
     pickButton: document.getElementById("pick-for-me"),
     backButton: document.getElementById("back-button"),
     detailContent: document.getElementById("detail-content"),
+    handRankingsModal: document.getElementById("hand-rankings-modal"),
+    handRankingsList: document.getElementById("hand-rankings-list"),
+    closeHandRankings: document.getElementById("close-hand-rankings"),
   };
+
+  // Every category except "Other" ends in a plain best-poker-hand showdown
+  // (see games.md's Game Categories note on why "Other" is the custom-scoring bucket).
+  function usesPokerHandRankings(game) {
+    return gameCategories(game).some((c) => c !== "Other");
+  }
 
   function gamesById(id) {
     return GAMES.find((g) => g.id === id);
@@ -149,6 +158,10 @@
       ? `<div class="player-note">👥 ${game.resolvePlayers(state.players)}</div>`
       : (game.players.note ? `<div class="player-note">👥 ${game.players.note}</div>` : "");
 
+    const rankingsButton = usesPokerHandRankings(game)
+      ? `<button type="button" class="hand-rankings-trigger" data-open-rankings>🏆 Hand Rankings</button>`
+      : "";
+
     el.detailContent.innerHTML = `
       <div class="detail-head">
         <div class="icon">${game.icon}</div>
@@ -156,6 +169,7 @@
           <h2>${game.name}</h2>
           <div class="meta">${tags.join("")}</div>
         </div>
+        ${rankingsButton}
       </div>
 
       ${listBlock("Before You Deal", game.before)}
@@ -173,6 +187,51 @@
       ${anecdoteBlock(game.anecdote)}
     `;
   }
+
+  function miniCardMarkup(card) {
+    const red = card.s === "♥" || card.s === "♦";
+    return `
+      <div class="mini-playing-card${red ? " red" : ""}">
+        <span class="mini-playing-card-rank">${card.r}</span>
+        <span class="mini-playing-card-suit">${card.s}</span>
+      </div>
+    `;
+  }
+
+  function renderHandRankings() {
+    el.handRankingsList.innerHTML = HAND_RANKINGS.map((hand, i) => `
+      <div class="hand-ranking-row">
+        <div class="hand-ranking-rank">${i + 1}</div>
+        <div class="hand-ranking-cards">${hand.cards.map(miniCardMarkup).join("")}</div>
+        <div class="hand-ranking-info">
+          <div class="hand-ranking-name">${hand.name}</div>
+          <div class="hand-ranking-blurb">${hand.blurb}</div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function openHandRankings() {
+    el.handRankingsModal.hidden = false;
+  }
+
+  function closeHandRankingsModal() {
+    el.handRankingsModal.hidden = true;
+  }
+
+  el.detailContent.addEventListener("click", (e) => {
+    if (e.target.closest("[data-open-rankings]")) openHandRankings();
+  });
+
+  el.closeHandRankings.addEventListener("click", closeHandRankingsModal);
+
+  el.handRankingsModal.addEventListener("click", (e) => {
+    if (e.target === el.handRankingsModal) closeHandRankingsModal();
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !el.handRankingsModal.hidden) closeHandRankingsModal();
+  });
 
   function showListView() {
     el.detailView.hidden = true;
@@ -221,5 +280,6 @@
   state.players = parseInt(el.playerCount.value, 10) || 6;
   buildCategoryFilters();
   renderGrid();
+  renderHandRankings();
   route();
 })();

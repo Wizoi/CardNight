@@ -590,3 +590,60 @@ const GAMES = [
     script: `Standard stud start — two down, one up. There's also three cards face down on the table, but those aren't yours to use — they just trigger things. After your 4th card, I flip the first one: that's the Good — matching cards in your hand go wild. After your 5th card, the second one: the Bad — matching cards get discarded. After your 6th, the third: the Ugly — if your up card matches, you're out, right then. Whoever's left standing plays out the hand and best hand wins.`,
   },
 ];
+
+// Standard 5-card poker hand rankings, best to worst.
+// Shown for any game whose showdown is a plain poker-hand comparison
+// (i.e. every category except "Other" — see app.js usesPokerHandRankings()).
+// Example hands are illustrative only; wildcards can stand in for any card.
+const HAND_RANKINGS = [
+  {
+    name: "Royal Flush",
+    blurb: "A, K, Q, J, 10, all one suit — the best hand there is.",
+    cards: [{ r: "A", s: "♠" }, { r: "K", s: "♠" }, { r: "Q", s: "♠" }, { r: "J", s: "♠" }, { r: "10", s: "♠" }],
+  },
+  {
+    name: "Straight Flush",
+    blurb: "Five cards in a row, all one suit.",
+    cards: [{ r: "9", s: "♥" }, { r: "8", s: "♥" }, { r: "7", s: "♥" }, { r: "6", s: "♥" }, { r: "5", s: "♥" }],
+  },
+  {
+    name: "Four of a Kind",
+    blurb: "Four cards of the same rank.",
+    cards: [{ r: "9", s: "♣" }, { r: "9", s: "♦" }, { r: "9", s: "♥" }, { r: "9", s: "♠" }, { r: "2", s: "♣" }],
+  },
+  {
+    name: "Full House",
+    blurb: "Three of a kind, plus a pair.",
+    cards: [{ r: "K", s: "♠" }, { r: "K", s: "♥" }, { r: "K", s: "♦" }, { r: "4", s: "♣" }, { r: "4", s: "♠" }],
+  },
+  {
+    name: "Flush",
+    blurb: "Five cards of the same suit, not in sequence.",
+    cards: [{ r: "A", s: "♦" }, { r: "J", s: "♦" }, { r: "8", s: "♦" }, { r: "6", s: "♦" }, { r: "3", s: "♦" }],
+  },
+  {
+    name: "Straight",
+    blurb: "Five cards in a row, mixed suits.",
+    cards: [{ r: "10", s: "♣" }, { r: "9", s: "♠" }, { r: "8", s: "♥" }, { r: "7", s: "♦" }, { r: "6", s: "♣" }],
+  },
+  {
+    name: "Three of a Kind",
+    blurb: "Three cards of the same rank.",
+    cards: [{ r: "7", s: "♠" }, { r: "7", s: "♥" }, { r: "7", s: "♦" }, { r: "K", s: "♣" }, { r: "2", s: "♠" }],
+  },
+  {
+    name: "Two Pair",
+    blurb: "Two separate pairs.",
+    cards: [{ r: "J", s: "♠" }, { r: "J", s: "♦" }, { r: "4", s: "♥" }, { r: "4", s: "♣" }, { r: "9", s: "♠" }],
+  },
+  {
+    name: "One Pair",
+    blurb: "Two cards of the same rank.",
+    cards: [{ r: "10", s: "♥" }, { r: "10", s: "♠" }, { r: "K", s: "♦" }, { r: "6", s: "♣" }, { r: "2", s: "♥" }],
+  },
+  {
+    name: "High Card",
+    blurb: "No pair — the highest card plays.",
+    cards: [{ r: "A", s: "♣" }, { r: "J", s: "♥" }, { r: "8", s: "♠" }, { r: "6", s: "♦" }, { r: "3", s: "♣" }],
+  },
+];
