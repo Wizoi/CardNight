@@ -363,6 +363,7 @@ const GAMES = [
     players: { min: 5, max: 8 },
     before: [
       "Choose the wipe price scale for the night: $1/$2/$3, or the cheaper $0.50-start scale",
+      "Decide whether 1-2 Jokers are in the deck as extra wildcards — dealer's choice; this game has no wildcard rule otherwise",
     ],
     resolvePlayers(n) {
       const upRounds = Math.min(4, Math.floor(52 / n) - 3);

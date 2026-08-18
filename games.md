@@ -314,12 +314,13 @@ Every game in this doc is designed around a standard single poker table: **5–8
 
 ## House rule: playing with Jokers
 
-Dealer's choice to add 1 or 2 Jokers into the deck as extra wildcards for the night (53 or 54 cards instead of 52 — a small enough change that it doesn't meaningfully affect any of the player-count deck-math above). This fits best in games where the showdown hand is a standard 5-card poker hand built from a larger pool of cards, since a Joker just slots in as one more wild the same way any other wildcard would:
+Dealer's choice to add 1 or 2 Jokers into the deck as extra wildcards for the night (53 or 54 cards instead of 52 — a small enough change that it doesn't meaningfully affect any of the player-count deck-math above). This fits games that don't already have their own dedicated wildcard mechanic — the Joker becomes the only source of wildness instead of doubling up on an existing one:
 
 - **Pair of Jacks, Trips to Win** — our one 5-card draw game; a Joker in your dealt hand (or drawn later) is wild like any other card.
-- **Cincinnati** and **Criss Cross** — both build a 5-card hand from hole cards plus a community spread; a Joker among either works the same way.
+- **Cincinnati** and **Criss Cross** — both build a 5-card hand from hole cards plus a community spread, and neither has a fixed wildcard by default.
+- **Free Enterprise** — its only house twist is the "wipe" mechanic (paying to discard and replace a card); it has no wildcard rule at all, so a Joker fits cleanly.
 
-It doesn't fit games that already have their own dedicated wildcard scheme — the Guts games, the Baseball family, Follow the Queen, Mexican Sweat, Free Enterprise — since stacking Jokers on top of an already-established wild mechanic would just double up rather than cleanly slot in.
+It doesn't fit games that already have a dedicated wildcard scheme baked in — the Guts games, the Baseball family, Follow the Queen, Mexican Sweat — since stacking a Joker on top would double up rather than cleanly slot in.
 
 ## House rule: chips & betting
 
