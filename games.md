@@ -312,6 +312,15 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 
 Every game in this doc is designed around a standard single poker table: **5–8 players**. Nobody's capped out of a game for having a full table — instead, a few entries adjust their deal shape to keep total cards dealt within a single 52-card deck (Deep or Double Screw, Free Enterprise, Mexican Sweat, 3-5-7 Guts, Seven and What Makes It, The Good the Bad and the Ugly — see each entry's Deal field). Player count is worth settling before dealing since it decides which version of these games is actually in play. **Anaconda is the one exception that can't adapt** — its full 7-card deal happens all at once before any discarding, so it genuinely doesn't fit at 8 players without a second deck; treat it as a 5–7 player game in practice.
 
+## House rule: playing with Jokers
+
+Dealer's choice to add 1 or 2 Jokers into the deck as extra wildcards for the night (53 or 54 cards instead of 52 — a small enough change that it doesn't meaningfully affect any of the player-count deck-math above). This fits best in games where the showdown hand is a standard 5-card poker hand built from a larger pool of cards, since a Joker just slots in as one more wild the same way any other wildcard would:
+
+- **Pair of Jacks, Trips to Win** — our one 5-card draw game; a Joker in your dealt hand (or drawn later) is wild like any other card.
+- **Cincinnati** and **Criss Cross** — both build a 5-card hand from hole cards plus a community spread; a Joker among either works the same way.
+
+It doesn't fit games that already have their own dedicated wildcard scheme — the Guts games, the Baseball family, Follow the Queen, Mexican Sweat, Free Enterprise — since stacking Jokers on top of an already-established wild mechanic would just double up rather than cleanly slot in.
+
 ## House rule: chips & betting
 
 Chip denominations and betting limits are set by the dealer for each hand — no fixed rule across the whole group. For example gameplay, we're using these as the defaults:

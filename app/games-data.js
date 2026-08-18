@@ -200,6 +200,7 @@ const GAMES = [
     players: { min: 5, max: 8 },
     before: [
       "Decide whether the last-revealed community card (and its rank) is wild — dealer's choice, not in the base game",
+      "Decide whether 1-2 Jokers are in the deck as extra wildcards — dealer's choice, since this builds a 5-card hand from a larger pool",
     ],
     betting: `Ante 50¢, 25¢ raise increment, $2 max bet per person (house default).`,
     setup: `Deal 5 hole cards face down to each player, plus 5 community cards face down to the table.`,
@@ -224,6 +225,7 @@ const GAMES = [
     before: [
       "Decide whether the center card (and its rank) is wild — dealer's choice",
       "Decide whether hi-lo is on",
+      "Decide whether 1-2 Jokers are in the deck as extra wildcards — dealer's choice, since this builds a 5-card hand from a larger pool",
     ],
     betting: `Ante 50¢, 25¢ raise increment, $2 max bet per person (house default).`,
     setup: `Deal 5 hole cards face down to each player, plus 5 community cards face down to the table in a cross shape — a shared center card, a horizontal arm of 3, and a vertical arm of 3.`,
@@ -494,7 +496,9 @@ const GAMES = [
     isNew: false,
     icon: "🎰",
     players: { min: 5, max: 8 },
-    before: [],
+    before: [
+      "Decide whether 1-2 Jokers are in the deck as extra wildcards — dealer's choice, since this is our one 5-card draw game",
+    ],
     betting: `Ante 50¢, 25¢ raise increment, $2 max bet per person (house default).`,
     setup: `Deal 5 cards face down to each player.`,
     gameplay: `Only a hand of Jacks-or-better may open the betting — if nobody can open, redeal. After opening, players may draw: exchange up to 3 cards, or 4 if holding an Ace.`,
