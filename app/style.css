@@ -236,6 +236,41 @@ main.view {
   color: var(--gold);
 }
 
+.detail-nav-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.detail-pager {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.detail-pager-bottom {
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.pager-button {
+  background: transparent;
+  border: 1px solid var(--card-border);
+  color: var(--cream);
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  min-height: 44px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.pager-button:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
 #detail-content {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
@@ -498,6 +533,12 @@ main.view {
 
 .mini-playing-card.red {
   color: var(--pip);
+}
+
+.mini-playing-card.wild {
+  background: var(--gold-soft);
+  border: 1px solid var(--gold);
+  color: var(--ink);
 }
 
 .mini-playing-card-suit {

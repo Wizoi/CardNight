@@ -602,8 +602,13 @@ const GAMES = [
 // Example hands are illustrative only; wildcards can stand in for any card.
 const HAND_RANKINGS = [
   {
+    name: "Five of a Kind",
+    blurb: "Five cards of the same rank — only possible with a wildcard (or Joker) in play. Beats a Royal Flush.",
+    cards: [{ r: "A", s: "♠" }, { r: "A", s: "♥" }, { r: "A", s: "♦" }, { r: "A", s: "♣" }, { r: "A", s: "🃏", wild: true }],
+  },
+  {
     name: "Royal Flush",
-    blurb: "A, K, Q, J, 10, all one suit — the best hand there is.",
+    blurb: "A, K, Q, J, 10, all one suit — the best hand possible without a wild.",
     cards: [{ r: "A", s: "♠" }, { r: "K", s: "♠" }, { r: "Q", s: "♠" }, { r: "J", s: "♠" }, { r: "10", s: "♠" }],
   },
   {

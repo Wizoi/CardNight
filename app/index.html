@@ -50,8 +50,18 @@
 </main>
 
 <main id="detail-view" class="view" hidden>
-  <button id="back-button" class="back-button">← Back to all games</button>
+  <div class="detail-nav-row">
+    <button id="back-button" class="back-button">← Back to all games</button>
+    <div class="detail-pager">
+      <button id="prev-game" class="pager-button" aria-label="Previous game">← Prev</button>
+      <button id="next-game" class="pager-button" aria-label="Next game">Next →</button>
+    </div>
+  </div>
   <article id="detail-content"></article>
+  <div class="detail-pager detail-pager-bottom">
+    <button id="prev-game-bottom" class="pager-button" aria-label="Previous game">← Prev</button>
+    <button id="next-game-bottom" class="pager-button" aria-label="Next game">Next →</button>
+  </div>
 </main>
 
 <div id="hand-rankings-modal" class="modal-overlay" hidden>

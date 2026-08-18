@@ -29,6 +29,10 @@
     handRankingsModal: document.getElementById("hand-rankings-modal"),
     handRankingsList: document.getElementById("hand-rankings-list"),
     closeHandRankings: document.getElementById("close-hand-rankings"),
+    prevGame: document.getElementById("prev-game"),
+    nextGame: document.getElementById("next-game"),
+    prevGameBottom: document.getElementById("prev-game-bottom"),
+    nextGameBottom: document.getElementById("next-game-bottom"),
   };
 
   // Every category except "Other" ends in a plain best-poker-hand showdown
@@ -190,8 +194,9 @@
 
   function miniCardMarkup(card) {
     const red = card.s === "♥" || card.s === "♦";
+    const cls = card.wild ? " wild" : (red ? " red" : "");
     return `
-      <div class="mini-playing-card${red ? " red" : ""}">
+      <div class="mini-playing-card${cls}" title="${card.wild ? "Wildcard, standing in as this rank" : ""}">
         <span class="mini-playing-card-rank">${card.r}</span>
         <span class="mini-playing-card-suit">${card.s}</span>
       </div>
@@ -255,6 +260,20 @@
     }
   }
 
+  // Pages through the currently filtered list (so it matches whatever
+  // category chip was active), falling back to the full list if the
+  // current game isn't in it (e.g. a direct link plus an unrelated filter).
+  function navigateRelative(delta) {
+    const match = location.hash.match(/^#\/game\/(.+)$/);
+    if (!match) return;
+    const currentId = decodeURIComponent(match[1]);
+    let list = visibleGames();
+    if (!list.some((g) => g.id === currentId)) list = GAMES;
+    const idx = list.findIndex((g) => g.id === currentId);
+    const next = list[(idx + delta + list.length) % list.length];
+    location.hash = "#/game/" + next.id;
+  }
+
   el.playerCount.addEventListener("change", () => {
     const n = parseInt(el.playerCount.value, 10);
     state.players = Number.isFinite(n) && n > 0 ? n : state.players;
@@ -269,6 +288,33 @@
     const pick = games[Math.floor(Math.random() * games.length)];
     location.hash = "#/game/" + pick.id;
   });
+
+  [el.prevGame, el.prevGameBottom].forEach((btn) => btn.addEventListener("click", () => navigateRelative(-1)));
+  [el.nextGame, el.nextGameBottom].forEach((btn) => btn.addEventListener("click", () => navigateRelative(1)));
+
+  // Swipe left/right on the detail view to page between games (touch only).
+  (function enableSwipeNav() {
+    let startX = null;
+    let startY = null;
+    const SWIPE_THRESHOLD = 60;
+
+    el.detailView.addEventListener("touchstart", (e) => {
+      const t = e.changedTouches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+    }, { passive: true });
+
+    el.detailView.addEventListener("touchend", (e) => {
+      if (startX === null) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      startX = null;
+      startY = null;
+      if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      navigateRelative(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  })();
 
   el.backButton.addEventListener("click", () => {
     location.hash = "";
