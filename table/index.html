@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CardNight Table</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="setup-view">
+    <h1>CardNight Table</h1>
+    <p>Sit down for a night of poker against computer opponents — cut for deal, then pick a game.</p>
+    <label>Your name
+      <input id="setup-name" type="text" placeholder="Your name" />
+    </label>
+    <label>Players at the table (including you)
+      <select id="setup-seats">
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+      </select>
+    </label>
+    <div id="setup-ai-profiles"></div>
+    <div id="setup-seat-actions">
+      <button type="button" id="fill-remaining-btn">🎲 Fill remaining seats randomly</button>
+      <button type="button" id="clear-seats-btn">Clear seats (back to random)</button>
+    </div>
+    <fieldset>
+      <legend>Settings</legend>
+      <label>Initial buy-in ($)
+        <input id="setup-buyin" type="number" value="20" step="20" min="20" />
+      </label>
+      <label>Additional rebuy cap ($)
+        <input id="setup-cap" type="number" value="60" step="20" min="0" />
+      </label>
+    </fieldset>
+    <button id="setup-start">Sit down</button>
+    <button type="button" id="setup-history-btn">History</button>
+  </div>
+
+  <div id="table-view" hidden>
+    <div id="game-banner">
+      <span id="game-name-display"></span>
+      <a id="rules-link" href="#" target="_blank" rel="noopener">Rules</a>
+      <span id="test-jump-wrap">
+        <label for="test-jump-select">Jump to game (testing):</label>
+        <select id="test-jump-select"></select>
+      </span>
+    </div>
+    <header>
+      <div id="wallet-display"></div>
+      <div id="pot-display"></div>
+      <div>
+        <button id="rebuy-btn" hidden>Buy more chips (+$20)</button>
+        <button id="change-game-btn">Change game</button>
+        <button id="cashout-btn">Cash out</button>
+        <button id="history-btn">History</button>
+      </div>
+    </header>
+    <label id="debug-toggle-label">
+      <input type="checkbox" id="debug-toggle" />
+      Show AI hands &amp; reasoning (debug)
+    </label>
+    <div id="seats"></div>
+    <div id="board-hand"></div>
+    <div id="human-hand"></div>
+    <div id="action-panel"></div>
+    <div id="log-feed"></div>
+  </div>
+
+  <div id="cutfordeal-view" hidden>
+    <h2>Cut for deal — click your card</h2>
+    <div id="cutfordeal-draws"></div>
+    <div id="cutfordeal-winner"></div>
+    <button type="button" id="cutfordeal-continue-btn" hidden>Continue</button>
+  </div>
+
+  <div id="picker-view" hidden>
+    <h2 id="picker-heading">Pick the next game</h2>
+    <div id="picker-menu"></div>
+  </div>
+
+  <div id="history-view" hidden>
+    <h2>Chip history</h2>
+    <div id="history-list"></div>
+    <h2>Regulars</h2>
+    <div id="regulars-list"></div>
+    <button id="export-history-btn">Export as JSON</button>
+    <button id="back-to-table-btn">Back to table</button>
+  </div>
+
+  <div id="roster-modal" hidden>
+    <div id="roster-modal-content">
+      <div id="roster-modal-header">
+        <h2 id="roster-modal-title">Choose a player</h2>
+        <button type="button" id="roster-close-btn">&times;</button>
+      </div>
+      <div class="roster-hint">Every table person plays Cautious, Balanced, or Aggressive under the hood — shown on each card.</div>
+      <div id="roster-filters">
+        <select id="roster-archetype-filter"></select>
+        <select id="roster-pronoun-filter">
+          <option value="">Any pronouns</option>
+          <option value="he/him">he/him</option>
+          <option value="she/her">she/her</option>
+          <option value="they/them">they/them</option>
+        </select>
+        <input type="text" id="roster-search" placeholder="Search name or one-liner" />
+      </div>
+      <div id="roster-count"></div>
+      <div id="roster-grid"></div>
+    </div>
+  </div>
+
+  <script src="js/deck.js"></script>
+  <script src="js/hand-evaluator.js"></script>
+  <script src="js/chip-economy.js"></script>
+  <script src="js/betting-engine.js"></script>
+  <script src="js/baseball-family-wildcards.js"></script>
+  <script src="js/rules-midnight-baseball.js"></script>
+  <script src="js/rules-stud.js"></script>
+  <script src="js/game-configs-stud.js"></script>
+  <script src="js/rules-mexican-sweat.js"></script>
+  <script src="js/game-configs-mexican-sweat.js"></script>
+  <script src="js/rules-community-stud.js"></script>
+  <script src="js/game-configs-community-stud.js"></script>
+  <script src="js/rules-guts.js"></script>
+  <script src="js/game-configs-guts.js"></script>
+  <script src="js/rules-guts-357.js"></script>
+  <script src="js/rules-holdem.js"></script>
+  <script src="js/game-configs-holdem.js"></script>
+  <script src="js/ai-profiles.js"></script>
+  <script src="js/ai-stud-profiles.js"></script>
+  <script src="js/ai-mexican-sweat-profiles.js"></script>
+  <script src="js/ai-community-stud-profiles.js"></script>
+  <script src="js/ai-guts-profiles.js"></script>
+  <script src="js/ai-holdem-profiles.js"></script>
+  <script src="js/history-store.js"></script>
+  <script src="js/avatar.js"></script>
+  <script src="js/table-people-data.js"></script>
+  <script src="js/table-people.js"></script>
+  <script src="js/game-registry.js"></script>
+  <script src="js/session-midnight-baseball.js"></script>
+  <script src="js/session-stud.js"></script>
+  <script src="js/session-mexican-sweat.js"></script>
+  <script src="js/session-community-stud.js"></script>
+  <script src="js/session-guts.js"></script>
+  <script src="js/session-guts-357.js"></script>
+  <script src="js/session-holdem.js"></script>
+  <script src="js/table-night.js"></script>
+  <script src="js/table-ui-midnight-baseball.js"></script>
+  <script src="js/table-ui-stud.js"></script>
+  <script src="js/table-ui-mexican-sweat.js"></script>
+  <script src="js/table-ui-community-stud.js"></script>
+  <script src="js/table-ui-guts.js"></script>
+  <script src="js/table-ui-guts-357.js"></script>
+  <script src="js/table-ui-holdem.js"></script>
+  <script src="js/table-ui.js"></script>
+</body>
+</html>
