@@ -217,14 +217,21 @@ const StudRules = (function () {
 
   // The wipe price escalates with how many wipes have happened this hand
   // (across all players, not per-player — games.md doesn't scope it any
-  // narrower), and doubles on the final street. Exposed so the UI can show
-  // the price before the player decides.
+  // narrower), and doubles on the final round a wipe is even possible.
+  // That's NOT necessarily the literal last street: Free Enterprise's own
+  // last street is a down card (wipes only ever apply to face-up deals),
+  // so comparing against `streets.length - 1` directly meant the "doubled
+  // on the final round" rule could never actually fire — a real bug, found
+  // by re-checking this against games.md's wording rather than the deal
+  // shape alone. Exposed so the UI can show the price before the player
+  // decides.
   function currentWipePriceDollars(state) {
     const schedule = state.gameConfig.wipe.priceScheduleDollars;
     const wipeCount = state.wipeCount || 0;
     const base = schedule[Math.min(wipeCount, schedule.length - 1)];
-    const isFinalStreet = state.streetIndex === state.streets.length - 1;
-    return isFinalStreet ? base * state.gameConfig.wipe.finalRoundMultiplier : base;
+    const lastWipeableStreetIndex = state.streets.reduce((lastIdx, street, idx) => (street.faceUp ? idx : lastIdx), -1);
+    const isFinalWipeableStreet = state.streetIndex === lastWipeableStreetIndex;
+    return isFinalWipeableStreet ? base * state.gameConfig.wipe.finalRoundMultiplier : base;
   }
 
   // Free Enterprise's "buy your card": discard the card just dealt and draw
@@ -359,6 +366,7 @@ const StudRules = (function () {
     return BettingEngine.maxRaiseDollars(state.bettingRound, playerId, {
       maxBetDollars: state.maxBetDollars,
       raiseIncrementDollars: state.raiseIncrementDollars,
+      walletChips: getPlayer(state, playerId).wallet.chips,
     });
   }
 
@@ -368,6 +376,7 @@ const StudRules = (function () {
     const result = BettingEngine.submitBet(br, player, action, raiseDollars, {
       raiseIncrementDollars: state.raiseIncrementDollars,
       maxBetDollars: state.maxBetDollars,
+      walletChips: player.wallet.chips,
     });
     state.pot += result.paidChips;
 

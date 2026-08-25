@@ -31,15 +31,18 @@
 // simplified to a flat `raiseIncrementDollars` rather than real hold'em's
 // "must match the size of the previous bet/raise" — consistent with how
 // every other game in this project already uses one flat raise increment.
-// A real "no cap on bet size" table still doesn't raise forever in
-// practice -- with several AI seats independently willing to raise once
-// their hand clears a bar, an uncapped bet size otherwise lets them
-// leapfrog each other for as many increments as the (deliberately large)
-// max bet allows, which found a real infinite-loop-shaped bug during
-// testing (a betting round that took hundreds of rounds to resolve).
-// Capping raises per street at 4 is a common real-table house rule
-// ("bet + 3 raises, then just call"), not a symptom-patching hack.
-const HOLDEM_MAX_RAISES_PER_STREET = 4;
+// games.md's own words for this family are "no cap on bet size" -- a
+// raise-count limit (an earlier version of this file capped raises at 4
+// per street to bound a slow betting war found during testing) still
+// caps the effective bet size, contradicting that. The genuine bound is
+// each player's own finite wallet: raises cost real chips, `maxRaiseDollars`
+// returns 0 once a player can't afford even one more increment, and
+// `BettingEngine`'s all-in tracking (see betting-engine.js) permanently
+// stops asking an all-in player to act again -- so a betting round is
+// always bounded by the table's total chips in play, exactly like a real
+// no-limit table where players eventually run out of money to keep
+// raising with, not by an artificial raise-count rule games.md never
+// documents.
 
 const HoldemRules = (function () {
   function getPlayer(state, playerId) {
@@ -121,7 +124,6 @@ const HoldemRules = (function () {
     if (sbResult.allIn) allIn.add(sbId);
     if (bbResult.allIn) allIn.add(bbId);
     state.bettingRound = { order: state.actionOrder.slice(), committed, currentBetChips: Math.max(sbResult.paid, bbResult.paid), responded: new Set(), allIn };
-    state.raisesThisStreet = 0;
     state.log.push(`${sbPlayer.name} posts small blind ($${state.smallBlindDollars.toFixed(2)}), ${bbPlayer.name} posts big blind ($${state.bigBlindDollars.toFixed(2)}).`);
   }
 
@@ -175,7 +177,6 @@ const HoldemRules = (function () {
     const activeIds = state.players.filter((p) => !p.folded).map((p) => p.id);
     const order = state.actionOrder.filter((id) => activeIds.includes(id));
     state.bettingRound = BettingEngine.startRound(order);
-    state.raisesThisStreet = 0;
   }
 
   function getCurrentBettor(state) {
@@ -189,10 +190,10 @@ const HoldemRules = (function () {
   }
 
   function maxRaiseDollars(state, playerId) {
-    if (state.raisesThisStreet >= HOLDEM_MAX_RAISES_PER_STREET) return 0;
     return BettingEngine.maxRaiseDollars(state.bettingRound, playerId, {
       maxBetDollars: state.maxBetDollars,
       raiseIncrementDollars: state.raiseIncrementDollars,
+      walletChips: getPlayer(state, playerId).wallet.chips,
     });
   }
 
@@ -202,6 +203,7 @@ const HoldemRules = (function () {
     const result = BettingEngine.submitBet(br, player, action, raiseDollars, {
       raiseIncrementDollars: state.raiseIncrementDollars,
       maxBetDollars: state.maxBetDollars,
+      walletChips: player.wallet.chips,
     });
     state.pot += result.paidChips;
 
@@ -209,7 +211,6 @@ const HoldemRules = (function () {
       player.folded = true;
       state.log.push(`${player.name} folds.`);
     } else if (action === "raise") {
-      state.raisesThisStreet += 1;
       state.log.push(`${player.name} raises to $${ChipEconomy.chipsToDollars(br.currentBetChips).toFixed(2)}.`);
     } else {
       state.log.push(result.paidChips > 0 ? `${player.name} calls.` : `${player.name} checks.`);

@@ -178,6 +178,14 @@ const FREE_ENTERPRISE_CONFIG = {
   // (discard and replace) a card, at an escalating price, doubled on the
   // final street.
   wipe: { priceScheduleDollars: [1, 2, 3], finalRoundMultiplier: 2 },
+  // games.md: "Betting: Based on highest showing card(s)" -- the same
+  // bring-in rule Follow the Queen and Seven and What Makes It use, missed
+  // when this config was first built (games.md is explicit here, unlike
+  // Follow the Queen's still-open deal-size question).
+  firstToActId(state) {
+    const best = StudRules.currentBestShowingHand(state);
+    return best.holderId || state.players.find((p) => !p.folded).id;
+  },
   // 2 down, then up-card rounds (one per round), then 1 down again --
   // matching the stud family's default except the final card here is down
   // rather than up. 4 up-rounds (7 cards total) at 5-7 players, 3 up-rounds

@@ -43,10 +43,23 @@ const BettingEngine = (function () {
     return getCurrentBettor(round, isFolded) === null;
   }
 
-  function maxRaiseDollars(round, playerId, { maxBetDollars, raiseIncrementDollars }) {
+  // walletChips bounds the raise by what the player can actually still
+  // pay, on top of the configured maxBetDollars cap. Every game here used
+  // to rely on maxBetDollars alone (a low fixed cap like $2, always well
+  // under a $20 buy-in) to keep this implicitly safe — hold'em's genuinely
+  // uncapped maxBetDollars (games.md: "no cap on bet size") exposed that
+  // this function never actually checked affordability at all, so an AI
+  // could be told it "could" raise by an amount its own wallet couldn't
+  // cover, submit that raise anyway, and have it silently clamp to a
+  // confusing "$0.00" all-in with no chips actually moving. Defaults to
+  // Infinity (unbounded) so a caller that doesn't pass it behaves exactly
+  // as before.
+  function maxRaiseDollars(round, playerId, { maxBetDollars, raiseIncrementDollars, walletChips = Infinity }) {
     const toCall = round.currentBetChips - round.committed[playerId];
     const maxTotalChips = ChipEconomy.dollarsToChips(maxBetDollars);
-    const roomChips = Math.max(0, maxTotalChips - (round.committed[playerId] + toCall));
+    const roomByCapChips = Math.max(0, maxTotalChips - (round.committed[playerId] + toCall));
+    const roomByWalletChips = Math.max(0, walletChips - toCall);
+    const roomChips = Math.min(roomByCapChips, roomByWalletChips);
     const incrementChips = ChipEconomy.dollarsToChips(raiseIncrementDollars);
     const steps = Math.floor(roomChips / incrementChips);
     return steps * raiseIncrementDollars;

@@ -181,6 +181,7 @@ const CommunityStudRules = (function () {
     return BettingEngine.maxRaiseDollars(state.bettingRound, playerId, {
       maxBetDollars: state.maxBetDollars,
       raiseIncrementDollars: state.raiseIncrementDollars,
+      walletChips: getPlayer(state, playerId).wallet.chips,
     });
   }
 
@@ -190,6 +191,7 @@ const CommunityStudRules = (function () {
     const result = BettingEngine.submitBet(br, player, action, raiseDollars, {
       raiseIncrementDollars: state.raiseIncrementDollars,
       maxBetDollars: state.maxBetDollars,
+      walletChips: player.wallet.chips,
     });
     state.pot += result.paidChips;
 
