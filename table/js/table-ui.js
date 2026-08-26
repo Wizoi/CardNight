@@ -72,7 +72,6 @@
     el.setupName = document.getElementById("setup-name");
     el.setupSeats = document.getElementById("setup-seats");
     el.setupAiProfiles = document.getElementById("setup-ai-profiles");
-    el.clearSeatsBtn = document.getElementById("clear-seats-btn");
     el.setupBuyIn = document.getElementById("setup-buyin");
     el.setupCap = document.getElementById("setup-cap");
     el.setupStart = document.getElementById("setup-start");
@@ -85,10 +84,12 @@
     el.rosterCount = document.getElementById("roster-count");
     el.rosterGrid = document.getElementById("roster-grid");
     el.rosterCloseBtn = document.getElementById("roster-close-btn");
-    el.fillRemainingBtn = document.getElementById("fill-remaining-btn");
 
     el.gameNameDisplay = document.getElementById("game-name-display");
     el.rulesLink = document.getElementById("rules-link");
+    el.gameScriptDetails = document.getElementById("game-script-details");
+    el.gameScriptSummary = document.getElementById("game-script-summary");
+    el.gameScriptBody = document.getElementById("game-script-body");
     el.potDisplay = document.getElementById("pot-display");
     el.walletDisplay = document.getElementById("wallet-display");
     el.rebuyBtn = document.getElementById("rebuy-btn");
@@ -121,6 +122,14 @@
 
   let currentView = "setup";
   function showView(name) {
+    // A pending AI auto-pick timer is only valid while still on the picker
+    // screen -- if something else (the picker menu, "Jump to game") already
+    // chose a game and left this view, the stale timer must not fire later
+    // and silently stomp that choice with an unrelated random pick.
+    if (name !== "picker" && autoPickTimer) {
+      clearTimeout(autoPickTimer);
+      autoPickTimer = null;
+    }
     currentView = name;
     el.setupView.hidden = name !== "setup";
     el.tableView.hidden = name !== "table";
@@ -240,6 +249,13 @@
     if (entry.uiFamily === "guts") return TableUIGuts;
     if (entry.uiFamily === "guts357") return TableUIGuts357;
     if (entry.uiFamily === "holdem") return TableUIHoldem;
+    if (entry.uiFamily === "pressYourLuck") return TableUIPressYourLuck;
+    if (entry.uiFamily === "threeThirtyThree") return TableUI333;
+    if (entry.uiFamily === "aceyDucey") return TableUIAceyDucey;
+    if (entry.uiFamily === "blindMansBluff") return TableUIBlindMansBluff;
+    if (entry.uiFamily === "gameOfLife") return TableUIGameOfLife;
+    if (entry.uiFamily === "drawPoker") return TableUIDrawPoker;
+    if (entry.uiFamily === "anaconda") return TableUIAnaconda;
     return TableUIMidnightBaseball;
   }
 
@@ -267,7 +283,26 @@
     seattle: "omaha-seattle-boise-jersey-holdem",
     boise: "omaha-seattle-boise-jersey-holdem",
     jerseyHoldem: "omaha-seattle-boise-jersey-holdem",
+    fiveFiveTwentyOne: "5-5-21",
+    sevenTwentySeven: "7-27",
+    threeThirtyThree: "3-33",
+    aceyDucey: "acey-ducey",
+    blindMansBluff: "blind-mans-bluff",
+    gameOfLife: "game-of-life",
+    pairOfJacksTripsToWin: "pair-of-jacks-trips-to-win",
+    anaconda: "anaconda",
   };
+
+  // Looks up the matching app/games-data.js entry (icon, category, the
+  // dealer's-read-aloud `script`) for a table/ game id, via the same
+  // id-mapping the "Rules" link already uses -- app/ and table/ share no
+  // code, but games-data.js is just a plain data file, loaded the same
+  // deliberate-exception way the Rules link already reaches into app/.
+  function gameDataFor(tableGameId) {
+    const appId = RULES_PAGE_ID_BY_GAME[tableGameId];
+    if (!appId || typeof GAMES === "undefined") return null;
+    return GAMES.find((g) => g.id === appId) || null;
+  }
 
   function renderGameBanner(vs) {
     const entry = GameRegistry.get(vs.activeGameId);
@@ -278,6 +313,25 @@
       el.rulesLink.hidden = false;
     } else {
       el.rulesLink.hidden = true;
+    }
+
+    const data = entry ? gameDataFor(vs.activeGameId) : null;
+    if (data) {
+      el.gameScriptSummary.innerHTML = `<span class="game-script-icon">${data.icon}</span> How to describe ${data.name}`;
+      // Every entry's `script` is a plain string EXCEPT the combined
+      // Omaha/Seattle/Boise/Jersey Hold'em entry, whose one games-data.js
+      // record covers 4 variants at once -- there it's an array of
+      // {label, text} instead, one per variant (plus a hi-lo add-on).
+      if (Array.isArray(data.script)) {
+        el.gameScriptBody.innerHTML = data.script
+          .map((part) => `<p><strong>${part.label}:</strong> ${part.text}</p>`)
+          .join("");
+      } else {
+        el.gameScriptBody.textContent = data.script || "No dealer script written for this game yet.";
+      }
+      el.gameScriptDetails.hidden = false;
+    } else {
+      el.gameScriptDetails.hidden = true;
     }
   }
 
@@ -296,7 +350,12 @@
     // stale hand-completion race with the new game.
     const canSwitchGames = !gvs || !gvs.state || gvs.state.status === "complete";
     el.changeGameBtn.disabled = !canSwitchGames;
-    el.testJumpSelect.disabled = !canSwitchGames;
+    // The testing jump is exempt from that guard on purpose -- it's a debug
+    // shortcut, not the in-fiction "Change game" flow, so jumping mid-hand is
+    // allowed and just abandons/resets whatever hand was in progress (the
+    // outgoing orchestrator's async loop naturally stops itself at its next
+    // human-decision checkpoint once nothing is left to call back into it).
+    el.testJumpSelect.disabled = false;
     el.testJumpSelect.value = "";
   }
 
@@ -419,7 +478,20 @@
     const picker = vs.players.find((p) => p.id === pickerSeatId);
     if (picker.isHuman) {
       el.pickerHeading.textContent = "Pick the next game";
-      el.pickerMenu.innerHTML = vs.gameList.map((g) => `<button type="button" data-pick-game="${g.id}">${g.name}</button>`).join("");
+      el.pickerMenu.innerHTML = vs.gameList
+        .map((g) => {
+          const data = gameDataFor(g.id);
+          const icon = data ? data.icon : "🎴";
+          const category = data ? data.category : "";
+          return `
+            <button type="button" class="game-pick-card" data-pick-game="${g.id}">
+              <span class="game-pick-icon">${icon}</span>
+              <span class="game-pick-name">${g.name}</span>
+              ${category ? `<span class="game-pick-category">${category}</span>` : ""}
+            </button>
+          `;
+        })
+        .join("");
     } else {
       el.pickerHeading.textContent = `${picker.name} is picking the next game...`;
       el.pickerMenu.innerHTML = `<div class="picker-waiting">Waiting for ${picker.name} to choose&hellip;</div>`;
@@ -513,23 +585,6 @@
         saveSeatAssignments();
         renderSetupSeats(Number(el.setupSeats.value));
       }
-    });
-
-    el.clearSeatsBtn.addEventListener("click", () => {
-      seatAssignments = new Array(MAX_AI_SEATS).fill(null);
-      saveSeatAssignments();
-      renderSetupSeats(Number(el.setupSeats.value));
-    });
-
-    el.fillRemainingBtn.addEventListener("click", () => {
-      const seatCount = Number(el.setupSeats.value);
-      for (let seatIndex = 0; seatIndex < seatCount - 1; seatIndex++) {
-        if (seatAssignments[seatIndex]) continue;
-        const takenElsewhere = seatAssignments.filter(Boolean);
-        seatAssignments[seatIndex] = TablePeople.randomUnused(takenElsewhere).id;
-      }
-      saveSeatAssignments();
-      renderSetupSeats(seatCount);
     });
 
     el.rosterCloseBtn.addEventListener("click", closeRosterModal);

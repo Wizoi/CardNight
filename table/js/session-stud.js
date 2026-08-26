@@ -109,8 +109,21 @@ const SessionStud = (function () {
       } else if (kind === "buy4") {
         StudRules.resolveBuy4(state, playerId, willBuy);
         if (willBuy) maybeQuip(player, "buyBonus");
-      } else if (kind === "wipe") {
-        StudRules.resolveWipe(state, playerId, willBuy);
+      }
+    }
+
+    // Free Enterprise's Enterprise pile: a player either buys a position
+    // (ends their turn), takes a free card (ends their turn), or wipes --
+    // wiping alone doesn't resolve their turn, it just refreshes the pile,
+    // so the caller must immediately follow up with another buy-or-free
+    // decision (never another wipe -- one per turn).
+    function resolveEnterpriseDecision(playerId, action, position) {
+      if (action === "buy") {
+        StudRules.resolveEnterpriseBuy(state, playerId, position);
+      } else if (action === "wipe") {
+        StudRules.resolveEnterpriseWipe(state);
+      } else if (action === "free") {
+        StudRules.resolveEnterpriseFree(state, playerId);
       }
     }
 
@@ -160,7 +173,25 @@ const SessionStud = (function () {
             StudRules.resolveShowdown(state);
             break;
           }
-          if (dealt.needsDecision) {
+          if (dealt.needsDecision === "enterprisePile") {
+            const player = StudRules.getPlayer(state, dealt.playerId);
+            if (player.isHuman) {
+              pending = { kind: "enterprisePile", playerId: dealt.playerId };
+              notify();
+              break;
+            }
+            const profile = AIProfiles.profileFor(player.profileName);
+            await sleep(DECISION_DELAY_MS);
+            const decision = StudAIProfiles.decideEnterpriseChoice(player, state, profile);
+            resolveEnterpriseDecision(dealt.playerId, decision.action, decision.position);
+            notify();
+            if (decision.action === "wipe") {
+              await sleep(DECISION_DELAY_MS);
+              const followUp = StudAIProfiles.decideEnterpriseAfterWipe(player, state, profile);
+              resolveEnterpriseDecision(dealt.playerId, followUp.action, followUp.position);
+              notify();
+            }
+          } else if (dealt.needsDecision) {
             const player = StudRules.getPlayer(state, dealt.playerId);
             if (player.isHuman) {
               pending = { kind: dealt.needsDecision, playerId: dealt.playerId };
@@ -168,10 +199,7 @@ const SessionStud = (function () {
               break;
             }
             const profile = AIProfiles.profileFor(player.profileName);
-            const willBuy =
-              dealt.needsDecision === "wipe"
-                ? StudAIProfiles.decideWipe(player, dealt.card, profile, StudRules.currentWipePriceDollars(state))
-                : StudAIProfiles.decideBuyOnDeal(player, dealt.card, profile);
+            const willBuy = StudAIProfiles.decideBuyOnDeal(player, dealt.card, profile);
             await sleep(DECISION_DELAY_MS);
             resolveBuyDecision(dealt.needsDecision, dealt.playerId, willBuy);
             notify();
@@ -197,6 +225,24 @@ const SessionStud = (function () {
       processTurnLoop();
     }
 
+    // action: 'buy' (needs position) | 'wipe' | 'free'. Wiping doesn't end
+    // the turn -- it re-arms `pending` as "enterprisePileAfterWipe" (no
+    // wipe option this time) and waits for the human's next click, rather
+    // than resuming processTurnLoop.
+    function humanResolveEnterprise(action, position) {
+      if (!pending || (pending.kind !== "enterprisePile" && pending.kind !== "enterprisePileAfterWipe")) return;
+      const { playerId } = pending;
+      pending = null;
+      resolveEnterpriseDecision(playerId, action, position);
+      notify();
+      if (action === "wipe") {
+        pending = { kind: "enterprisePileAfterWipe", playerId };
+        notify();
+        return;
+      }
+      processTurnLoop();
+    }
+
     function humanBet(action, raiseDollars) {
       const human = getHuman();
       if (!state.bettingRound || StudRules.getCurrentBettor(state) !== human.id) return;
@@ -214,6 +260,7 @@ const SessionStud = (function () {
       dealNextHand,
       canDealNextHand,
       humanResolveBuy,
+      humanResolveEnterprise,
       humanBet,
       getViewState,
     };

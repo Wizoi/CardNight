@@ -280,7 +280,7 @@ const GAMES = [
     icon: "🔩",
     players: { min: 5, max: 8 },
     before: [
-      "Choose the wildcard scheme: flip-up 1–3 wild, lowest card wild, 3s/5s/7s wild, or red royals wild",
+      "Decide whether 1 or 2 flip-up wildcards are also in play tonight, on top of the lowest-card rule (dealer's choice)",
       "Decide whether a dummy hand is in play",
     ],
     resolvePlayers(n) {
@@ -292,18 +292,19 @@ const GAMES = [
       }`;
     },
     betting: `Ante only — 50¢ house default. No raises, no max bet.`,
-    setup: `Deal 6 or 7 cards face down — whichever version fits tonight's player count (see above). Pass 1 left / 1 right (6-card version) or 2 left / 1 right (7-card version).`,
-    gameplay: `Guts round after passing — ante only, no raises, no max bet. The chosen wildcard scheme applies for the hand.`,
+    setup: `Deal 6 or 7 cards face down — whichever version fits tonight's player count (see above). Each player then chooses which of their own cards to pass left and which to pass right: 1 left / 1 right (6-card version) or 2 left / 1 right (7-card version).`,
+    gameplay: `Guts round after passing — ante only, no raises, no max bet. The lowest card in each player's hand is always wild; if the dealer also called 1 or 2 flip-up wildcards before the deal, those apply on top of the lowest-card rule, not instead of it.`,
     win: `Best hand among players who stayed in wins the pot. Anyone who stayed in and lost — including losing to a dummy hand — must match the pot to play again. Ends only when one player bets and wins outright.`,
     keyDecisions: [
-      "Which cards to pass",
+      "Which of your own cards to pass left vs. right",
       "Stay in (bet the guts) or fold, after seeing your passed hand",
     ],
     repeats: [
-      "Announce which wildcard scheme is active this hand — it changes by dealer's choice",
+      "The lowest card in hand is always wild — every hand, no exceptions",
+      "Any flip-up wildcards called before the deal stack on top of the lowest-card rule",
       "Losing to the dummy hand still counts as losing",
     ],
-    script: `You get cards down, then pass some left and right. Wildcards this hand: [dealer announces scheme]. After passing, everyone secretly decides in or out — best hand among the ins wins, everyone else who was in matches the pot for next hand. We keep going until someone bets and wins it outright.`,
+    script: `You get cards down, then you choose which ones to pass left and which to pass right. Your lowest card is always wild — and if we called flip-up wildcards before the deal, those count too, on top of your lowest card. After passing, everyone secretly decides in or out — best hand among the ins wins, everyone else who was in matches the pot for next hand. We keep going until someone bets and wins it outright.`,
     anecdote: `Beware adding a dummy hand! Our friend George has lost some great hands to a sneaky Dummy.`,
   },
   {
@@ -363,28 +364,28 @@ const GAMES = [
     icon: "💸",
     players: { min: 5, max: 8 },
     before: [
-      "Choose the wipe price scale for the night: $1/$2/$3, or the cheaper $0.50-start scale",
+      "Choose the Enterprise pile's price scale for the night: $1/$2/$3 by position, or the cheaper $0.50/$1/$1.50 scale",
       "Decide whether 1-2 Jokers are in the deck as extra wildcards — dealer's choice; this game has no wildcard rule otherwise",
     ],
     resolvePlayers(n) {
-      const upRounds = Math.min(4, Math.floor(52 / n) - 3);
-      const total = 3 + upRounds;
-      return `With ${n} players: deal ${total} cards each — 2 down, ${upRounds} up (one per round), 1 down.${
-        upRounds < 4 ? " (Trimmed down from the usual 4 up-rounds so the deal fits one deck.)" : ""
+      const pileRounds = Math.min(5, Math.floor(52 / n) - 2);
+      const total = 2 + pileRounds;
+      return `With ${n} players: deal 2 down to start, then ${pileRounds} more rounds each at the Enterprise pile — ${total} cards total.${
+        pileRounds < 5 ? " (Trimmed down from the usual 5 rounds so the deal fits one deck.)" : ""
       }`;
     },
     betting: `Ante 50¢, 25¢ raise increment, $2 max bet per person (house default).`,
-    setup: `Deal in sequence — 2 down, then up-card rounds (count adjusts to tonight's player count, see above), then 1 down. 7 cards total (4 up-rounds) at typical table sizes, matching the stud family's typical shape.`,
-    gameplay: `Anytime, a player can pay to "wipe" (discard and replace) a card — the price escalates as the hand goes on. The final round's wipe price is doubled. Betting is based on the highest showing card(s).`,
+    setup: `Deal 2 cards down to start. From then on nobody's dealt a card directly — every remaining card (count adjusts to tonight's player count, see above) comes from a turn at the shared Enterprise pile instead.`,
+    gameplay: `A shared spread of 3 face-up cards sits on the table, drawn from the deck. On your turn, do exactly one of: buy one of the 3 showing cards (priced by position — $1/$2/$3, or the cheaper scale) and it stays face up since the table already saw it; wipe the whole pile (discard all 3, deal 3 fresh ones), then immediately buy one of the new 3 or take a free card instead; or skip the pile and take a free card off the top of the deck, dealt face down since nobody's seen it. The pile refills back to 3 the instant a card leaves it. Wiped-out and folded players' cards go into a shared discard pool, reshuffled in only once the deck itself runs dry. Betting is based on the highest showing card(s).`,
     win: `Best hand at showdown wins.`,
     keyDecisions: [
-      "Wipe a card at the current escalating price, or keep it — every round",
+      "Buy from the pile, wipe it for a fresh 3, or take a free (face-down) card instead — every round",
     ],
     repeats: [
-      "Announce the current wipe price each round since it escalates",
-      "The last round's wipe price is doubled",
+      "The pile always shows exactly 3 cards, priced $1/$2/$3 (or the cheaper scale) by position",
+      "The last round the pile is used, all three prices double",
     ],
-    script: `Two down, then one up at a time — how many rounds depends on how many of us are playing — then one more down. Anytime, you can pay to wipe a card for a new one — price goes up as the hand goes on. Last round, whatever the wipe price is, it's doubled. Best hand showing bets first; best hand at the end wins.`,
+    script: `Two down to start. After that, nobody gets dealt a card directly — you take your turn at the pile in the middle: three cards face up, priced $1, $2, and $3 left to right. Buy one and it stays face up, since we all just saw it. Or wipe the whole pile for three fresh ones and then buy or draw free from there. Or skip the pile entirely and take a free card off the deck — that one's face down, since nobody's seen it. Last round we use the pile, all three prices double. Best hand showing bets first; best hand at the end wins.`,
   },
   {
     id: "game-of-life",

@@ -20,10 +20,17 @@ const TableUIGuts = (function () {
   function renderSeats(el, gvs, debugMode, activeQuip) {
     const revealed = gvs.state && gvs.state.status === "complete";
     const peekAi = debugMode && gvs.state;
+    const stillPassing = gvs.state && gvs.state.status === "passing";
     el.seats.innerHTML = gvs.players
       .map((p) => {
         const stillDeciding = gvs.state && gvs.state.stayDecisions[p.id] == null;
-        const isTurn = !!(gvs.pending && ((gvs.pending.kind === "stayDecision" && stillDeciding && p.isHuman) || (gvs.pending.playerId === p.id)));
+        const stillPickingPass = stillPassing && gvs.state.passSelections[p.id] == null;
+        const isTurn = !!(
+          gvs.pending &&
+          ((gvs.pending.kind === "stayDecision" && stillDeciding && p.isHuman) ||
+            (gvs.pending.kind === "passSelection" && stillPickingPass && p.isHuman) ||
+            gvs.pending.playerId === p.id)
+        );
         const profileBadge = p.isHuman
           ? ""
           : `<span class="profile-badge">${p.archetypeLabel || AIProfiles.profileFor(p.profileName).label}</span>`;
@@ -49,7 +56,15 @@ const TableUIGuts = (function () {
               ${gvs.state && showCards ? p.hand.map((c) => cardMarkup(c, faceDown)).join("") : ""}
             </div>
             ${debugLine}
-            ${p.folded ? '<div class="seat-status">Folded</div>' : gvs.state && stillDeciding && gvs.state.status !== "complete" ? '<div class="seat-status">Deciding...</div>' : ""}
+            ${
+              p.folded
+                ? '<div class="seat-status">Folded</div>'
+                : stillPickingPass
+                ? '<div class="seat-status">Passing...</div>'
+                : gvs.state && stillDeciding && gvs.state.status !== "complete" && gvs.state.status !== "passing"
+                ? '<div class="seat-status">Deciding...</div>'
+                : ""
+            }
           </div>
         `;
       })
@@ -62,9 +77,14 @@ const TableUIGuts = (function () {
       return;
     }
     const wildLine = gvs.state.wildRanks && gvs.state.wildRanks.length ? `<div><strong>Wild:</strong> ${gvs.state.wildRanks.join(", ")}s</div>` : "";
+    // lowestCardWild is per-player (each hand has its own lowest rank), so
+    // unlike wildRanks there's no single table-wide rank list to show --
+    // just note that the rule is in effect this hand.
+    const lowestWildLine = gvs.state.gameConfig.lowestCardWild ? `<div><strong>Wild:</strong> each player's own lowest card</div>` : "";
     el.boardHand.innerHTML = `
       <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(gvs.state.pot))}</div>
       ${wildLine}
+      ${lowestWildLine}
     `;
   }
 
@@ -75,8 +95,16 @@ const TableUIGuts = (function () {
       return;
     }
     const pendingExchange = gvs.pending && gvs.pending.kind === "exchangeDecision" && gvs.pending.playerId === humanId;
+    const pendingPass = gvs.pending && gvs.pending.kind === "passSelection";
+    const assignments = pendingPass && gvs.passSelectionSoFar ? gvs.passSelectionSoFar.assignments : {};
     el.humanHand.innerHTML = human.hand
       .map((c, i) => {
+        if (pendingPass) {
+          const assigned = assignments[i];
+          const red = c.suit === "H" || c.suit === "D";
+          const tag = assigned === "left" ? `<span class="wild-tag">L</span>` : assigned === "right" ? `<span class="wild-tag">R</span>` : "";
+          return `<div data-pass-card="${i}" class="card ${red ? "card-red" : "card-black"}${assigned ? " card-beaten" : ""}">${Deck.cardLabel(c)}${tag}</div>`;
+        }
         const markup = cardMarkup(c, false);
         if (!pendingExchange) return markup;
         return markup.replace('<div class="card', `<div data-exchange-card="${i}" class="card`);
@@ -105,6 +133,19 @@ const TableUIGuts = (function () {
       `;
       return;
     }
+    if (gvs.pending && gvs.pending.kind === "passSelection") {
+      const counts = gvs.state.passCounts;
+      const assignments = (gvs.passSelectionSoFar && gvs.passSelectionSoFar.assignments) || {};
+      const leftSoFar = Object.values(assignments).filter((v) => v === "left").length;
+      const rightSoFar = Object.values(assignments).filter((v) => v === "right").length;
+      const ready = leftSoFar === counts.left && rightSoFar === counts.right;
+      el.actionPanel.innerHTML = `
+        <div>Choose ${counts.left} card(s) to pass left (L) and ${counts.right} to pass right (R) — click a card to assign it, click again to cycle L → R → unassigned.</div>
+        <div>Left: ${leftSoFar}/${counts.left} &nbsp; Right: ${rightSoFar}/${counts.right}</div>
+        <button data-confirm-pass ${ready ? "" : "disabled"}>Confirm pass</button>
+      `;
+      return;
+    }
     if (gvs.pending && gvs.pending.kind === "stayDecision" && gvs.pending.playerId == null) {
       const hand = GutsRules.evaluateHand(gvs.state, gvs.players.find((p) => p.id === humanId));
       el.actionPanel.innerHTML = `
@@ -127,12 +168,15 @@ const TableUIGuts = (function () {
 
   function wireActions(el, orchestrator) {
     el.humanHand.onclick = (e) => {
-      const cardEl = e.target.closest("[data-exchange-card]");
-      if (cardEl) orchestrator.humanExchangeDecision(Number(cardEl.getAttribute("data-exchange-card")));
+      const exchangeCardEl = e.target.closest("[data-exchange-card]");
+      if (exchangeCardEl) return orchestrator.humanExchangeDecision(Number(exchangeCardEl.getAttribute("data-exchange-card")));
+      const passCardEl = e.target.closest("[data-pass-card]");
+      if (passCardEl) return orchestrator.humanTogglePassCard(Number(passCardEl.getAttribute("data-pass-card")));
     };
     el.actionPanel.onclick = (e) => {
       if (e.target.id === "deal-first-hand-btn") return orchestrator.startFirstHand();
       if (e.target.id === "deal-next-hand-btn") return orchestrator.dealNextHand();
+      if (e.target.hasAttribute("data-confirm-pass")) return orchestrator.humanConfirmPassSelection();
       if (e.target.hasAttribute("data-stay-yes")) return orchestrator.humanDeclare(true);
       if (e.target.hasAttribute("data-stay-no")) return orchestrator.humanDeclare(false);
       if (e.target.hasAttribute("data-exchange-skip")) return orchestrator.humanExchangeDecision(-1);

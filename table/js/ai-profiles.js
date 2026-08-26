@@ -13,6 +13,11 @@ const AIProfiles = (function () {
       chancePerCard: 0.5, // how many "hand categories" of gap one more unknown flip is assumed worth closing
       raiseWhenLeading: false,
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.TWO_PAIR, // guts games: a fully-known hand needs to be genuinely strong to risk the ante
+      pressYourLuckStandThreshold: 3, // 5.5-21/7-27: stands once already within this far of either target, rather than pushing for exact
+      aceyDuceyMinWinProb: 0.5, // Acey Ducey: only bets when the gap between the two shown cards looks genuinely safe
+      aceyDuceyBetFraction: 0.25, // ...and even then, risks only a quarter of the pot
+      blindBluffScaryRankValue: 12, // Blind Man's Bluff: folds once any visible opponent shows a Queen or better (own card is hidden, so this is the only signal there is)
+      blindBluffRaiseBelowRankValue: 7, // ...and only raises when the best visible opposing card is quite low
     },
     balanced: {
       name: "balanced",
@@ -22,6 +27,11 @@ const AIProfiles = (function () {
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR, // won't raise on a lead this thin
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
+      pressYourLuckStandThreshold: 1.5,
+      aceyDuceyMinWinProb: 0.3,
+      aceyDuceyBetFraction: 0.5,
+      blindBluffScaryRankValue: 14, // only an Ace showing among opponents scares balanced off
+      blindBluffRaiseBelowRankValue: 10,
     },
     aggressive: {
       name: "aggressive",
@@ -31,6 +41,11 @@ const AIProfiles = (function () {
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.PAIR, // presses even a modest lead
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD, // stays in almost every guts hand -- fits the reckless archetype
+      pressYourLuckStandThreshold: 0.5, // keeps hitting until right on top of a target or busted
+      aceyDuceyMinWinProb: 0.15,
+      aceyDuceyBetFraction: 1, // goes for broke on any decent-looking gap
+      blindBluffScaryRankValue: 99, // never folds -- fits the reckless archetype
+      blindBluffRaiseBelowRankValue: 13, // raises unless someone's showing an outright Ace
     },
   };
 

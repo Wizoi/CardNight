@@ -171,14 +171,10 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 
 - **Category:** Guts
 - **Deal:** 6 or 7 cards, face down — pick the version based on tonight's player count, not a fixed choice: fewer players plays the 7-card version, a fuller table switches to the 6-card version so total cards dealt stays within a single 52-card deck (e.g., at 8 players the 7-card version would need 56 cards, more than a deck holds, so 8 plays the 6-card version instead). A dummy hand adds another full hand's worth of cards on top of the real players, so it needs the same per-player-count check.
-- **Passing:** Follows whichever deal size is in use — 6-card version passes 1 left / 1 right; 7-card version passes 2 left / 1 right.
+- **Passing:** Follows whichever deal size is in use — 6-card version passes 1 left / 1 right; 7-card version passes 2 left / 1 right. Each player chooses which of their own cards go left and which go right — not dealt or assigned automatically.
 - **Betting:** Guts game — ante only, no raise/max-bet structure. Pot escalates hand over hand: any player who loses (including losing against a dummy hand) must match the lost pot to play again. Ends only when one player bets and wins outright. (See "House rule: chips & betting.")
-- **Wildcard/game variations (pick one):**
-  - 1, 2, or 3 flip-up wildcard(s) after passing
-  - Lowest card in hand is wild
-  - 3s, 5s, and 7s are wild
-  - "Red royals" — all red face cards are wild
-- **Notes:** Several wildcard variants exist; dealer's choice which one is in play for a given hand.
+- **Wildcards:** The lowest card in each player's hand is always wild. Dealer's choice to also flip up 1 or 2 additional wildcards after passing — those stack on top of the lowest-card rule, they don't replace it.
+- **Variants:** Other published wildcard schemes exist for this game and aren't part of our default: 3s, 5s, and 7s all wild; "red royals" (all red face cards wild).
 - **Sources:** [Guts (card game) – Wikipedia](https://en.wikipedia.org/wiki/Guts_(card_game)); [Guts variants – pagat.com](https://www.pagat.com/poker/variants/guts.html); [3-5-7 Guts – coololdgames.com](https://www.coololdgames.com/card-games/gambling/guts/3-5-7/)
 
 ## Follow the Queen
@@ -207,10 +203,15 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 ## Free Enterprise
 
 - **Category:** Stud-based
-- **Family:** Part of the stud-based games, along with Follow the Queen and Mexican Sweat. Matches the family's usual "2 down, then rest up" default, except the final card here is dealt down again rather than up (see "House rule: the stud family").
-- **Deal:** 2 down, then up-card rounds (one per round), then 1 down — matching the stud family's typical shape (see "House rule: the stud family"). Number of up-rounds scales with tonight's player count so the deal stays within a single 52-card deck: 4 up-rounds (7 cards total) at typical table sizes (5–7 players), dropping to 3 up-rounds (6 cards total) at a full 8-player table.
-- **Wipe:** Players can pay to "wipe" (discard and replace) a card. The wipe price escalates as the hand goes on — dealer's choice of scale: $1 / $2 / $3, or a cheaper scale starting at $0.50.
-- **Last round:** Whatever the current wipe price is at that point gets doubled for the final round.
+- **Family:** Part of the stud-based games, along with Follow the Queen and Mexican Sweat. Starts like the family's usual "2 down" default, but every card after that comes from the Enterprise pile below rather than a normal per-player deal, and its face-up/face-down status is decided by HOW it's acquired rather than a fixed street-by-street schedule — see "House rule: the stud family."
+- **Deal:** 2 down cards dealt normally to start. From then on, players don't get a card dealt directly — each round is a turn at the Enterprise pile (below), one per player, for as many rounds as the table's player count allows (5 more rounds/7 cards total at 5–7 players, 4 more rounds/6 cards total at a full 8-player table, same scaling as the rest of the stud family).
+- **The Enterprise pile:** A shared spread of 3 face-up cards sits on the table, dealt from the top of the deck. On their turn, a player does exactly one of:
+  - **Buy** one of the 3 showing cards — priced by its position in the spread: $1 / $2 / $3 (dealer's choice of a cheaper $0.50 / $1 / $1.50 scale instead). Stays face up — it was already visible in the pile.
+  - **Wipe** the pile — discard all 3 showing cards and deal 3 fresh ones from the deck — then immediately buy one of the *new* 3, or take a free card instead (see next).
+  - **Take a free card** off the top of the deck, skipping the pile (and its price) entirely. Dealt face down — nobody's seen it.
+
+  The pile is topped back up to 3 (from the deck) the moment any card leaves it, so it's always showing exactly 3 between turns. Wiped-out cards and any folded players' cards go into a shared discard pool, reshuffled into a fresh deck only once the top-of-deck supply actually runs out.
+- **Last round:** The pile's three prices double on the final round.
 - **Betting:** Based on highest showing card(s).
 - **Sources:** [Buy Your Card – pagat.com](https://www.pagat.com/poker/variants/buyyourcard.html); [Free Enterprise (unrelated game) – poker.com](https://poker.com/game/stud-poker-games/free-enterprise/)
 

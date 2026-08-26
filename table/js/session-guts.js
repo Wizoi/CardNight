@@ -22,8 +22,9 @@ const SessionGuts = (function () {
     let handNumber = config.handNumber || 0;
     let carriedPotChips = config.carriedPotChips || 0;
     let state = null;
-    let pending = null; // {kind: 'stayDecision'} | {kind: 'exchangeDecision', playerId}
+    let pending = null; // {kind: 'passSelection'} | {kind: 'stayDecision'} | {kind: 'exchangeDecision', playerId}
     let exchangeQueue = [];
+    let passSelectionSoFar = null; // { assignments: { [handIndex]: 'left'|'right' } } -- human's in-progress pick, while pending.kind === 'passSelection'
     let running = false;
     let lastQuip = null;
     let quipSeq = 0;
@@ -85,8 +86,83 @@ const SessionGuts = (function () {
       carriedPotChips = 0;
       pending = null;
       exchangeQueue = [];
+      passSelectionSoFar = null;
       notify();
-      processDeclareLoop();
+      if (state.status === "passing") processPassingLoop();
+      else processDeclareLoop();
+    }
+
+    // Deep or Double Screw's neighbor-passing: each player privately picks
+    // which cards to send left/right before anyone's stay/fold decision.
+    // AI seats decide instantly via the same lowest-non-wild-first heuristic
+    // the old automatic version used; the human picks interactively via
+    // humanTogglePassCard/humanConfirmPassSelection. Only once EVERYONE has
+    // submitted does resolvePassingFromSelections actually redistribute the
+    // cards -- so nobody's choice is informed by having already seen a
+    // neighbor's post-pass hand.
+    async function processPassingLoop() {
+      if (running) return;
+      running = true;
+      try {
+        for (const p of players) {
+          if (state.passSelections[p.id] != null) continue;
+          if (p.isHuman) {
+            pending = { kind: "passSelection" };
+            if (!passSelectionSoFar) passSelectionSoFar = { assignments: {} };
+            notify();
+            return;
+          }
+          await sleep(DECIDE_DELAY_MS);
+          const { toLeftIdx, toRightIdx } = GutsRules.defaultPassSelection(state, p, state.passCounts.left, state.passCounts.right);
+          GutsRules.submitPassSelection(state, p.id, toLeftIdx, toRightIdx);
+          notify();
+        }
+        pending = null;
+        passSelectionSoFar = null;
+        GutsRules.resolvePassingFromSelections(state);
+        notify();
+        await processDeclareLoop();
+      } finally {
+        running = false;
+      }
+    }
+
+    // Clicking an unassigned card assigns it to whichever pile still has
+    // room (left first, then right); clicking an already-assigned card
+    // cycles it onward (left -> right -> unassigned) so a misclick is easy
+    // to correct without a separate "undo" control.
+    function humanTogglePassCard(cardIndex) {
+      if (!pending || pending.kind !== "passSelection") return;
+      if (!passSelectionSoFar) passSelectionSoFar = { assignments: {} };
+      const counts = state.passCounts;
+      const assignments = passSelectionSoFar.assignments;
+      const leftCount = Object.values(assignments).filter((v) => v === "left").length;
+      const rightCount = Object.values(assignments).filter((v) => v === "right").length;
+      const current = assignments[cardIndex];
+      if (current == null) {
+        if (leftCount < counts.left) assignments[cardIndex] = "left";
+        else if (rightCount < counts.right) assignments[cardIndex] = "right";
+      } else if (current === "left") {
+        if (rightCount < counts.right) assignments[cardIndex] = "right";
+        else delete assignments[cardIndex];
+      } else {
+        delete assignments[cardIndex];
+      }
+      notify();
+    }
+
+    function humanConfirmPassSelection() {
+      if (!pending || pending.kind !== "passSelection" || !passSelectionSoFar) return;
+      const counts = state.passCounts;
+      const entries = Object.entries(passSelectionSoFar.assignments);
+      const toLeftIdx = entries.filter(([, v]) => v === "left").map(([i]) => Number(i));
+      const toRightIdx = entries.filter(([, v]) => v === "right").map(([i]) => Number(i));
+      if (toLeftIdx.length !== counts.left || toRightIdx.length !== counts.right) return;
+      GutsRules.submitPassSelection(state, getHuman().id, toLeftIdx, toRightIdx);
+      pending = null;
+      passSelectionSoFar = null;
+      notify();
+      processPassingLoop();
     }
 
     async function processDeclareLoop() {
@@ -179,13 +255,15 @@ const SessionGuts = (function () {
     }
 
     function getViewState() {
-      return { gameId: gameConfig.id, players, dealerIndex, handNumber, state, pending, lastQuip };
+      return { gameId: gameConfig.id, players, dealerIndex, handNumber, state, pending, passSelectionSoFar, lastQuip };
     }
 
     return {
       startFirstHand,
       dealNextHand,
       canDealNextHand,
+      humanTogglePassCard,
+      humanConfirmPassSelection,
       humanDeclare,
       humanExchangeDecision,
       getViewState,

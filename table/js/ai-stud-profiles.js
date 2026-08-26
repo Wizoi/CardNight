@@ -20,23 +20,47 @@ const StudAIProfiles = (function () {
     return false;
   }
 
-  // Free Enterprise's wipe: worth paying for only if the just-dealt card
-  // isn't actually contributing (a pure dead card, e.g. an unpaired low
-  // card that doesn't extend a draw) — judged against the player's WHOLE
-  // hand, hole cards included. Unlike Midnight Baseball's self-reveal
-  // convention, a stud player always knows their own hole cards for real,
-  // so this isn't peeking; judging only from face-up cards would almost
-  // always look like an "improvement" early on, since any single card
-  // beats having none showing at all. Cautious profiles hold onto their
-  // chips and skip the gamble; balanced/aggressive take it whenever the
-  // card isn't helping and they can afford the price.
-  function decideWipe(player, card, profile, priceDollars) {
-    if (player.wallet.chips < ChipEconomy.dollarsToChips(priceDollars)) return false;
-    if (profile.name === "cautious") return false;
-    const asCards = (cards) => cards.map((c) => ({ rank: c.rank, suit: c.suit, isWild: c.isWild }));
-    const withCard = HandEvaluator.evaluatePartial(asCards(player.hand));
-    const withoutCard = HandEvaluator.evaluatePartial(asCards(player.hand.filter((c) => c !== card)));
-    return !HandEvaluator.isBetter(withCard, withoutCard);
+  // Free Enterprise's Enterprise pile: judged against the player's WHOLE
+  // hand, hole cards included (a stud player genuinely knows their own hole
+  // cards, unlike Midnight Baseball's self-reveal convention, so this isn't
+  // peeking). Picks the CHEAPEST pile position that actually improves the
+  // hand's category, ties broken toward cheaper -- a rational buyer
+  // wouldn't pay more for an equally-good option. If nothing in the
+  // current pile helps, wiping is free (nothing to lose), so that's always
+  // the fallback rather than paying for a card that doesn't help.
+  function bestEnterprisePileChoice(player, pile) {
+    const asCards = (cards) => cards.map((c) => ({ rank: c.rank, suit: c.suit, isWild: false }));
+    const withoutCard = HandEvaluator.evaluatePartial(asCards(player.hand));
+    let best = null;
+    pile.forEach((card, position) => {
+      const withCard = HandEvaluator.evaluatePartial(asCards(player.hand.concat([card])));
+      if (!HandEvaluator.isBetter(withCard, withoutCard)) return;
+      if (best == null || HandEvaluator.isBetter(withCard, best.result)) {
+        best = { position, result: withCard };
+      }
+    });
+    return best ? best.position : null;
+  }
+
+  // Whether the player can even afford this position's price factors in
+  // too -- no point "wanting" a card priced above what's left in the wallet.
+  function decideEnterpriseChoice(player, state, profile) {
+    const bestPosition = bestEnterprisePileChoice(player, state.enterprisePile);
+    if (bestPosition != null) {
+      const priceDollars = StudRules.currentEnterprisePriceDollars(state, bestPosition);
+      if (player.wallet.chips >= ChipEconomy.dollarsToChips(priceDollars)) {
+        return { action: "buy", position: bestPosition };
+      }
+    }
+    return { action: "wipe" };
+  }
+
+  // Re-run against the fresh pile after a wipe -- can't wipe a second time
+  // in the same turn, so the fallback here is a free card instead.
+  function decideEnterpriseAfterWipe(player, state, profile) {
+    const decision = decideEnterpriseChoice(player, state, profile);
+    if (decision.action === "buy") return decision;
+    return { action: "free" };
   }
 
   // A fully-dealt hand (no streets left) has no more upside and nothing
@@ -70,5 +94,5 @@ const StudAIProfiles = (function () {
     return { action: "call" };
   }
 
-  return { decideBuyOnDeal, decideWipe, decideBet };
+  return { decideBuyOnDeal, decideEnterpriseChoice, decideEnterpriseAfterWipe, decideBet };
 })();

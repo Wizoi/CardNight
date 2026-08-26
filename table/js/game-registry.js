@@ -113,6 +113,54 @@ const GameRegistry = (function () {
       uiFamily: "holdem",
       createOrchestrator: (config) => SessionHoldem.create({ ...config, gameConfig: JERSEY_HOLDEM_CONFIG }),
     },
+    fiveFiveTwentyOne: {
+      id: "fiveFiveTwentyOne",
+      name: "5.5-21",
+      uiFamily: "pressYourLuck",
+      createOrchestrator: (config) => SessionPressYourLuck.create({ ...config, gameConfig: FIVE_FIVE_TWENTYONE_CONFIG }),
+    },
+    sevenTwentySeven: {
+      id: "sevenTwentySeven",
+      name: "7-27",
+      uiFamily: "pressYourLuck",
+      createOrchestrator: (config) => SessionPressYourLuck.create({ ...config, gameConfig: SEVEN_TWENTYSEVEN_CONFIG }),
+    },
+    threeThirtyThree: {
+      id: "threeThirtyThree",
+      name: "3-33",
+      uiFamily: "threeThirtyThree",
+      createOrchestrator: (config) => Session333.create(config),
+    },
+    aceyDucey: {
+      id: "aceyDucey",
+      name: "Acey Ducey",
+      uiFamily: "aceyDucey",
+      createOrchestrator: (config) => SessionAceyDucey.create(config),
+    },
+    blindMansBluff: {
+      id: "blindMansBluff",
+      name: "Blind Man's Bluff",
+      uiFamily: "blindMansBluff",
+      createOrchestrator: (config) => SessionBlindMansBluff.create(config),
+    },
+    gameOfLife: {
+      id: "gameOfLife",
+      name: "Game of Life",
+      uiFamily: "gameOfLife",
+      createOrchestrator: (config) => SessionGameOfLife.create(config),
+    },
+    pairOfJacksTripsToWin: {
+      id: "pairOfJacksTripsToWin",
+      name: "Pair of Jacks, Trips to Win",
+      uiFamily: "drawPoker",
+      createOrchestrator: (config) => SessionDrawPoker.create(config),
+    },
+    anaconda: {
+      id: "anaconda",
+      name: "Anaconda (Pass the Trash)",
+      uiFamily: "anaconda",
+      createOrchestrator: (config) => SessionAnaconda.create(config),
+    },
   };
 
   function list() {

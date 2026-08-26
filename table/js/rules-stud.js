@@ -12,7 +12,10 @@
 //     streets(playerCount) -> [{ faceUp: bool, bettingAfter: bool }, ...],
 //     wildcards: BaseballWildcards | null,        // null when this game has no fixed-rank wildcard
 //     rainOutCheck?: (state, dealtCard, gameMemory) -> bool,  // true if this card rains out the hand
-//     wipe?: { priceScheduleDollars: number[], finalRoundMultiplier: number },  // Free Enterprise's "buy your card" mechanic
+//     enterprisePile?: { priceScheduleDollars: number[], finalRoundMultiplier: number },  // Free Enterprise's
+//                                                    // shared 3-card buy pile (see resolveEnterpriseBuy/Wipe/Free below) —
+//                                                    // priceScheduleDollars is positional ($1/$2/$3 for pile slots 0/1/2),
+//                                                    // not per-count-of-wipes-so-far the way it first looked
 //     firstToActId?: (state) -> playerId,          // who leads each betting round (default: fixed dealer-relative order)
 //     rollingWildcard?: { triggerRank: string },    // Follow the Queen: triggerRank is always wild, and so is
 //                                                    // whatever rank follows the most-recently-exposed one
@@ -103,6 +106,15 @@ const StudRules = (function () {
       deck = deck.slice(gameConfig.tableCards.count);
     }
 
+    // Free Enterprise: a shared 3-card face-up pile, drawn off the top of
+    // the deck before any player card, refilled from the same source
+    // throughout the hand (see refillEnterprisePile).
+    let enterprisePile = [];
+    if (gameConfig.enterprisePile) {
+      enterprisePile = deck.slice(0, 3).map((c) => ({ rank: c.rank, suit: c.suit }));
+      deck = deck.slice(3);
+    }
+
     const state = {
       players,
       dealerIndex,
@@ -126,6 +138,7 @@ const StudRules = (function () {
       rainedOut: false,
       tableCards,
       tableRevealsResolved: [],
+      enterprisePile,
     };
     collectAntes(state);
     return state;
@@ -154,9 +167,9 @@ const StudRules = (function () {
 
   // Deals one card to the next player still owed one this street. Returns
   // {playerId, card, needsDecision, rainedOut, exhausted} — needsDecision is
-  // 'buy3'|'buy9'|'buy4' (baseball-family games), 'wipe' (Free Enterprise),
-  // or null. A game only ever configures one of wildcards/wipe, so these
-  // never compete for the same dealt card.
+  // 'buy3'|'buy9'|'buy4' (baseball-family games), 'enterprisePile' (Free
+  // Enterprise), or null. A game only ever configures one of
+  // wildcards/enterprisePile, so these never compete for the same dealt card.
   //
   // Draws through the same reshuffle-safe path 4-bonus buys use, not a bare
   // `state.deck.shift()`: at a full table, normal per-street dealing alone
@@ -171,6 +184,17 @@ const StudRules = (function () {
     if (playerId == null) return null;
     const player = getPlayer(state, playerId);
     const street = currentStreet(state);
+
+    // Free Enterprise: nobody's dealt a card directly here -- their card
+    // for this round comes from a turn at the shared pile (buy/wipe/free),
+    // which decides both its identity and its face-up/face-down status.
+    // Nothing to draw yet; the caller resolves the decision via
+    // resolveEnterpriseBuy/Wipe/Free below.
+    if (state.gameConfig.enterprisePile) {
+      state.dealCursor += 1;
+      return { playerId, card: null, needsDecision: "enterprisePile", rainedOut: false };
+    }
+
     const { card: raw, reshuffled } = Deck.drawWithReshuffle(state);
     if (reshuffled) state.log.push("The draw pile ran out — reshuffling folded players' cards back in.");
     if (!raw) {
@@ -209,54 +233,73 @@ const StudRules = (function () {
       if (card.rank === "3") needsDecision = "buy3";
       else if (card.rank === "9") needsDecision = "buy9";
       else if (card.rank === "4") needsDecision = "buy4";
-    } else if (!rainedOut && card.faceUp && state.gameConfig.wipe) {
-      needsDecision = "wipe";
     }
     return { playerId, card, needsDecision, rainedOut };
   }
 
-  // The wipe price escalates with how many wipes have happened this hand
-  // (across all players, not per-player — games.md doesn't scope it any
-  // narrower), and doubles on the final round a wipe is even possible.
-  // That's NOT necessarily the literal last street: Free Enterprise's own
-  // last street is a down card (wipes only ever apply to face-up deals),
-  // so comparing against `streets.length - 1` directly meant the "doubled
-  // on the final round" rule could never actually fire — a real bug, found
-  // by re-checking this against games.md's wording rather than the deal
-  // shape alone. Exposed so the UI can show the price before the player
-  // decides.
-  function currentWipePriceDollars(state) {
-    const schedule = state.gameConfig.wipe.priceScheduleDollars;
-    const wipeCount = state.wipeCount || 0;
-    const base = schedule[Math.min(wipeCount, schedule.length - 1)];
-    const lastWipeableStreetIndex = state.streets.reduce((lastIdx, street, idx) => (street.faceUp ? idx : lastIdx), -1);
-    const isFinalWipeableStreet = state.streetIndex === lastWipeableStreetIndex;
-    return isFinalWipeableStreet ? base * state.gameConfig.wipe.finalRoundMultiplier : base;
+  // Free Enterprise's Enterprise pile: a shared 3-card face-up spread a
+  // player buys from (or wipes, or skips for a free card) instead of being
+  // dealt directly. Position-priced ($1/$2/$3 by pile slot, not by how many
+  // wipes have happened — the earlier draft of this rule assumed a single
+  // escalating price and had to be corrected against the real house rule),
+  // doubled on the final round. `state.streetIndex` doubles as "which round
+  // of the pile is this" here, since every street uses the pile the same
+  // way (no fixed up/down schedule the way other stud games have).
+  function currentEnterprisePriceDollars(state, position) {
+    const schedule = state.gameConfig.enterprisePile.priceScheduleDollars;
+    const base = schedule[position];
+    const isFinalStreet = state.streetIndex === state.streets.length - 1;
+    return isFinalStreet ? base * state.gameConfig.enterprisePile.finalRoundMultiplier : base;
   }
 
-  // Free Enterprise's "buy your card": discard the card just dealt and draw
-  // a replacement (still face-up), at an escalating price. Unlike the
-  // baseball-family buys, this isn't about making a card wild — it's a
-  // straight do-over on a card that isn't helping.
-  function resolveWipe(state, playerId, willWipe) {
+  // Tops the pile back up to 3 from the deck (reshuffling the discard pile
+  // in if it runs dry, same reshuffle-safe path as everything else this
+  // engine draws from) -- called after any card leaves the pile, whether
+  // bought or wiped away.
+  function refillEnterprisePile(state) {
+    while (state.enterprisePile.length < 3) {
+      const card = drawCard(state);
+      if (!card) break;
+      state.enterprisePile.push({ rank: card.rank, suit: card.suit });
+    }
+  }
+
+  // Buying a pile card leaves it face up -- the whole table already saw it
+  // sitting in the pile, so there's nothing left to hide.
+  function resolveEnterpriseBuy(state, playerId, position) {
     const player = getPlayer(state, playerId);
-    if (!willWipe) {
-      state.log.push(`${player.name} keeps the card.`);
-      return;
-    }
-    const priceDollars = currentWipePriceDollars(state);
-    const oldCard = player.hand[player.hand.length - 1];
-    state.discardPile.push({ rank: oldCard.rank, suit: oldCard.suit });
-    const replacement = drawCard(state);
-    if (!replacement) {
-      state.log.push(`${player.name} wanted to wipe, but no cards are left to draw.`);
-      return;
-    }
-    player.hand[player.hand.length - 1] = { rank: replacement.rank, suit: replacement.suit, faceUp: true, isWild: false, bought: false, isBonus: false };
+    const priceDollars = currentEnterprisePriceDollars(state, position);
+    const chosen = state.enterprisePile.splice(position, 1)[0];
     const { paid } = ChipEconomy.pay(player.wallet, ChipEconomy.dollarsToChips(priceDollars));
     state.pot += paid;
-    state.wipeCount = (state.wipeCount || 0) + 1;
-    state.log.push(`${player.name} wipes the card for $${priceDollars.toFixed(2)}.`);
+    player.hand.push({ rank: chosen.rank, suit: chosen.suit, faceUp: true, isWild: false, bought: false, isBonus: false });
+    refillEnterprisePile(state);
+    state.log.push(`${player.name} buys the ${Deck.cardLabel(chosen)} from the pile for $${priceDollars.toFixed(2)}.`);
+  }
+
+  // Wiping is free -- it just discards the current 3 and deals a fresh 3.
+  // It doesn't resolve the player's own card for this round by itself; the
+  // caller must follow up with resolveEnterpriseBuy or resolveEnterpriseFree
+  // against the new pile (a player can only wipe once per turn, so the
+  // follow-up never offers "wipe" again).
+  function resolveEnterpriseWipe(state) {
+    state.discardPile.push(...state.enterprisePile.map((c) => ({ rank: c.rank, suit: c.suit })));
+    state.enterprisePile = [];
+    refillEnterprisePile(state);
+    state.log.push("The Enterprise pile is wiped — 3 fresh cards dealt.");
+  }
+
+  // Skipping the pile for a free card off the top of the deck -- dealt
+  // face down, since nobody (the table included) has seen it.
+  function resolveEnterpriseFree(state, playerId) {
+    const player = getPlayer(state, playerId);
+    const card = drawCard(state);
+    if (!card) {
+      state.log.push(`${player.name} wanted a free card, but none are left to draw.`);
+      return;
+    }
+    player.hand.push({ rank: card.rank, suit: card.suit, faceUp: false, isWild: false, bought: false, isBonus: false });
+    state.log.push(`${player.name} takes a free card, face down.`);
   }
 
   // Same signatures as rules-midnight-baseball.js's resolveBuy3/9/4, so AI
@@ -520,8 +563,10 @@ const StudRules = (function () {
     resolveBuy3,
     resolveBuy9,
     resolveBuy4,
-    resolveWipe,
-    currentWipePriceDollars,
+    currentEnterprisePriceDollars,
+    resolveEnterpriseBuy,
+    resolveEnterpriseWipe,
+    resolveEnterpriseFree,
     declineThreeAndFold,
     evaluateShowingHand,
     currentBestShowingHand,

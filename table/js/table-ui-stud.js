@@ -77,10 +77,17 @@ const TableUIStud = (function () {
             })
             .join(" ")}</div>`
         : "";
+    const enterprisePileLine =
+      gvs.state.enterprisePile && gvs.state.enterprisePile.length
+        ? `<div><strong>Enterprise pile:</strong> ${gvs.state.enterprisePile
+            .map((c, i) => `${cardMarkup(c, false)} ${money(StudRules.currentEnterprisePriceDollars(gvs.state, i))}`)
+            .join(" &nbsp; ")}</div>`
+        : "";
     el.boardHand.innerHTML = `
       <div><strong>Best showing hand:</strong> ${holder ? `${HandEvaluator.describe(best.hand)} (held by ${holder.name})` : "None yet"}</div>
       <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(gvs.state.pot))}</div>
       ${tableCardsLine}
+      ${enterprisePileLine}
     `;
   }
 
@@ -90,7 +97,7 @@ const TableUIStud = (function () {
       el.humanHand.innerHTML = "";
       return;
     }
-    el.humanHand.innerHTML = human.hand.map((c) => (c.faceUp ? cardMarkup(c, false) : cardMarkup(null, true))).join("");
+    el.humanHand.innerHTML = human.hand.map((c) => cardMarkup(c, false)).join("");
   }
 
   function renderActionPanel(el, gvs, humanId, orchestrator, settings) {
@@ -137,12 +144,20 @@ const TableUIStud = (function () {
       `;
       return;
     }
-    if (gvs.pending && gvs.pending.kind === "wipe") {
-      const priceDollars = StudRules.currentWipePriceDollars(gvs.state);
+    if (gvs.pending && (gvs.pending.kind === "enterprisePile" || gvs.pending.kind === "enterprisePileAfterWipe")) {
+      const pile = gvs.state.enterprisePile;
+      const buyButtons = pile
+        .map((c, i) => {
+          const priceDollars = StudRules.currentEnterprisePriceDollars(gvs.state, i);
+          return `<button data-enterprise-buy="${i}">Buy ${Deck.cardLabel(c)} (${money(priceDollars)})</button>`;
+        })
+        .join("");
+      const wipeButton = gvs.pending.kind === "enterprisePile" ? `<button data-enterprise-wipe>Wipe the pile (free)</button>` : "";
       el.actionPanel.innerHTML = `
-        <div>Wipe that card for ${money(priceDollars)} and draw a replacement? (optional)</div>
-        <button data-buy-yes>Wipe it (${money(priceDollars)})</button>
-        <button data-buy-no>Keep it</button>
+        <div>Buy a card from the Enterprise pile, ${gvs.pending.kind === "enterprisePile" ? "wipe it for a fresh 3, " : ""}or take a free card face down.</div>
+        ${buyButtons}
+        ${wipeButton}
+        <button data-enterprise-free>Take a free card (face down)</button>
       `;
       return;
     }
@@ -168,6 +183,9 @@ const TableUIStud = (function () {
       if (e.target.id === "deal-next-hand-btn") return orchestrator.dealNextHand();
       if (e.target.hasAttribute("data-buy-yes")) return orchestrator.humanResolveBuy(true);
       if (e.target.hasAttribute("data-buy-no")) return orchestrator.humanResolveBuy(false);
+      if (e.target.hasAttribute("data-enterprise-buy")) return orchestrator.humanResolveEnterprise("buy", Number(e.target.getAttribute("data-enterprise-buy")));
+      if (e.target.hasAttribute("data-enterprise-wipe")) return orchestrator.humanResolveEnterprise("wipe");
+      if (e.target.hasAttribute("data-enterprise-free")) return orchestrator.humanResolveEnterprise("free");
       if (e.target.hasAttribute("data-bet-fold")) return orchestrator.humanBet("fold");
       if (e.target.hasAttribute("data-bet-call")) return orchestrator.humanBet("call");
       if (e.target.hasAttribute("data-bet-raise")) return orchestrator.humanBet("raise", Number(e.target.getAttribute("data-bet-raise")));

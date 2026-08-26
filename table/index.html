@@ -21,10 +21,6 @@
       </select>
     </label>
     <div id="setup-ai-profiles"></div>
-    <div id="setup-seat-actions">
-      <button type="button" id="fill-remaining-btn">🎲 Fill remaining seats randomly</button>
-      <button type="button" id="clear-seats-btn">Clear seats (back to random)</button>
-    </div>
     <fieldset>
       <legend>Settings</legend>
       <label>Initial buy-in ($)
@@ -47,6 +43,10 @@
         <select id="test-jump-select"></select>
       </span>
     </div>
+    <details id="game-script-details">
+      <summary id="game-script-summary"></summary>
+      <div id="game-script-body"></div>
+    </details>
     <header>
       <div id="wallet-display"></div>
       <div id="pot-display"></div>
@@ -111,6 +111,7 @@
     </div>
   </div>
 
+  <script src="../app/games-data.js"></script>
   <script src="js/deck.js"></script>
   <script src="js/hand-evaluator.js"></script>
   <script src="js/chip-economy.js"></script>
@@ -128,12 +129,27 @@
   <script src="js/rules-guts-357.js"></script>
   <script src="js/rules-holdem.js"></script>
   <script src="js/game-configs-holdem.js"></script>
+  <script src="js/target-sum-evaluator.js"></script>
+  <script src="js/rules-press-your-luck.js"></script>
+  <script src="js/game-configs-press-your-luck.js"></script>
+  <script src="js/rules-333.js"></script>
+  <script src="js/rules-acey-ducey.js"></script>
+  <script src="js/rules-blind-mans-bluff.js"></script>
+  <script src="js/rules-game-of-life.js"></script>
+  <script src="js/rules-draw-poker.js"></script>
+  <script src="js/rules-anaconda.js"></script>
   <script src="js/ai-profiles.js"></script>
   <script src="js/ai-stud-profiles.js"></script>
   <script src="js/ai-mexican-sweat-profiles.js"></script>
   <script src="js/ai-community-stud-profiles.js"></script>
   <script src="js/ai-guts-profiles.js"></script>
   <script src="js/ai-holdem-profiles.js"></script>
+  <script src="js/ai-press-your-luck-profiles.js"></script>
+  <script src="js/ai-acey-ducey-profiles.js"></script>
+  <script src="js/ai-blind-mans-bluff-profiles.js"></script>
+  <script src="js/ai-game-of-life-profiles.js"></script>
+  <script src="js/ai-draw-poker-profiles.js"></script>
+  <script src="js/ai-anaconda-profiles.js"></script>
   <script src="js/history-store.js"></script>
   <script src="js/avatar.js"></script>
   <script src="js/table-people-data.js"></script>
@@ -146,6 +162,13 @@
   <script src="js/session-guts.js"></script>
   <script src="js/session-guts-357.js"></script>
   <script src="js/session-holdem.js"></script>
+  <script src="js/session-press-your-luck.js"></script>
+  <script src="js/session-333.js"></script>
+  <script src="js/session-acey-ducey.js"></script>
+  <script src="js/session-blind-mans-bluff.js"></script>
+  <script src="js/session-game-of-life.js"></script>
+  <script src="js/session-draw-poker.js"></script>
+  <script src="js/session-anaconda.js"></script>
   <script src="js/table-night.js"></script>
   <script src="js/table-ui-midnight-baseball.js"></script>
   <script src="js/table-ui-stud.js"></script>
@@ -154,6 +177,13 @@
   <script src="js/table-ui-guts.js"></script>
   <script src="js/table-ui-guts-357.js"></script>
   <script src="js/table-ui-holdem.js"></script>
+  <script src="js/table-ui-press-your-luck.js"></script>
+  <script src="js/table-ui-333.js"></script>
+  <script src="js/table-ui-acey-ducey.js"></script>
+  <script src="js/table-ui-blind-mans-bluff.js"></script>
+  <script src="js/table-ui-game-of-life.js"></script>
+  <script src="js/table-ui-draw-poker.js"></script>
+  <script src="js/table-ui-anaconda.js"></script>
   <script src="js/table-ui.js"></script>
 </body>
 </html>

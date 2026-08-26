@@ -20,7 +20,8 @@
 //     id, name,
 //     dealSize(playerCount) -> number,
 //     wildRanks: string[],                 // fixed wild ranks, e.g. Four-Two-Two's ["2"]
-//     flipWildcardCount?: number,          // Deep or Double Screw's flip-up-wildcard variant
+//     lowestCardWild?: boolean,            // Deep or Double Screw: each player's OWN lowest-ranked card(s) are wild
+//     flipWildcardCount?: number,          // Deep or Double Screw's optional additional flip-up wildcard(s), on top of lowestCardWild
 //     bonusCards?: number,                 // Four-Two-Two: cards dealt to stayers only, after the decision
 //     exchangePriceDollars?: number,       // 3 Buy 5 / 5 Buy 5: optional one-card exchange, price per card
 //     passing?: (playerCount) -> {left, right} | null,  // Deep or Double Screw's neighbor-passing step
@@ -32,12 +33,32 @@ const GutsRules = (function () {
     return state.players.find((p) => p.id === playerId);
   }
 
-  function isCardWild(state, card) {
-    return !!(state.wildRanks && state.wildRanks.includes(card.rank));
+  // `player` is optional -- only needed to check lowestCardWild, which is
+  // per-player (each player's own hand has its own lowest rank), unlike
+  // wildRanks/flip-ups which are fixed, table-wide ranks. Callers that don't
+  // have a player in scope (e.g. the passing heuristic, which runs before
+  // any player's final post-pass hand -- and therefore final lowest card --
+  // is even determined) just get the fixed-rank check.
+  function isCardWild(state, card, player) {
+    if (state.wildRanks && state.wildRanks.includes(card.rank)) return true;
+    if (player && state.gameConfig.lowestCardWild) {
+      const lowValue = playerLowestValue(player);
+      if (lowValue != null && Deck.RANK_VALUES[card.rank] === lowValue) return true;
+    }
+    return false;
+  }
+
+  // A tie for lowest rank (e.g. two 6s) makes every card of that rank wild,
+  // not just one arbitrary instance -- consistent with how every other
+  // wildcard rule in this project (bought 3s/9s, a fixed wildRanks list)
+  // treats wildness as a property of a RANK, never a single card object.
+  function playerLowestValue(player) {
+    if (!player.hand.length) return null;
+    return Math.min(...player.hand.map((c) => Deck.RANK_VALUES[c.rank]));
   }
 
   function allCards(state, player) {
-    return player.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: isCardWild(state, c) }));
+    return player.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: isCardWild(state, c, player) }));
   }
 
   // Works for any hand size (3 up to 7 across these games) — evaluatePartial
@@ -65,16 +86,20 @@ const GutsRules = (function () {
       wildRanks = wildRanks.concat(flippedWildcards.map((c) => c.rank));
     }
 
+    const passCounts = gameConfig.passing ? gameConfig.passing(players.length) : null;
+
     const state = {
       players,
       gameConfig,
       deck: deck.slice(cursor),
       wildRanks,
       flippedWildcards,
+      passCounts,
+      passSelections: {},
       stayDecisions: {},
       pot: carriedPotChips || 0,
       anteDollars: gameConfig.anteDollars || settings.anteDollars,
-      status: "declaring",
+      status: passCounts ? "passing" : "declaring",
       log: [],
       winnerId: null,
       loserIds: [],
@@ -86,40 +111,64 @@ const GutsRules = (function () {
     if (flippedWildcards.length) {
       state.log.push(`Flipped wildcard${flippedWildcards.length > 1 ? "s" : ""}: ${flippedWildcards.map((c) => Deck.cardLabel(c)).join(", ")}.`);
     }
-
-    if (gameConfig.passing) {
-      const counts = gameConfig.passing(players.length);
-      if (counts) resolvePassing(state, counts.left, counts.right);
-    }
     return state;
   }
 
-  // Naive but consistent heuristic applied uniformly to every seat (human
-  // included, not just AI) — each player passes their own lowest-ranked
-  // non-wild cards left/right, simultaneously, then receives from both
-  // neighbors. A real player would judge this by what actually helps their
-  // OWN hand rather than a blind rank cutoff, but adding a card-picker UI
-  // for this one sub-mechanic is disproportionate scope for how niche it
-  // is — a documented simplification, not a modeled player decision.
-  function resolvePassing(state, leftCount, rightCount) {
+  // Deep or Double Screw's neighbor-passing (rebuilt 2026-08-25 to be a real
+  // player choice, not an automated heuristic): each player privately picks
+  // which of their own cards go left/right (`submitPassSelection`); once
+  // everyone's in, `resolvePassingFromSelections` redistributes all of them
+  // simultaneously. `defaultPassSelection` is only the AI's OWN decision
+  // function now (a plain lowest-non-wild-first heuristic, unchanged from
+  // the old automatic behavior) — the human instead picks via the UI.
+  //
+  // Only fixed-rank wildness (wildRanks -- e.g. a flip-up wildcard) is
+  // considered here, not lowestCardWild: a player's final lowest card can't
+  // be known until AFTER passing resolves, so there's no meaningful "avoid
+  // passing away my wildcard" heuristic to apply at this point -- whatever
+  // ends up lowest in the post-pass hand becomes wild regardless.
+  function defaultPassSelection(state, player, leftCount, rightCount) {
+    const sorted = player.hand
+      .map((c, i) => ({ c, i }))
+      .sort((a, b) => (isCardWild(state, a.c) ? 99 : Deck.RANK_VALUES[a.c.rank]) - (isCardWild(state, b.c) ? 99 : Deck.RANK_VALUES[b.c.rank]));
+    return {
+      toLeftIdx: sorted.slice(0, leftCount).map((x) => x.i),
+      toRightIdx: sorted.slice(leftCount, leftCount + rightCount).map((x) => x.i),
+    };
+  }
+
+  function submitPassSelection(state, playerId, toLeftIdx, toRightIdx) {
+    const player = getPlayer(state, playerId);
+    const toLeft = toLeftIdx.map((i) => player.hand[i]);
+    const toRight = toRightIdx.map((i) => player.hand[i]);
+    state.passSelections[playerId] = { toLeft, toRight };
+    state.log.push(`${player.name} passes ${toLeft.length} card(s) left, ${toRight.length} right.`);
+  }
+
+  function allPassSelectionsSubmitted(state) {
+    return state.players.every((p) => state.passSelections[p.id] != null);
+  }
+
+  // Two passes, same as the original heuristic: remove everyone's outgoing
+  // cards first, then distribute -- so a card leaving one hand can't be
+  // read back out of its ORIGINAL owner's hand as still present partway
+  // through (the removal and the distribution both key off the selections
+  // captured at submission time, not the live, already-mutated hand).
+  function resolvePassingFromSelections(state) {
     const n = state.players.length;
-    const outgoing = state.players.map((p) => {
-      const sorted = p.hand
-        .slice()
-        .sort((a, b) => (isCardWild(state, a) ? 99 : Deck.RANK_VALUES[a.rank]) - (isCardWild(state, b) ? 99 : Deck.RANK_VALUES[b.rank]));
-      return { toLeft: sorted.slice(0, leftCount), toRight: sorted.slice(leftCount, leftCount + rightCount) };
+    state.players.forEach((p) => {
+      const sel = state.passSelections[p.id];
+      p.hand = p.hand.filter((c) => !sel.toLeft.includes(c) && !sel.toRight.includes(c));
     });
     state.players.forEach((p, i) => {
-      const passed = outgoing[i].toLeft.concat(outgoing[i].toRight);
-      p.hand = p.hand.filter((c) => !passed.includes(c));
-    });
-    state.players.forEach((p, i) => {
+      const sel = state.passSelections[p.id];
       const leftIdx = (i - 1 + n) % n;
       const rightIdx = (i + 1) % n;
-      state.players[leftIdx].hand.push(...outgoing[i].toLeft);
-      state.players[rightIdx].hand.push(...outgoing[i].toRight);
+      state.players[leftIdx].hand.push(...sel.toLeft);
+      state.players[rightIdx].hand.push(...sel.toRight);
     });
-    state.log.push(`Cards passed: ${leftCount} left, ${rightCount} right, all around the table.`);
+    state.status = "declaring";
+    state.log.push(`Cards passed: ${state.passCounts.left} left, ${state.passCounts.right} right, all around the table.`);
   }
 
   function submitStayDecision(state, playerId, stayingIn) {
@@ -236,6 +285,10 @@ const GutsRules = (function () {
 
   return {
     createRoundState,
+    defaultPassSelection,
+    submitPassSelection,
+    allPassSelectionsSubmitted,
+    resolvePassingFromSelections,
     submitStayDecision,
     allDecided,
     inPlayers,

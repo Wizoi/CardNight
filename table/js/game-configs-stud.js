@@ -174,10 +174,15 @@ const FREE_ENTERPRISE_CONFIG = {
   id: "freeEnterprise",
   name: "Free Enterprise",
   wildcards: null,
-  // No fixed wildcard at all -- its only house twist is paying to "wipe"
-  // (discard and replace) a card, at an escalating price, doubled on the
-  // final street.
-  wipe: { priceScheduleDollars: [1, 2, 3], finalRoundMultiplier: 2 },
+  // No fixed wildcard at all -- its whole house twist is the Enterprise
+  // pile: instead of a normal per-player deal, every card after the
+  // initial 2 down comes from a shared 3-card face-up spread each player
+  // either buys from (priced by position, $1/$2/$3), wipes for a fresh 3
+  // (free, then must buy or take a free card from the new spread), or
+  // skips for a free card off the deck. A bought card stays face up (the
+  // table already saw it); a free card is dealt face down. Doubled prices
+  // on the final round.
+  enterprisePile: { priceScheduleDollars: [1, 2, 3], finalRoundMultiplier: 2 },
   // games.md: "Betting: Based on highest showing card(s)" -- the same
   // bring-in rule Follow the Queen and Seven and What Makes It use, missed
   // when this config was first built (games.md is explicit here, unlike
@@ -186,19 +191,19 @@ const FREE_ENTERPRISE_CONFIG = {
     const best = StudRules.currentBestShowingHand(state);
     return best.holderId || state.players.find((p) => !p.folded).id;
   },
-  // 2 down, then up-card rounds (one per round), then 1 down again --
-  // matching the stud family's default except the final card here is down
-  // rather than up. 4 up-rounds (7 cards total) at 5-7 players, 3 up-rounds
-  // (6 total) at a full 8-player table, same scaling pattern as the
-  // baseball-family games.
+  // 2 down dealt normally, then every remaining card is a turn at the
+  // Enterprise pile -- no fixed up/down schedule beyond that, since a
+  // pile-acquired card's face depends on how it was gotten (bought = up,
+  // free = down), not which street it's on. 5 more rounds (7 cards total)
+  // at 5-7 players, 4 more rounds (6 total) at a full 8-player table, same
+  // scaling pattern as the baseball-family games.
   streets(playerCount) {
-    const upRounds = playerCount >= 8 ? 3 : 4;
+    const pileRounds = playerCount >= 8 ? 4 : 5;
     const streets = [
       { faceUp: false, bettingAfter: false },
       { faceUp: false, bettingAfter: false },
     ];
-    for (let i = 0; i < upRounds; i++) streets.push({ faceUp: true, bettingAfter: true });
-    streets.push({ faceUp: false, bettingAfter: true });
+    for (let i = 0; i < pileRounds; i++) streets.push({ bettingAfter: true });
     return streets;
   },
 };

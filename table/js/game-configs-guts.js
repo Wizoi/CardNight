@@ -14,24 +14,38 @@ const DEEP_OR_DOUBLE_SCREW_CONFIG = {
   dealSize(playerCount) {
     return playerCount >= 8 ? 6 : 7;
   },
-  // games.md documents FOUR dealer's-choice wildcard variants for this game
-  // (flip-up wildcards, lowest-card-wild, 3s/5s/7s wild, red royals) —
-  // implementing all four is disproportionate scope for a rule that's
-  // explicitly meant to vary night-to-night by dealer's choice anyway, so
-  // this picks ONE concrete default: a single flip-up wildcard (same
-  // wildcard density as the other guts games here, one rank). 3s/5s/7s-all-
-  // wild was tried first and produces such strong hands so often (3 wild
-  // ranks in a 7-card hand) that the escalating cycle rarely resolves —
-  // realistic to how rich that variant genuinely plays, but a bad fit as
-  // the single always-on default. The other three variants are left as a
-  // documented future enhancement (a per-hand dealer's-choice toggle).
+  // games.md's confirmed house rule (corrected 2026-08-25 -- the original
+  // build modeled this as "pick one of 4 dealer's-choice variants," which
+  // was wrong): the lowest card in each player's OWN hand is ALWAYS wild,
+  // every hand, no exceptions. 1 or 2 additional flip-up wildcards are an
+  // optional dealer's-choice add-on ON TOP of that base rule, not a
+  // replacement for it -- flipWildcardCount defaults to 0 (no flip-ups
+  // called) since there's no per-hand dealer prompt in this app yet; a
+  // future toggle could raise it to 1 or 2. The old "3s/5s/7s wild" and
+  // "red royals" variants are no longer modeled as alternatives at all now
+  // that games.md documents a single concrete base rule instead of 4
+  // mutually-exclusive picks -- see games.md's Variants: bullet if they're
+  // ever wanted back.
   wildRanks: [],
-  flipWildcardCount: 1,
-  // A 6-7 card hand is big enough that a bare pair is unremarkable (most
-  // random hands that size have one) -- shift every AI profile's stay-in
-  // bar up so the decision stays meaningfully selective. See
-  // ai-guts-profiles.js's decideStayIn for why.
-  categoryShift: 2,
+  lowestCardWild: true,
+  flipWildcardCount: 0,
+  // Re-tuned 2026-08-26 alongside the lowestCardWild rebuild above (was 2,
+  // back when this game's only wildness came from a single table-wide
+  // flip-up rank). A GUARANTEED per-player wild card (the lowest, always
+  // present) is a much bigger boost than that: with a 6-7 card hand, a lone
+  // wild can almost always pair with something, and a second, independent
+  // natural pair among the other 5-6 cards is itself likely (a birthday-
+  // paradox-style collision over 13 ranks) -- so most hands clear a
+  // TWO_PAIR-ish bar without even being genuinely strong. Empirically swept
+  // shift values 2-5 across 30 mixed-player-count trials each: shift=2
+  // resolved only 10/30 within 500 rounds (a cycle this rarely narrows to a
+  // solo winner is a bug, not "some hands take longer" — same class of
+  // issue as the original aggressive-always-stays bug this project already
+  // hit once); shift=4 resolved 30/30 in ~9 rounds on average (a believable
+  // real-guts-night escalation, not degenerate); shift=5 also resolved
+  // 30/30 but averaged just 3 rounds, which felt too quick to be a genuine
+  // "the pot escalates" experience. 4 was picked as the concrete default.
+  categoryShift: 4,
   // 6-card version passes 1 left / 1 right; 7-card version passes 2 left /
   // 1 right — tied directly to which deal size is actually in play.
   passing(playerCount) {
