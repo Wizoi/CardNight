@@ -189,8 +189,16 @@ const StudRules = (function () {
     // for this round comes from a turn at the shared pile (buy/wipe/free),
     // which decides both its identity and its face-up/face-down status.
     // Nothing to draw yet; the caller resolves the decision via
-    // resolveEnterpriseBuy/Wipe/Free below.
-    if (state.gameConfig.enterprisePile) {
+    // resolveEnterpriseBuy/Wipe/Free below. Only pile-round streets
+    // trigger this -- FREE_ENTERPRISE_CONFIG's initial 2 streets set a
+    // real `faceUp: false` (the plain "2 down to start" deal), while its
+    // pile-round streets deliberately leave `faceUp` undefined, which is
+    // the only thing distinguishing them. REAL BUG (caught live, not by
+    // testing): checking `state.gameConfig.enterprisePile` alone fired on
+    // every street including those first 2, so the initial down cards
+    // were never actually dealt at all -- players went straight into pile
+    // decisions with an empty hand from turn one.
+    if (state.gameConfig.enterprisePile && street.faceUp === undefined) {
       state.dealCursor += 1;
       return { playerId, card: null, needsDecision: "enterprisePile", rainedOut: false };
     }
