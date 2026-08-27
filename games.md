@@ -180,8 +180,8 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 ## Follow the Queen
 
 - **Category:** Stud-based
-- **Family:** Part of the stud-based games, along with Free Enterprise and Mexican Sweat. Deal order here differs from the family's usual "2 down, then rest up" default (see "House rule: the stud family").
-- **Deal:** 6 cards dealt in sequence — 2 up, 3 down, 1 up. (Documented standard is 7 cards — 2 down, 4 up, 1 down; ours may scale down with player count rather than being a flat departure — see Open Questions.)
+- **Family:** Part of the stud-based games, along with Free Enterprise and Mexican Sweat. Matches the family's usual "2 down, then rest up" default (see "House rule: the stud family") — confirmed as the standard/documented deal, not a house departure.
+- **Deal:** 2 down, then up-cards one per round, then a final down card — 7 cards total (2 down, 4 up, 1 down) at 5–7 players, scaling down to 6 (2 down, 3 up, 1 down) at a full 8-player table, same deck-size scaling every other stud-family game uses.
 - **Wildcards:** Queens are wild. The card immediately following an exposed Queen is also wild — but only the card after the MOST RECENTLY shown Queen. If a later Queen is exposed, the earlier "follow" wildcard is cancelled; only the new one applies going forward.
 - **Betting:** Highest showing hand starts the betting.
 - **Notes:** Low Chicago (best low spade in the hole) is encouraged as a companion side-pot rule — only concealed (hole-card) spades count toward it.
@@ -308,11 +308,11 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 
 ## Open questions / to confirm next session
 
-- **Follow the Queen:** Our deal is 6 cards (2 up, 3 down, 1 up); the standard/documented version deals 7 cards (2 down, 4 up, 1 down). Possibly ours scales with player count rather than being a fixed departure — worth confirming with the group.
+None currently open — the last one (Follow the Queen's deal size) was resolved: it's the standard/documented 7-card deal (2 down, 4 up, 1 down), scaling down to 6 at a full 8-player table like every other stud-family game.
 
 ## House rule: table size
 
-Every game in this doc is designed around a standard single poker table: **5–8 players**. Nobody's capped out of a game for having a full table — instead, a few entries adjust their deal shape to keep total cards dealt within a single 52-card deck (Deep or Double Screw, Free Enterprise, Mexican Sweat, 3-5-7 Guts, Seven and What Makes It, The Good the Bad and the Ugly — see each entry's Deal field). Player count is worth settling before dealing since it decides which version of these games is actually in play. **Anaconda is the one exception that can't adapt** — its full 7-card deal happens all at once before any discarding, so it genuinely doesn't fit at 8 players without a second deck; treat it as a 5–7 player game in practice.
+Every game in this doc is designed around a standard single poker table: **5–8 players**. Nobody's capped out of a game for having a full table — instead, a few entries adjust their deal shape to keep total cards dealt within a single 52-card deck (Deep or Double Screw, Free Enterprise, Follow the Queen, Mexican Sweat, 3-5-7 Guts, Seven and What Makes It, The Good the Bad and the Ugly — see each entry's Deal field). Player count is worth settling before dealing since it decides which version of these games is actually in play. **Anaconda is the one exception that can't adapt** — its full 7-card deal happens all at once before any discarding, so it genuinely doesn't fit at 8 players without a second deck; treat it as a 5–7 player game in practice.
 
 ## House rule: playing with Jokers
 

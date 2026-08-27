@@ -317,8 +317,15 @@ const GAMES = [
     before: [
       "Decide whether Low Chicago is on as a companion side-pot",
     ],
+    resolvePlayers(n) {
+      const upRounds = Math.min(4, Math.floor(52 / n) - 3);
+      const total = 3 + upRounds;
+      return `With ${n} players: ${upRounds} up-card rounds, ${total} cards each (2 down, ${upRounds} up, 1 down).${
+        upRounds < 4 ? " (Trimmed down from the usual 4 up-rounds so the deal fits one deck.)" : ""
+      }`;
+    },
     betting: `Ante 50¢, 25¢ raise increment, $2 max bet per person (house default).`,
-    setup: `Deal 6 cards in sequence — 2 up, 3 down, 1 up.`,
+    setup: `Deal 2 cards face down to start, then 1 card face up each round, then a final card face down — number of up-rounds adjusts to tonight's player count (see above), matching the rest of the stud family's deal-size scaling.`,
     gameplay: `Queens are wild. The card immediately after an exposed Queen is also wild — but only the one following the MOST RECENTLY shown Queen. When a later Queen is exposed, the earlier "follow" wildcard is cancelled; only the new one counts going forward. Highest showing hand starts the betting each round.`,
     win: `Best hand at showdown wins the main pot. If Low Chicago is on, the best concealed (hole-card) low spade wins that side pot separately — ties on it split evenly.`,
     keyDecisions: [
@@ -329,7 +336,7 @@ const GAMES = [
       "Only the card after the LATEST Queen is wild — a new Queen exposure kills the previous follow-card's wild status",
       "Low Chicago only counts concealed (hole-card) spades, not exposed ones",
     ],
-    script: `Six cards — 2 up, 3 down, 1 up. Queens are wild, and whatever card shows right after a Queen is wild too — but only after the most recent Queen. If another Queen shows up later, the old follow-wildcard stops being wild and only the new one counts. Highest hand showing bets first each round. If we're playing Low Chicago, best spade in the hole is a separate side pot.`,
+    script: `Two down to start, then a card up each round — number of up-rounds depends on tonight's player count — then a final card down. Queens are wild, and whatever card shows right after a Queen is wild too — but only after the most recent Queen. If another Queen shows up later, the old follow-wildcard stops being wild and only the new one counts. Highest hand showing bets first each round. If we're playing Low Chicago, best spade in the hole is a separate side pot.`,
   },
   {
     id: "four-two-two",

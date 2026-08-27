@@ -71,26 +71,24 @@ const FOLLOW_THE_QUEEN_CONFIG = {
     const best = StudRules.currentBestShowingHand(state);
     return best.holderId || state.players.find((p) => !p.folded).id;
   },
-  // 6 cards in sequence -- 2 up, 3 down, 1 up (games.md's documented deal;
-  // whether this should scale with player count like the other stud games
-  // is still an open question there, not resolved here). A betting round
-  // follows each up card, matching the stud family's "bet when new public
-  // information appears" default; the 3 down cards in the middle are dealt
-  // with no betting in between, same as the initial 2-down street elsewhere
-  // in the family.
+  // Resolved 2026-08-26 (was an open question in games.md): the standard/
+  // documented deal, not a house departure -- 2 down, then up-card rounds
+  // (one per round, betting after each), then a final down card, same
+  // deck-size scaling as the rest of the stud family: 4 up-rounds (7 cards
+  // total) at 5-7 players, 3 up-rounds (6 total) at a full 8-player table.
   //
   // Known gap: games.md also documents an optional "Low Chicago" side pot
   // (best concealed spade in the hole) as a companion rule to this game --
   // not implemented here, core high-hand-wins play only.
-  streets() {
-    return [
-      { faceUp: true, bettingAfter: true },
-      { faceUp: true, bettingAfter: true },
+  streets(playerCount) {
+    const upRounds = playerCount >= 8 ? 3 : 4;
+    const streets = [
       { faceUp: false, bettingAfter: false },
       { faceUp: false, bettingAfter: false },
-      { faceUp: false, bettingAfter: false },
-      { faceUp: true, bettingAfter: true },
     ];
+    for (let i = 0; i < upRounds; i++) streets.push({ faceUp: true, bettingAfter: true });
+    streets.push({ faceUp: false, bettingAfter: true });
+    return streets;
   },
 };
 
