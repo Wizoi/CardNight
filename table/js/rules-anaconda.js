@@ -91,6 +91,7 @@ const RulesAnaconda = (function () {
     // (the 8-player edge case) shouldn't pay for cards they never got.
     const anteEligible = players.filter((p) => !p.folded);
     state.pot += BettingEngine.collectAntes(anteEligible, state.anteDollars);
+    state.log.push(`Ante: $${state.anteDollars.toFixed(2)} each from ${anteEligible.length} players — pot starts at $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)}.`);
     if (sittingOutIds.length) {
       state.log.push(`${sittingOutIds.map((id) => getPlayer(state, id).name).join(", ")} sit out this hand — not enough cards in one deck for everyone at 7 each.`);
     }

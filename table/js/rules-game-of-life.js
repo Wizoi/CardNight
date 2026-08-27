@@ -65,6 +65,7 @@ const RulesGameOfLife = (function () {
       winnerIds: null,
     };
     state.pot += BettingEngine.collectAntes(players, state.anteDollars);
+    state.log.push(`Ante: $${state.anteDollars.toFixed(2)} each from ${players.length} players — pot starts at $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)}.`);
     return state;
   }
 

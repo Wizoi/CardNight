@@ -86,6 +86,7 @@ const MexicanSweatRules = (function () {
       winnerId: null,
     };
     state.pot += BettingEngine.collectAntes(players, settings.anteDollars);
+    state.log.push(`Ante: $${settings.anteDollars.toFixed(2)} each from ${players.length} players — pot starts at $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)}.`);
     if (wildRank) state.log.push(`${wildRank}s are wild this hand — flipped as the wildcard.`);
     return state;
   }

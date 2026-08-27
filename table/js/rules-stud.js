@@ -79,6 +79,7 @@ const StudRules = (function () {
 
   function collectAntes(state) {
     state.pot += BettingEngine.collectAntes(state.players, state.anteDollars);
+    state.log.push(`Ante: $${state.anteDollars.toFixed(2)} each from ${state.players.length} players — pot starts at $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)}.`);
   }
 
   // carriedPotChips: a rained-out hand (Rainy Day Baseball) ends with no

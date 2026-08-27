@@ -52,6 +52,7 @@ const BlindMansBluffRules = (function () {
     };
     for (const p of players) state.handCommittedChips[p.id] = 0;
     state.pot += BettingEngine.collectAntes(players, state.anteDollars);
+    state.log.push(`Ante: $${state.anteDollars.toFixed(2)} each from ${players.length} players — pot starts at $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)}.`);
     startBettingRound(state, dealerIndex);
     return state;
   }

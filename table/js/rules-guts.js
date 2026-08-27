@@ -108,6 +108,7 @@ const GutsRules = (function () {
       cycleComplete: false,
     };
     state.pot += BettingEngine.collectAntes(players, state.anteDollars);
+    state.log.push(`Ante: $${state.anteDollars.toFixed(2)} each from ${players.length} players — pot starts at $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)}.`);
     if (flippedWildcards.length) {
       state.log.push(`Flipped wildcard${flippedWildcards.length > 1 ? "s" : ""}: ${flippedWildcards.map((c) => Deck.cardLabel(c)).join(", ")}.`);
     }

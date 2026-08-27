@@ -99,7 +99,9 @@ const Guts357Rules = (function () {
     state.pot += BettingEngine.collectAntes(eligible, state.anteDollars);
     state.stayDecisions = {};
     state.status = "declaring";
-    state.log.push(`Round ${state.roundIndex + 1}: ${size}-card hands, ${state.wildRank}s wild.`);
+    state.log.push(
+      `Round ${state.roundIndex + 1}: ${size}-card hands, ${state.wildRank}s wild. Ante $${state.anteDollars.toFixed(2)} each from ${eligible.length} players — pot now $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)}.`
+    );
   }
 
   function submitStayDecision(state, playerId, stayingIn) {

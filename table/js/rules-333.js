@@ -79,6 +79,7 @@ const Rules333 = (function () {
       winnerId: null,
     };
     state.pot += BettingEngine.collectAntes(players, state.anteDollars);
+    state.log.push(`Ante: $${state.anteDollars.toFixed(2)} each from ${players.length} players — pot starts at $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)}.`);
 
     const ultimaIds = players.filter((p) => p.hand.length === 3 && p.hand.every((c) => c.rank === "A")).map((p) => p.id);
     if (ultimaIds.length) {

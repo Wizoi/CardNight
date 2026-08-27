@@ -52,7 +52,8 @@ const TableUIPressYourLuck = (function () {
             <div class="seat-cards">${cards}</div>
             ${debugLine}
             ${gvs.state && p.folded ? '<div class="seat-status">Folded</div>' : ""}
-            ${gvs.state && p.standing && !p.folded && gvs.state.status !== "complete" ? '<div class="seat-status">Standing</div>' : ""}
+            ${gvs.state && p.busted && !p.folded && gvs.state.status !== "complete" ? '<div class="seat-status">Busted</div>' : ""}
+            ${gvs.state && p.standing && !p.busted && !p.folded && gvs.state.status !== "complete" ? '<div class="seat-status">Standing</div>' : ""}
           </div>
         `;
       })

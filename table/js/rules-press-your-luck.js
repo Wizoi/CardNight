@@ -55,6 +55,7 @@ const PressYourLuckRules = (function () {
     for (const p of players) {
       p.hand = [];
       p.standing = false;
+      p.busted = false; // set true only under bustRule 'bust', once a hand clears both targets -- see checkAutoStandIfBusted
       p.buyBacksUsed = 0;
       p.folded = false; // only actually usable when gameConfig.bettingEnabled -- ante-only games never fold
     }
@@ -80,6 +81,7 @@ const PressYourLuckRules = (function () {
       winnerId: null,
     };
     state.pot += BettingEngine.collectAntes(players, state.anteDollars);
+    state.log.push(`Ante: $${state.anteDollars.toFixed(2)} each from ${players.length} players — pot starts at $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)}.`);
 
     for (const faceUp of gameConfig.initialDeal.faceUp) {
       for (const pid of dealOrder) {
@@ -298,14 +300,45 @@ const PressYourLuckRules = (function () {
     state.lapHitCount += 1;
     state.log.push(`${player.name} takes a card.`);
     const canBuyBack = card.faceUp && state.gameConfig.buyBack && player.buyBacksUsed < state.gameConfig.buyBack.maxBuys;
-    if (!canBuyBack) advanceCursor(state);
+    if (!canBuyBack) {
+      checkAutoStandIfBusted(state, player);
+      advanceCursor(state);
+    }
     return { dealtCard: card, needsBuyBack: canBuyBack };
   }
 
   function resolveBuyBack(state, playerId, willBuy) {
     if (willBuy) applyBuyBack(state, playerId);
     else state.log.push(`${getPlayer(state, playerId).name} keeps the card.`);
+    checkAutoStandIfBusted(state, getPlayer(state, playerId));
     advanceCursor(state);
+  }
+
+  // Under `bustRule: 'bust'` (5.5-21; never true for 7-27's 'noBust'), once
+  // a hand exceeds BOTH targets there is nothing left to gain by hitting
+  // again -- every card here is worth 0 or more, so the hand can only ever
+  // move further from both targets from this point on. The AI already
+  // reaches the same conclusion itself (decideHitOrStand re-evaluates
+  // before every action and stands once both sides are busted), but a
+  // human had no equivalent: the action panel kept offering "Take a card /
+  // Stand" forever after a bust, with no visible indication anything had
+  // changed, since the only feedback was the word "busted" buried inside a
+  // sentence in the action panel. Auto-standing (and marking `busted` for
+  // the UI) makes a bust a real, visible stopping point instead of a
+  // passive scoring footnote.
+  function checkAutoStandIfBusted(state, player) {
+    if (state.gameConfig.bustRule !== "bust" || player.standing) return;
+    const low = handSumResult(state, player, state.gameConfig.lowTarget);
+    const high = handSumResult(state, player, state.gameConfig.highTarget);
+    if (low.busted && high.busted) {
+      player.standing = true;
+      player.busted = true;
+      state.log.push(`${player.name} busts — over both ${formatTargetForLog(state.gameConfig.lowTarget)} and ${formatTargetForLog(state.gameConfig.highTarget)}, done for this hand.`);
+    }
+  }
+
+  function formatTargetForLog(n) {
+    return Number.isInteger(n) ? String(n) : n.toFixed(1);
   }
 
   // --- Showdown ---
