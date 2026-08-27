@@ -340,7 +340,14 @@
     const human = vs.players.find((p) => p.id === vs.humanId);
     el.walletDisplay.textContent = `Chips: ${money(ChipEconomy.chipsToDollars(human.wallet.chips))} | Bought in: ${money(ChipEconomy.totalBoughtInDollars(human.wallet))}`;
     const gvs = vs.orchestratorViewState;
-    el.potDisplay.textContent = gvs && gvs.state ? `Pot: ${money(ChipEconomy.chipsToDollars(gvs.state.pot))}` : "";
+    // Once a hand's complete, several games zero out state.pot right after
+    // payout (it's been awarded, not vanished) -- potAtShowdown, where a game
+    // tracks it, is what was actually won/carried. Games that never zero the
+    // pot at completion (stud, community stud, Mexican Sweat, Midnight
+    // Baseball, Acey Ducey) don't set this field, so this falls back to the
+    // always-accurate live state.pot for them.
+    const potChips = gvs && gvs.state && gvs.state.status === "complete" && typeof gvs.state.potAtShowdown === "number" ? gvs.state.potAtShowdown : gvs && gvs.state ? gvs.state.pot : null;
+    el.potDisplay.textContent = potChips != null ? `Pot: ${money(ChipEconomy.chipsToDollars(potChips))}` : "";
     const rebuyRoom = human.wallet.isTracked ? vs.settings.rebuyCapDollars - ChipEconomy.totalRebuysDollars(human.wallet) : 0;
     el.rebuyBtn.disabled = rebuyRoom < ChipEconomy.BUY_IN_INCREMENT_DOLLARS;
     el.rebuyBtn.hidden = ChipEconomy.chipsToDollars(human.wallet.chips) > LOW_CHIPS_DOLLARS;

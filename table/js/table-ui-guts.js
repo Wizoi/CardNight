@@ -81,8 +81,12 @@ const TableUIGuts = (function () {
     // unlike wildRanks there's no single table-wide rank list to show --
     // just note that the rule is in effect this hand.
     const lowestWildLine = gvs.state.gameConfig.lowestCardWild ? `<div><strong>Wild:</strong> each player's own lowest card</div>` : "";
+    // potAtShowdown is captured pre-payout so the board keeps showing what was
+    // actually won/matched instead of the now-zeroed live pot once a cycle's
+    // showdown has resolved (state.pot resets to 0 immediately, win or continue).
+    const potDisplay = gvs.state.status === "complete" ? gvs.state.potAtShowdown : gvs.state.pot;
     el.boardHand.innerHTML = `
-      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(gvs.state.pot))}</div>
+      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>
       ${wildLine}
       ${lowestWildLine}
     `;
@@ -121,7 +125,7 @@ const TableUIGuts = (function () {
       const winner = gvs.state.winnerId ? GutsRules.getPlayer(gvs.state, gvs.state.winnerId) : null;
       const canDeal = orchestrator.canDealNextHand();
       const resultLine = winner
-        ? `${winner.name} wins the round.`
+        ? `${winner.name} wins the ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))} pot.`
         : gvs.state.noContest
         ? "Nobody stayed in — the pot carries forward."
         : "Round over.";

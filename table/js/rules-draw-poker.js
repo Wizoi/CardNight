@@ -56,6 +56,7 @@ const RulesDrawPoker = (function () {
       deck: deck.slice(cursor),
       discardPile: [],
       pot: carriedPotChips || 0,
+      potAtShowdown: 0, // captured pre-payout -- state.pot itself is always 0 once complete
       anteDollars: settings.anteDollars,
       raiseIncrementDollars: settings.raiseIncrementDollars,
       maxBetDollars: settings.maxBetDollars,
@@ -153,6 +154,7 @@ const RulesDrawPoker = (function () {
     if (!state.openedThisRound) {
       state.status = "complete";
       state.noOpener = true;
+      state.potAtShowdown = state.pot;
       state.log.push("Nobody could open (no Jacks-or-better) — the hand redeals.");
       return;
     }
@@ -216,6 +218,7 @@ const RulesDrawPoker = (function () {
     state.bettingRound = null;
     state.winnerIds = winnerIds;
     state.winnerId = winnerIds[0] || null;
+    state.potAtShowdown = state.pot;
     if (winnerIds.length) {
       const share = Math.floor(state.pot / winnerIds.length);
       const remainder = state.pot - share * winnerIds.length;

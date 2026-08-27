@@ -61,8 +61,9 @@ const TableUIGuts357 = (function () {
       return;
     }
     const roundLine = gvs.state.status === "complete" ? "" : `<div><strong>Round:</strong> ${gvs.state.roundIndex + 1} of 3 — ${gvs.state.wildRank}s wild</div>`;
+    const potDisplay = gvs.state.status === "complete" ? gvs.state.potAtShowdown : gvs.state.pot;
     el.boardHand.innerHTML = `
-      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(gvs.state.pot))}</div>
+      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>
       ${roundLine}
     `;
   }
@@ -84,7 +85,11 @@ const TableUIGuts357 = (function () {
     if (gvs.state.status === "complete") {
       const winner = gvs.state.winnerId ? Guts357Rules.getPlayer(gvs.state, gvs.state.winnerId) : null;
       const canDeal = orchestrator.canDealNextHand();
-      const resultLine = winner ? `${winner.name} wins the hand.` : gvs.state.noContest ? "Nobody stayed in — the pot carries forward." : "Hand over.";
+      const resultLine = winner
+        ? `${winner.name} wins the ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))} pot.`
+        : gvs.state.noContest
+        ? "Nobody stayed in — the pot carries forward."
+        : "Hand over.";
       el.actionPanel.innerHTML = `
         <div>${resultLine}</div>
         ${canDeal ? `<button id="deal-next-hand-btn">Deal next hand</button>` : `<div>You're out of chips for this hand. Buy more chips or cash out to continue.</div>`}

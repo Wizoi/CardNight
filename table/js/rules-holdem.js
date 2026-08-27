@@ -151,6 +151,7 @@ const HoldemRules = (function () {
       dealOrder,
       actionOrder,
       pot: 0,
+      potAtShowdown: 0, // captured pre-payout -- state.pot itself is always 0 once complete
       bettingRound: null,
       smallBlindDollars: gameConfig.smallBlindDollars,
       bigBlindDollars: gameConfig.bigBlindDollars,
@@ -225,6 +226,7 @@ const HoldemRules = (function () {
       state.status = "complete";
       state.bettingRound = null;
       if (winner) {
+        state.potAtShowdown = state.pot;
         ChipEconomy.award(winner.wallet, state.pot);
         state.highWinnerIds = [winner.id];
         state.log.push(`${winner.name} wins the $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)} pot — everyone else folded.`);
@@ -264,6 +266,7 @@ const HoldemRules = (function () {
     }
 
     const potChips = state.pot;
+    state.potAtShowdown = potChips;
     state.pot = 0;
     state.status = "complete";
     state.highWinnerIds = highWinnerIds;
@@ -279,14 +282,14 @@ const HoldemRules = (function () {
       state.log.push(
         `High: ${highWinnerIds.map((id) => getPlayer(state, id).name).join(", ")} with ${state.bestHighDescribed}. Low: ${lowWinnerIds
           .map((id) => getPlayer(state, id).name)
-          .join(", ")} with ${state.bestLowDescribed}.`
+          .join(", ")} with ${state.bestLowDescribed}. Pot: $${ChipEconomy.chipsToDollars(potChips).toFixed(2)}.`
       );
     } else {
       payEvenSplit(state, highWinnerIds, potChips);
       state.log.push(
-        `${highWinnerIds.map((id) => getPlayer(state, id).name).join(", ")} win${highWinnerIds.length === 1 ? "s" : ""} the pot with ${state.bestHighDescribed}${
-          state.gameConfig.hiLo ? " (no qualifying low)" : ""
-        }.`
+        `${highWinnerIds.map((id) => getPlayer(state, id).name).join(", ")} win${highWinnerIds.length === 1 ? "s" : ""} the $${ChipEconomy.chipsToDollars(potChips).toFixed(
+          2
+        )} pot with ${state.bestHighDescribed}${state.gameConfig.hiLo ? " (no qualifying low)" : ""}.`
       );
     }
   }

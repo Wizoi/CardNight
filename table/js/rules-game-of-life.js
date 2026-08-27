@@ -55,6 +55,7 @@ const RulesGameOfLife = (function () {
       turnOrder,
       turnCursor: 0,
       pot: carriedPotChips || 0,
+      potAtShowdown: 0, // captured pre-payout -- state.pot itself is always 0 once complete
       anteDollars: settings.anteDollars,
       raiseIncrementDollars: settings.raiseIncrementDollars,
       maxBetDollars: settings.maxBetDollars,
@@ -229,6 +230,7 @@ const RulesGameOfLife = (function () {
     state.bettingRound = null;
     state.winnerIds = winnerIds;
     state.winnerId = winnerIds[0] || null;
+    state.potAtShowdown = state.pot;
     if (winnerIds.length) {
       const share = Math.floor(state.pot / winnerIds.length);
       const remainder = state.pot - share * winnerIds.length;

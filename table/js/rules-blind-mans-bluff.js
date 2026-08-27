@@ -35,6 +35,7 @@ const BlindMansBluffRules = (function () {
       players,
       deck,
       pot: carriedPotChips || 0,
+      potAtShowdown: 0, // captured pre-payout -- state.pot itself is always 0 once complete
       anteDollars: settings.anteDollars,
       raiseIncrementDollars: settings.raiseIncrementDollars,
       maxBetDollars: settings.maxBetDollars,
@@ -175,6 +176,7 @@ const BlindMansBluffRules = (function () {
     state.status = "complete";
     state.winnerId = winnerId;
     state.bettingRound = null;
+    state.potAtShowdown = state.pot;
     if (winnerId) {
       const winner = getPlayer(state, winnerId);
       ChipEconomy.award(winner.wallet, state.pot);
@@ -188,6 +190,7 @@ const BlindMansBluffRules = (function () {
     state.winnerId = winnerIds[0];
     state.winnerIds = winnerIds;
     state.bettingRound = null;
+    state.potAtShowdown = state.pot;
     const share = Math.floor(state.pot / winnerIds.length);
     const remainder = state.pot - share * winnerIds.length;
     winnerIds.forEach((id, i) => {

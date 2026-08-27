@@ -68,8 +68,9 @@ const TableUIGameOfLife = (function () {
       return;
     }
     const poisonLine = gvs.state.poisonedRanks.length ? `<div><strong>Poisoned ranks:</strong> ${gvs.state.poisonedRanks.join(", ")}</div>` : "";
+    const potDisplay = gvs.state.status === "complete" ? gvs.state.potAtShowdown : gvs.state.pot;
     el.boardHand.innerHTML = `
-      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(gvs.state.pot))}</div>
+      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>
       <div><strong>Good row:</strong> ${rowMarkup(gvs.state.goodRow)}</div>
       <div><strong>Bad row:</strong> ${rowMarkup(gvs.state.badRow)}</div>
       ${poisonLine}
@@ -94,7 +95,9 @@ const TableUIGameOfLife = (function () {
     if (gvs.state.status === "complete") {
       const canDeal = orchestrator.canDealNextHand();
       const names = (gvs.state.winnerIds || []).map((id) => RulesGameOfLife.getPlayer(gvs.state, id).name);
-      const resultLine = names.length ? `${names.join(", ")} win${names.length > 1 ? "" : "s"} the pot.` : "Hand over.";
+      const resultLine = names.length
+        ? `${names.join(", ")} win${names.length > 1 ? "" : "s"} the ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))} pot.`
+        : "Hand over.";
       el.actionPanel.innerHTML = `
         <div>${resultLine}</div>
         ${canDeal ? `<button id="deal-next-hand-btn">Deal next hand</button>` : `<div>You're out of chips for this hand. Buy more chips or cash out to continue.</div>`}

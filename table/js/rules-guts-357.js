@@ -74,6 +74,7 @@ const Guts357Rules = (function () {
       wildRank: null,
       stayDecisions: {},
       pot: carriedPotChips || 0,
+      potAtShowdown: 0, // captured pre-payout -- state.pot itself is always 0 once complete
       anteDollars: settings.anteDollars,
       status: "dealingRound",
       log: [],
@@ -142,6 +143,7 @@ const Guts357Rules = (function () {
       }
     }
     const winner = getPlayer(state, winnerId);
+    state.potAtShowdown = state.pot;
     ChipEconomy.award(winner.wallet, state.pot);
     state.status = "complete";
     state.winnerId = winnerId;
@@ -162,6 +164,7 @@ const Guts357Rules = (function () {
       state.status = "complete";
       state.winnerId = null;
       state.noContest = true;
+      state.potAtShowdown = state.pot;
       state.log.push("Nobody stayed in — the pot carries forward to the next 3-5-7 hand.");
       return;
     }

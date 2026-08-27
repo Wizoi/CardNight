@@ -54,7 +54,8 @@ const TableUIBlindMansBluff = (function () {
       el.boardHand.innerHTML = "";
       return;
     }
-    el.boardHand.innerHTML = `<div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(gvs.state.pot))}</div>`;
+    const potDisplay = gvs.state.status === "complete" ? gvs.state.potAtShowdown : gvs.state.pot;
+    el.boardHand.innerHTML = `<div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>`;
   }
 
   // The human's own hand panel stays empty/hidden the whole hand -- they
@@ -77,10 +78,11 @@ const TableUIBlindMansBluff = (function () {
     }
     if (gvs.state.status === "complete") {
       const canDeal = orchestrator.canDealNextHand();
+      const potLine = money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown));
       const resultLine = gvs.state.winnerIds && gvs.state.winnerIds.length > 1
-        ? `${gvs.state.winnerIds.map((id) => BlindMansBluffRules.getPlayer(gvs.state, id).name).join(", ")} tied and split the pot.`
+        ? `${gvs.state.winnerIds.map((id) => BlindMansBluffRules.getPlayer(gvs.state, id).name).join(", ")} tied and split the ${potLine} pot.`
         : gvs.state.winnerId
-        ? `${BlindMansBluffRules.getPlayer(gvs.state, gvs.state.winnerId).name} wins with the highest card.`
+        ? `${BlindMansBluffRules.getPlayer(gvs.state, gvs.state.winnerId).name} wins the ${potLine} pot with the highest card.`
         : "Hand over.";
       el.actionPanel.innerHTML = `
         <div>${resultLine}</div>

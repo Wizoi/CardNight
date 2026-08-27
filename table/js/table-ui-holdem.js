@@ -62,8 +62,11 @@ const TableUIHoldem = (function () {
       return;
     }
     const cards = gvs.state.communityCards.map((c) => cardMarkup(c, false)).join("");
+    // potAtShowdown is captured pre-payout so the board keeps showing what was
+    // actually won instead of the now-zeroed live pot once a hand's complete.
+    const potDisplay = gvs.state.status === "complete" ? gvs.state.potAtShowdown : gvs.state.pot;
     el.boardHand.innerHTML = `
-      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(gvs.state.pot))}</div>
+      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>
       <div class="community-row">${cards}</div>
     `;
   }
@@ -86,13 +89,16 @@ const TableUIHoldem = (function () {
     if (gvs.state.status === "complete") {
       const canDeal = orchestrator.canDealNextHand();
       let resultLine;
+      const potLine = money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown));
       if (gvs.state.lowWinnerIds.length > 0) {
         const highNames = gvs.state.highWinnerIds.map((id) => HoldemRules.getPlayer(gvs.state, id).name).join(", ");
         const lowNames = gvs.state.lowWinnerIds.map((id) => HoldemRules.getPlayer(gvs.state, id).name).join(", ");
-        resultLine = `High: ${highNames} (${gvs.state.bestHighDescribed}). Low: ${lowNames} (${gvs.state.bestLowDescribed}).`;
+        resultLine = `${potLine} pot — High: ${highNames} (${gvs.state.bestHighDescribed}). Low: ${lowNames} (${gvs.state.bestLowDescribed}).`;
       } else {
         const highNames = gvs.state.highWinnerIds.map((id) => HoldemRules.getPlayer(gvs.state, id).name).join(", ");
-        resultLine = gvs.state.bestHighDescribed ? `${highNames} win${gvs.state.highWinnerIds.length === 1 ? "s" : ""} with ${gvs.state.bestHighDescribed}.` : `${highNames} wins.`;
+        resultLine = gvs.state.bestHighDescribed
+          ? `${highNames} win${gvs.state.highWinnerIds.length === 1 ? "s" : ""} the ${potLine} pot with ${gvs.state.bestHighDescribed}.`
+          : `${highNames} wins the ${potLine} pot.`;
       }
       el.actionPanel.innerHTML = `
         <div>${resultLine}</div>
