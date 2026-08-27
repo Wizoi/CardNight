@@ -66,22 +66,32 @@ const TableUIPressYourLuck = (function () {
       return;
     }
     const cfg = gvs.state.gameConfig;
+    // Once a hand completes, state.pot is always zeroed (it's already been
+    // paid out) -- showing it directly here just reads as "the pot
+    // vanished." potAtShowdown is captured pre-payout for exactly this:
+    // the board should keep showing what was actually won, not $0.00.
+    const potDisplay = gvs.state.status === "complete" ? gvs.state.potAtShowdown : gvs.state.pot;
     let resultLine = "";
-    if (gvs.state.results) {
+    if (gvs.state.outrightWinnerIds && gvs.state.outrightWinnerIds.length) {
+      const names = gvs.state.outrightWinnerIds.map((id) => PressYourLuckRules.getPlayer(gvs.state, id).name);
+      resultLine = `<div><strong>${names.join(", ")}</strong> wins uncontested — takes the whole ${money(ChipEconomy.chipsToDollars(potDisplay))} pot.</div>`;
+    } else if (gvs.state.results) {
       if (gvs.state.results.kitchenSink) {
-        resultLine = `<div><strong>Kitchen Sink!</strong> ${gvs.state.results.winnerIds.map((id) => PressYourLuckRules.getPlayer(gvs.state, id).name).join(", ")} take the whole pot.</div>`;
+        resultLine = `<div><strong>Kitchen Sink!</strong> ${gvs.state.results.winnerIds.map((id) => PressYourLuckRules.getPlayer(gvs.state, id).name).join(", ")} take the whole ${money(ChipEconomy.chipsToDollars(potDisplay))} pot.</div>`;
       } else {
+        const lowShareChips = Math.floor(potDisplay / 2);
+        const highShareChips = potDisplay - lowShareChips;
         const lowNames = gvs.state.results.lowWinners.map((id) => PressYourLuckRules.getPlayer(gvs.state, id).name);
         const highNames = gvs.state.results.highWinners.map((id) => PressYourLuckRules.getPlayer(gvs.state, id).name);
         resultLine = `
-          <div><strong>Low (${formatTarget(cfg.lowTarget)}):</strong> ${lowNames.length ? lowNames.join(", ") : "no qualifiers"}</div>
-          <div><strong>High (${formatTarget(cfg.highTarget)}):</strong> ${highNames.length ? highNames.join(", ") : "no qualifiers"}</div>
+          <div><strong>Low (${formatTarget(cfg.lowTarget)}, ${money(ChipEconomy.chipsToDollars(lowShareChips))}):</strong> ${lowNames.length ? lowNames.join(", ") : "no qualifiers — carries forward"}</div>
+          <div><strong>High (${formatTarget(cfg.highTarget)}, ${money(ChipEconomy.chipsToDollars(highShareChips))}):</strong> ${highNames.length ? highNames.join(", ") : "no qualifiers — carries forward"}</div>
         `;
       }
     }
     el.boardHand.innerHTML = `
       <div><strong>Targets:</strong> ${formatTarget(cfg.lowTarget)} (low) / ${formatTarget(cfg.highTarget)} (high)</div>
-      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(gvs.state.pot))}</div>
+      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>
       ${resultLine}
     `;
   }

@@ -77,16 +77,18 @@ const Rules333 = (function () {
       results: null,
       outrightWinnerIds: null,
       winnerId: null,
+      potAtShowdown: 0, // captured pre-payout wherever the pot is awarded -- state.pot itself is always 0 once complete
     };
     state.pot += BettingEngine.collectAntes(players, state.anteDollars);
     state.log.push(`Ante: $${state.anteDollars.toFixed(2)} each from ${players.length} players — pot starts at $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)}.`);
 
     const ultimaIds = players.filter((p) => p.hand.length === 3 && p.hand.every((c) => c.rank === "A")).map((p) => p.id);
     if (ultimaIds.length) {
+      state.potAtShowdown = state.pot;
       payEvenSplit(state, ultimaIds, state.pot);
       state.status = "complete";
       state.outrightWinnerIds = ultimaIds;
-      state.log.push(`Ultima! ${ultimaIds.map((id) => getPlayer(state, id).name).join(", ")} dealt three Aces — takes the whole pot outright, no betting needed.`);
+      state.log.push(`Ultima! ${ultimaIds.map((id) => getPlayer(state, id).name).join(", ")} dealt three Aces — takes the whole $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)} pot outright, no betting needed.`);
       state.pot = 0;
       return state;
     }
@@ -160,12 +162,13 @@ const Rules333 = (function () {
 
   function completeHandOutright(state, winnerIds) {
     state.bettingRound = null;
+    state.potAtShowdown = state.pot;
     payEvenSplit(state, winnerIds, state.pot);
     state.status = "complete";
     state.outrightWinnerIds = winnerIds;
     state.winnerId = winnerIds[0] || null;
     if (winnerIds.length) {
-      state.log.push(`${winnerIds.map((id) => getPlayer(state, id).name).join(", ")} wins uncontested — takes the pot outright.`);
+      state.log.push(`${winnerIds.map((id) => getPlayer(state, id).name).join(", ")} wins uncontested — takes the $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)} pot outright.`);
     }
     state.pot = 0;
   }
@@ -221,9 +224,10 @@ const Rules333 = (function () {
 
     if (emptiedIds.length) {
       state.status = "complete";
+      state.potAtShowdown = state.pot;
       payEvenSplit(state, emptiedIds, state.pot);
       state.outrightWinnerIds = emptiedIds;
-      state.log.push(`${emptiedIds.map((id) => getPlayer(state, id).name).join(", ")} discarded their last card — takes the whole pot outright.`);
+      state.log.push(`${emptiedIds.map((id) => getPlayer(state, id).name).join(", ")} discarded their last card — takes the whole $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)} pot outright.`);
       state.pot = 0;
       return { card, emptiedIds };
     }
@@ -251,6 +255,7 @@ const Rules333 = (function () {
   // practice here since 'noBust' means every remaining player always has
   // SOME achievable sum for both sides.
   function resolveShowdown(state) {
+    state.potAtShowdown = state.pot;
     const contenders = state.players.filter((p) => !p.folded && p.hand.length > 0);
     const lowResults = contenders.map((p) => ({ id: p.id, result: handSumResult(state, p, LOW_TARGET) }));
     const highResults = contenders.map((p) => ({ id: p.id, result: handSumResult(state, p, HIGH_TARGET) }));
@@ -262,15 +267,17 @@ const Rules333 = (function () {
     let carried = 0;
     if (lowWinners.length) {
       payEvenSplit(state, lowWinners, lowShareChips);
-      state.log.push(`${lowWinners.map((id) => getPlayer(state, id).name).join(", ")} win the low half (closest to ${LOW_TARGET}).`);
+      state.log.push(`${lowWinners.map((id) => getPlayer(state, id).name).join(", ")} win the $${ChipEconomy.chipsToDollars(lowShareChips).toFixed(2)} low half (closest to ${LOW_TARGET}).`);
     } else {
       carried += lowShareChips;
+      state.log.push(`Nobody qualified for the $${ChipEconomy.chipsToDollars(lowShareChips).toFixed(2)} low half — that share carries forward.`);
     }
     if (highWinners.length) {
       payEvenSplit(state, highWinners, highShareChips);
-      state.log.push(`${highWinners.map((id) => getPlayer(state, id).name).join(", ")} win the high half (closest to ${HIGH_TARGET}).`);
+      state.log.push(`${highWinners.map((id) => getPlayer(state, id).name).join(", ")} win the $${ChipEconomy.chipsToDollars(highShareChips).toFixed(2)} high half (closest to ${HIGH_TARGET}).`);
     } else {
       carried += highShareChips;
+      state.log.push(`Nobody qualified for the $${ChipEconomy.chipsToDollars(highShareChips).toFixed(2)} high half — that share carries forward.`);
     }
     state.results = { lowWinners, highWinners, lowResults, highResults };
     state.winnerId = lowWinners[0] || highWinners[0] || null;

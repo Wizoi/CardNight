@@ -79,6 +79,7 @@ const PressYourLuckRules = (function () {
       log: [],
       results: null,
       winnerId: null,
+      potAtShowdown: 0, // captured pre-payout in resolveShowdown/checkForInstantWin -- state.pot itself is always 0 once complete
     };
     state.pot += BettingEngine.collectAntes(players, state.anteDollars);
     state.log.push(`Ante: $${state.anteDollars.toFixed(2)} each from ${players.length} players — pot starts at $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)}.`);
@@ -247,8 +248,9 @@ const PressYourLuckRules = (function () {
       // a low/high split on top of this outright win.
       state.outrightWinnerIds = winner ? [winner.id] : [];
       if (winner) {
+        state.potAtShowdown = state.pot;
         ChipEconomy.award(winner.wallet, state.pot);
-        state.log.push(`${winner.name} wins uncontested — takes the pot outright.`);
+        state.log.push(`${winner.name} wins uncontested — takes the $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)} pot outright.`);
         state.pot = 0;
       }
     }
@@ -374,6 +376,7 @@ const PressYourLuckRules = (function () {
   // than letting it silently vanish.
   function resolveShowdown(state) {
     state.status = "complete";
+    state.potAtShowdown = state.pot;
     const lowTarget = state.gameConfig.lowTarget;
     const highTarget = state.gameConfig.highTarget;
     const contenders = state.players.filter((p) => !p.folded);
@@ -390,7 +393,7 @@ const PressYourLuckRules = (function () {
       if (sinkers.length) {
         payEvenSplit(state, sinkers, state.pot);
         state.results = { kitchenSink: true, winnerIds: sinkers, lowResults, highResults };
-        state.log.push(`Kitchen Sink! ${sinkers.map((id) => getPlayer(state, id).name).join(", ")} hit both targets exactly and take the whole pot.`);
+        state.log.push(`Kitchen Sink! ${sinkers.map((id) => getPlayer(state, id).name).join(", ")} hit both targets exactly and take the whole $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)} pot.`);
         state.pot = 0;
         return 0;
       }
@@ -404,17 +407,17 @@ const PressYourLuckRules = (function () {
 
     if (lowWinners.length) {
       payEvenSplit(state, lowWinners, lowShareChips);
-      state.log.push(`${lowWinners.map((id) => getPlayer(state, id).name).join(", ")} win the low half (closest to ${lowTarget}).`);
+      state.log.push(`${lowWinners.map((id) => getPlayer(state, id).name).join(", ")} win the $${ChipEconomy.chipsToDollars(lowShareChips).toFixed(2)} low half (closest to ${lowTarget}).`);
     } else {
       carried += lowShareChips;
-      state.log.push(`Nobody qualified for the low half — that share carries forward.`);
+      state.log.push(`Nobody qualified for the $${ChipEconomy.chipsToDollars(lowShareChips).toFixed(2)} low half — that share carries forward.`);
     }
     if (highWinners.length) {
       payEvenSplit(state, highWinners, highShareChips);
-      state.log.push(`${highWinners.map((id) => getPlayer(state, id).name).join(", ")} win the high half (closest to ${highTarget}).`);
+      state.log.push(`${highWinners.map((id) => getPlayer(state, id).name).join(", ")} win the $${ChipEconomy.chipsToDollars(highShareChips).toFixed(2)} high half (closest to ${highTarget}).`);
     } else {
       carried += highShareChips;
-      state.log.push(`Nobody qualified for the high half — that share carries forward.`);
+      state.log.push(`Nobody qualified for the $${ChipEconomy.chipsToDollars(highShareChips).toFixed(2)} high half — that share carries forward.`);
     }
 
     state.results = { kitchenSink: false, lowWinners, highWinners, lowResults, highResults };

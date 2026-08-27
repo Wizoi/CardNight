@@ -61,20 +61,26 @@ const TableUI333 = (function () {
     const communityLine = gvs.state.communityCards.length
       ? `<div><strong>Community (${gvs.state.communityCards.length}/${Rules333.TOTAL_ROUNDS}):</strong> ${gvs.state.communityCards.map((c) => cardMarkup(c, false)).join("")}</div>`
       : "";
+    // Once complete, state.pot is always 0 (already paid out) --
+    // potAtShowdown is captured pre-payout so the board keeps showing what
+    // was actually won instead of reading as "the pot vanished."
+    const potDisplay = gvs.state.status === "complete" ? gvs.state.potAtShowdown : gvs.state.pot;
     let resultLine = "";
     if (gvs.state.outrightWinnerIds) {
-      resultLine = `<div><strong>Outright winner(s):</strong> ${gvs.state.outrightWinnerIds.map((id) => Rules333.getPlayer(gvs.state, id).name).join(", ")}</div>`;
+      resultLine = `<div><strong>Outright winner(s):</strong> ${gvs.state.outrightWinnerIds.map((id) => Rules333.getPlayer(gvs.state, id).name).join(", ")} — ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>`;
     } else if (gvs.state.results) {
+      const lowShareChips = Math.floor(potDisplay / 2);
+      const highShareChips = potDisplay - lowShareChips;
       const lowNames = gvs.state.results.lowWinners.map((id) => Rules333.getPlayer(gvs.state, id).name);
       const highNames = gvs.state.results.highWinners.map((id) => Rules333.getPlayer(gvs.state, id).name);
       resultLine = `
-        <div><strong>Low (${Rules333.LOW_TARGET}):</strong> ${lowNames.length ? lowNames.join(", ") : "no qualifiers"}</div>
-        <div><strong>High (${Rules333.HIGH_TARGET}):</strong> ${highNames.length ? highNames.join(", ") : "no qualifiers"}</div>
+        <div><strong>Low (${Rules333.LOW_TARGET}, ${money(ChipEconomy.chipsToDollars(lowShareChips))}):</strong> ${lowNames.length ? lowNames.join(", ") : "no qualifiers — carries forward"}</div>
+        <div><strong>High (${Rules333.HIGH_TARGET}, ${money(ChipEconomy.chipsToDollars(highShareChips))}):</strong> ${highNames.length ? highNames.join(", ") : "no qualifiers — carries forward"}</div>
       `;
     }
     el.boardHand.innerHTML = `
       <div><strong>Targets:</strong> ${Rules333.LOW_TARGET} (low) / ${Rules333.HIGH_TARGET} (high)</div>
-      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(gvs.state.pot))}</div>
+      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>
       ${communityLine}
       ${resultLine}
     `;
