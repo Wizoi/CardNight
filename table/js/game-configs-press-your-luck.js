@@ -19,6 +19,11 @@ const FIVE_FIVE_TWENTYONE_CONFIG = {
   buyBack: null, // not a feature of this game at all
   kitchenSink: false,
   tieBreak: "fewestCards", // games.md's one explicit exception to the usual even-split-on-tie default
+  // Added 2026-08-26 after the user caught the same "documented but never
+  // built" gap 3-33 had: a real betting round right after the deal, then
+  // another after each full hit-or-stand lap. See rules-press-your-luck.js.
+  bettingEnabled: true,
+  consecutiveStandRoundsToEnd: 2, // games.md: "one more complete round of no-takers is required" after the first
 };
 
 const SEVEN_TWENTYSEVEN_CONFIG = {
@@ -46,4 +51,11 @@ const SEVEN_TWENTYSEVEN_CONFIG = {
   buyBack: { priceScheduleDollars: [1, 2, 3], maxBuys: 3 },
   kitchenSink: true, // exactly 7 for low AND exactly 27 for high at once wins the whole pot outright
   tieBreak: "split", // standard house default -- no exception documented for this game
+  // Confirmed by the user 2026-08-26 (games.md itself doesn't restate a
+  // betting field or ending condition for this game): real betting same
+  // as 5.5-21, but ending on just ONE round of nobody taking a card, not
+  // two -- and folding is still a real option even though nobody can
+  // bust under this game's noBust rule.
+  bettingEnabled: true,
+  consecutiveStandRoundsToEnd: 1,
 };

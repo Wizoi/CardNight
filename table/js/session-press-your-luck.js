@@ -1,9 +1,11 @@
 "use strict";
 
-// Orchestrates the shared PressYourLuckRules engine (5.5-21, 7-27). No
-// betting rounds at all (see rules-press-your-luck.js) -- the human's only
-// decisions are hit-or-stand each turn, plus an optional buy-back prompt
-// (7-27's up-cards only) right after being dealt one.
+// Orchestrates the shared PressYourLuckRules engine (5.5-21, 7-27). Both
+// games are bettingEnabled now (see rules-press-your-luck.js): a real
+// betting round right after the deal, and another after every full
+// hit-or-stand lap. The human's decisions are hit-or-stand each turn, an
+// optional buy-back prompt (7-27's up-cards only) right after being dealt
+// one, and fold/call/raise whenever a betting round is open.
 const SessionPressYourLuck = (function () {
   function create(config) {
     const DECIDE_DELAY_MS = 450;
@@ -104,8 +106,44 @@ const SessionPressYourLuck = (function () {
             continue;
           }
 
+          if (state.status === "betting") {
+            if (PressYourLuckRules.isBettingRoundOver(state)) {
+              PressYourLuckRules.advanceAfterBetting(state);
+              notify();
+              continue;
+            }
+            const bettorId = PressYourLuckRules.getCurrentBettor(state);
+            const bettor = PressYourLuckRules.getPlayer(state, bettorId);
+            if (bettor.isHuman) {
+              pending = { kind: "bet", playerId: bettorId };
+              notify();
+              return;
+            }
+            await sleep(DECIDE_DELAY_MS);
+            const profile = AIProfiles.profileFor(bettor.profileName);
+            const decision = PressYourLuckAIProfiles.decideBet(bettor, state, profile);
+            if (decision.action === "fold") maybeQuip(bettor, "fold");
+            else if (decision.action === "raise") maybeQuip(bettor, "raise");
+            PressYourLuckRules.submitBet(state, bettorId, decision.action, decision.raiseDollars);
+            notify();
+            continue;
+          }
+
           const playerId = PressYourLuckRules.currentDecisionPlayerId(state);
-          if (playerId == null) break; // currentDecisionPlayerId only returns null once state.status is already "complete"
+          if (playerId == null) continue;
+          // currentDecisionPlayerId's internal skip-cascade (auto-advancing
+          // past already-standing/folded players) can itself cross a lap
+          // boundary and flip state.status to "betting" (via advanceCursor,
+          // whenever gameConfig.bettingEnabled) -- not just to "complete".
+          // A bare `break` here used to abandon the hand entirely the
+          // instant that happened purely via skipping (as opposed to via an
+          // actual resolveHitOrStand call, which already loops back through
+          // the top of this while and picks the new status up correctly):
+          // the betting round was left freshly started with nobody ever
+          // asked to act, silently hanging the hand forever. `continue`
+          // lets the loop's own top-of-iteration status check route into
+          // the right branch instead ("betting", or the natural exit once
+          // status is genuinely "complete").
           const player = PressYourLuckRules.getPlayer(state, playerId);
           if (player.isHuman) {
             pending = { kind: "hitOrStand", playerId };
@@ -124,8 +162,10 @@ const SessionPressYourLuck = (function () {
             notify();
           }
         }
-        if (state && state.status === "complete" && !state.results) {
+        if (state && state.status === "complete" && !state.results && !state.outrightWinnerIds) {
           carriedPotChips = PressYourLuckRules.resolveShowdown(state);
+          finalizeComplete();
+        } else if (state && state.status === "complete" && state.outrightWinnerIds && !state.results) {
           finalizeComplete();
         }
       } finally {
@@ -134,7 +174,14 @@ const SessionPressYourLuck = (function () {
     }
 
     function finalizeComplete() {
-      const winnerIds = state.results.kitchenSink ? state.results.winnerIds : [...state.results.lowWinners, ...state.results.highWinners];
+      // An outright fold-out win (state.outrightWinnerIds) never runs
+      // resolveShowdown, so state.results stays null -- read the winner
+      // straight off state.winnerId instead in that case.
+      const winnerIds = state.outrightWinnerIds
+        ? state.outrightWinnerIds
+        : state.results.kitchenSink
+          ? state.results.winnerIds
+          : [...state.results.lowWinners, ...state.results.highWinners];
       const uniqueWinnerIds = [...new Set(winnerIds)];
       for (const id of uniqueWinnerIds) maybeQuip(PressYourLuckRules.getPlayer(state, id), "win");
       onHandComplete({ winnerId: uniqueWinnerIds[0] || null, rainedOut: false, potChips: 0 });
@@ -166,6 +213,15 @@ const SessionPressYourLuck = (function () {
       processLoop();
     }
 
+    function humanBet(action, raiseDollars) {
+      if (!pending || pending.kind !== "bet") return;
+      const { playerId } = pending;
+      PressYourLuckRules.submitBet(state, playerId, action, raiseDollars || 0);
+      pending = null;
+      notify();
+      processLoop();
+    }
+
     function getViewState() {
       return { gameId: gameConfig.id, players, dealerIndex, handNumber, state, pending, lastQuip };
     }
@@ -177,6 +233,7 @@ const SessionPressYourLuck = (function () {
       humanInitialBuyback,
       humanHitOrStand,
       humanBuyBack,
+      humanBet,
       getViewState,
     };
   }

@@ -85,6 +85,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 - **Goal:** Split pot — best hand closest to 5.5 wins half, best hand closest to 21 wins the other half. A player can aim for either target (target game, blackjack-style).
 - **Going over:** Players CANNOT go over either target — going over busts you out of contention for that half. (Contrast with 7-27, where going over is allowed.)
 - **Card values:** Face cards = 0.5, Ace = 1. All cards dealt face down.
+- **Betting:** Standard betting (50¢ ante, 25¢ raise increment, $2 max bet per person, house default) — a round right after the first card is dealt, then another after each full round where everyone gets to take a card or stand. A player who's busted on both sides has nothing left to play for and should fold rather than keep calling.
 - **Play:** Start with 1 card. Each round, players may take another card or pass.
 - **End condition:** Once a full round passes with nobody taking a card, one more complete round of no-takers is required before dealing ends.
 - **Tie-breaker:** If two or more players tie for the low (5.5) or high (21) side, the tied player holding the fewest cards wins that side of the pot.
@@ -97,6 +98,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 - **Ante:** 25¢ — half the usual 50¢ house default (see "House rule: chips & betting").
 - **Going over:** Players CAN go over either target and still win — going over does not disqualify a hand. (Contrast with 5.5-21, where going over busts you out.)
 - **Deal:** 1 card down, then 1 card up (with the option to buy the up-card back so it's hidden again).
+- **Betting:** Standard betting (25¢ ante as above, 25¢ raise increment, $2 max bet per person) — a round right after the initial deal (down + up), then another after each round where everyone gets to take another card or stand. Ends after just ONE round of nobody taking a card (unlike 5.5-21's two). Players can fold at any time, even though nobody can bust in this game.
 - **Additional cards:** Optional extra card each round after the initial deal.
 - **Card values:** Face cards = 0.5, Ace = 1 or 11 (free choice). A 10 counts as 10 by default; paying $1 gives it the flexible 0-or-10 choice instead. No fee for being dealt a card face up.
 - **Buy-back ("down the river"):** Escalating cost per card replaced, up to 3 total: $1 to replace a first card, $2 to replace a second card (both can happen within the same turn), then later in the game $3 to replace a third — after which the player is done, no more buy-backs allowed. "Use it or lose it" — must decide immediately when offered.

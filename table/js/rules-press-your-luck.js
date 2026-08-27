@@ -3,12 +3,19 @@
 // Shared engine for the "hit or stand against two numeric targets, split
 // the pot" games (5.5-21, 7-27) -- games.md's "Other" bucket entries that
 // score by card-value SUM rather than poker hand rank (see
-// target-sum-evaluator.js for the pure math). Distinct from every ante+bet
-// family elsewhere in this project: neither game's entry describes a
-// raise/call/fold betting round at all (no "raise increment"/"max bet"
-// field, unlike every stud/hold'em entry, which all state one explicitly),
-// so this is treated as ANTE-ONLY, same shape as the Guts family -- the
-// hit-or-stand decision itself is already the entire economic tension.
+// target-sum-evaluator.js for the pure math).
+//
+// gameConfig.bettingEnabled (both games, corrected 2026-08-26 after the
+// user caught the same "documented but never built" gap 3-33 had --
+// app/games-data.js's own `betting` field always described real betting
+// rounds): a standard call/raise/fold round right after the deal, then
+// another after each full lap where every active player gets to hit or
+// stand. `consecutiveStandRoundsToEnd` controls how many all-stand laps
+// in a row end the hand -- 2 for 5.5-21 (games.md's explicit "one more
+// complete round of no-takers"), 1 for 7-27 (confirmed by the user, not
+// restated in games.md's own entry). Folding is available in both even
+// though 7-27's `bustRule: 'noBust'` means nobody there ever actually
+// busts -- there's just no automatic "fold when busted" trigger for it.
 //
 // gameConfig shape:
 //   {
@@ -22,10 +29,15 @@
 //     buyBack: null | { priceScheduleDollars: number[], maxBuys: number },  // 7-27's "down the river"
 //     kitchenSink: bool,           // 7-27: hitting both targets exactly at once wins the WHOLE pot outright
 //     tieBreak: 'split' | 'fewestCards',  // 5.5-21 is the one exception to the usual even-split default
+//     bettingEnabled?: bool,       // 5.5-21: real call/raise/fold betting (see above); falsy elsewhere means ante-only
 //   }
 const PressYourLuckRules = (function () {
   function getPlayer(state, playerId) {
     return state.players.find((p) => p.id === playerId);
+  }
+
+  function activeCount(state) {
+    return state.players.filter((p) => !p.folded).length;
   }
 
   function drawCard(state) {
@@ -44,7 +56,7 @@ const PressYourLuckRules = (function () {
       p.hand = [];
       p.standing = false;
       p.buyBacksUsed = 0;
-      p.folded = false; // this family never folds -- kept only so shared render helpers elsewhere don't choke on a missing field
+      p.folded = false; // only actually usable when gameConfig.bettingEnabled -- ante-only games never fold
     }
 
     const state = {
@@ -54,6 +66,9 @@ const PressYourLuckRules = (function () {
       discardPile: [],
       pot: carriedPotChips || 0,
       anteDollars: gameConfig.anteDollars || settings.anteDollars,
+      raiseIncrementDollars: settings.raiseIncrementDollars,
+      maxBetDollars: settings.maxBetDollars,
+      bettingRound: null,
       dealOrder,
       turnCursor: 0,
       lapHitCount: 0,
@@ -62,6 +77,7 @@ const PressYourLuckRules = (function () {
       status: "dealingInitial",
       log: [],
       results: null,
+      winnerId: null,
     };
     state.pot += BettingEngine.collectAntes(players, state.anteDollars);
 
@@ -72,7 +88,14 @@ const PressYourLuckRules = (function () {
       }
     }
     const lastFaceUp = gameConfig.initialDeal.faceUp[gameConfig.initialDeal.faceUp.length - 1];
-    state.status = lastFaceUp && gameConfig.buyBack ? "dealingInitialBuyback" : "playing";
+    if (lastFaceUp && gameConfig.buyBack) {
+      state.status = "dealingInitialBuyback";
+    } else if (gameConfig.bettingEnabled) {
+      state.status = "betting";
+      startBettingRound(state);
+    } else {
+      state.status = "playing";
+    }
     return state;
   }
 
@@ -89,7 +112,14 @@ const PressYourLuckRules = (function () {
     if (willBuy) applyBuyBack(state, playerId);
     else state.log.push(`${getPlayer(state, playerId).name} keeps the card.`);
     state.initialBuybackCursor += 1;
-    if (state.initialBuybackCursor >= state.dealOrder.length) state.status = "playing";
+    if (state.initialBuybackCursor >= state.dealOrder.length) {
+      if (state.gameConfig.bettingEnabled) {
+        state.status = "betting";
+        startBettingRound(state);
+      } else {
+        state.status = "playing";
+      }
+    }
   }
 
   function applyBuyBack(state, playerId) {
@@ -108,34 +138,134 @@ const PressYourLuckRules = (function () {
   // --- Main hit-or-stand loop. Turn order is a repeating round-robin over
   // EVERY player (standing or not) so lap-completion bookkeeping stays
   // simple; a standing player is silently skipped rather than asked again.
-  // Ends once 2 consecutive full laps pass with zero hits (games.md's
-  // explicit rule for 5.5-21, applied to both games here for consistency,
-  // since 7-27's own entry doesn't restate an ending condition). ---
+  // Ends once `gameConfig.consecutiveStandRoundsToEnd` full laps pass with
+  // zero hits -- 2 for 5.5-21 (games.md's explicit rule: "one more
+  // complete round of no-takers is required"), 1 for 7-27 (confirmed by
+  // the user, not restated in games.md's own entry). Defaults to 2 if a
+  // game config doesn't set it. ---
 
+  // A lap that completes with the hand still going on: if betting is on,
+  // that's a genuine "everyone's had a chance to hit or stand" moment, so
+  // a betting round follows before the next lap (or before showdown, if
+  // this lap also happened to be the LAST consecutive stand round needed
+  // to end the hand).
   function advanceCursor(state) {
+    const roundsToEnd = state.gameConfig.consecutiveStandRoundsToEnd || 2;
     state.turnCursor += 1;
     if (state.turnCursor >= state.dealOrder.length) {
       state.turnCursor = 0;
       state.consecutiveStandRounds = state.lapHitCount === 0 ? state.consecutiveStandRounds + 1 : 0;
       state.lapHitCount = 0;
-      if (state.consecutiveStandRounds >= 2) state.status = "complete";
+      if (state.consecutiveStandRounds >= roundsToEnd) {
+        state.status = "complete";
+      } else if (state.gameConfig.bettingEnabled) {
+        state.status = "betting";
+        startBettingRound(state);
+      }
     }
   }
 
-  // Skips silently past already-standing players (each skip still advances
-  // the lap-completion bookkeeping), returning whichever player next
-  // genuinely needs a hit-or-stand decision, or null once the hand is over.
+  // Skips silently past already-standing OR already-folded players (each
+  // skip still advances the lap-completion bookkeeping), returning
+  // whichever player next genuinely needs a hit-or-stand decision, or null
+  // once the hand is over (or a betting round has opened).
   function currentDecisionPlayerId(state) {
     if (state.status !== "playing") return null;
     while (state.status === "playing") {
       const playerId = state.dealOrder[state.turnCursor];
-      if (getPlayer(state, playerId).standing) {
+      const player = getPlayer(state, playerId);
+      if (player.standing || player.folded) {
         advanceCursor(state);
         continue;
       }
       return playerId;
     }
     return null;
+  }
+
+  // --- Betting (5.5-21 only; 7-27 never sets gameConfig.bettingEnabled,
+  // so none of this ever runs for it) ---
+
+  function startBettingRound(state) {
+    const activeIds = state.dealOrder.filter((pid) => !getPlayer(state, pid).folded);
+    state.bettingRound = BettingEngine.startRound(activeIds);
+  }
+
+  function getCurrentBettor(state) {
+    if (!state.bettingRound) return null;
+    return BettingEngine.getCurrentBettor(state.bettingRound, (id) => getPlayer(state, id).folded);
+  }
+
+  function isBettingRoundOver(state) {
+    return getCurrentBettor(state) === null;
+  }
+
+  function maxRaiseDollars(state, playerId) {
+    const player = getPlayer(state, playerId);
+    return BettingEngine.maxRaiseDollars(state.bettingRound, playerId, {
+      maxBetDollars: state.maxBetDollars,
+      raiseIncrementDollars: state.raiseIncrementDollars,
+      walletChips: player.wallet.chips,
+    });
+  }
+
+  function foldPlayer(state, playerId) {
+    getPlayer(state, playerId).folded = true;
+  }
+
+  function submitBet(state, playerId, action, raiseDollars) {
+    const player = getPlayer(state, playerId);
+    const result = BettingEngine.submitBet(state.bettingRound, player, action, raiseDollars, {
+      raiseIncrementDollars: state.raiseIncrementDollars,
+      maxBetDollars: state.maxBetDollars,
+      walletChips: player.wallet.chips,
+    });
+    state.pot += result.paidChips;
+    if (action === "fold") {
+      foldPlayer(state, playerId);
+      state.log.push(`${player.name} folds.`);
+    } else if (action === "raise") {
+      state.log.push(`${player.name} raises to $${ChipEconomy.chipsToDollars(state.bettingRound.currentBetChips).toFixed(2)}.`);
+    } else {
+      state.log.push(result.paidChips > 0 ? `${player.name} calls.` : `${player.name} checks.`);
+    }
+    checkForInstantWin(state);
+  }
+
+  function checkForInstantWin(state) {
+    if (state.status === "complete") return;
+    if (activeCount(state) <= 1) {
+      const winner = state.players.find((p) => !p.folded);
+      state.bettingRound = null;
+      state.status = "complete";
+      state.winnerId = winner ? winner.id : null;
+      // Marks the hand as already resolved so the caller's "run showdown"
+      // fallback (triggered whenever status flips to complete with no
+      // results yet) doesn't also re-score everyone's hand and double-log
+      // a low/high split on top of this outright win.
+      state.outrightWinnerIds = winner ? [winner.id] : [];
+      if (winner) {
+        ChipEconomy.award(winner.wallet, state.pot);
+        state.log.push(`${winner.name} wins uncontested — takes the pot outright.`);
+        state.pot = 0;
+      }
+    }
+  }
+
+  // Called once a betting round closes: either the hand's already ending
+  // (the configured number of consecutive stand-laps was reached before
+  // this round even opened) -- in which case there's nothing left to do
+  // but let the caller run showdown -- or play continues into the next
+  // lap.
+  function advanceAfterBetting(state) {
+    if (state.status === "complete") return;
+    state.bettingRound = null;
+    const roundsToEnd = state.gameConfig.consecutiveStandRoundsToEnd || 2;
+    if (state.consecutiveStandRounds >= roundsToEnd) {
+      state.status = "complete";
+    } else {
+      state.status = "playing";
+    }
   }
 
   // Returns { dealtCard, needsBuyBack } -- the caller must resolve a
@@ -213,11 +343,12 @@ const PressYourLuckRules = (function () {
     state.status = "complete";
     const lowTarget = state.gameConfig.lowTarget;
     const highTarget = state.gameConfig.highTarget;
-    const lowResults = state.players.map((p) => ({ id: p.id, result: handSumResult(state, p, lowTarget) }));
-    const highResults = state.players.map((p) => ({ id: p.id, result: handSumResult(state, p, highTarget) }));
+    const contenders = state.players.filter((p) => !p.folded);
+    const lowResults = contenders.map((p) => ({ id: p.id, result: handSumResult(state, p, lowTarget) }));
+    const highResults = contenders.map((p) => ({ id: p.id, result: handSumResult(state, p, highTarget) }));
 
     if (state.gameConfig.kitchenSink) {
-      const sinkers = state.players
+      const sinkers = contenders
         .filter((p) => {
           const sums = TargetSumEvaluator.achievableSums(p.hand, state.gameConfig.cardValue);
           return sums.includes(lowTarget) && sums.includes(highTarget);
@@ -265,6 +396,11 @@ const PressYourLuckRules = (function () {
     currentDecisionPlayerId,
     resolveHitOrStand,
     resolveBuyBack,
+    getCurrentBettor,
+    isBettingRoundOver,
+    maxRaiseDollars,
+    submitBet,
+    advanceAfterBetting,
     handSumResult,
     resolveShowdown,
     getPlayer,
