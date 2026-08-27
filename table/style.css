@@ -273,22 +273,13 @@ header {
   color: var(--gold-soft);
 }
 
-#test-jump-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
+#jump-to-game-btn {
   font-size: 0.8rem;
-  color: var(--cream);
-  opacity: 0.85;
-}
-
-#test-jump-wrap select {
-  font: inherit;
-  border-radius: 6px;
-  border: 1px solid var(--gold);
+  padding: 0.3rem 0.7rem;
+  min-height: unset;
   background: var(--felt-dark);
-  color: var(--cream);
-  padding: 0.2rem 0.4rem;
+  color: var(--gold-soft);
+  border: 1px solid var(--gold);
 }
 
 #debug-toggle-label {
@@ -527,6 +518,13 @@ header {
   opacity: 0.8;
   font-style: italic;
   padding: 1rem 0;
+}
+
+#picker-cancel-btn {
+  margin-top: 1.25rem;
+  background: transparent;
+  color: var(--cream);
+  border: 1px solid var(--card-border);
 }
 
 .game-pick-card {

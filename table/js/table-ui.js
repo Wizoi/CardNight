@@ -30,6 +30,7 @@
   let lastShownQuipId = 0;
   let autoPickTimer = null;
   let cutForDealAutoTimer = null;
+  let jumpMode = false;
 
   function loadSetupPrefs() {
     try {
@@ -96,9 +97,7 @@
     el.cashoutBtn = document.getElementById("cashout-btn");
     el.historyBtn = document.getElementById("history-btn");
     el.changeGameBtn = document.getElementById("change-game-btn");
-    el.testJumpSelect = document.getElementById("test-jump-select");
-    el.testJumpSelect.innerHTML =
-      `<option value="">Jump to...</option>` + GameRegistry.list().map((g) => `<option value="${g.id}">${g.name}</option>`).join("");
+    el.jumpToGameBtn = document.getElementById("jump-to-game-btn");
 
     el.seats = document.getElementById("seats");
     el.boardHand = document.getElementById("board-hand");
@@ -118,6 +117,7 @@
 
     el.pickerHeading = document.getElementById("picker-heading");
     el.pickerMenu = document.getElementById("picker-menu");
+    el.pickerCancelBtn = document.getElementById("picker-cancel-btn");
   }
 
   let currentView = "setup";
@@ -350,13 +350,12 @@
     // stale hand-completion race with the new game.
     const canSwitchGames = !gvs || !gvs.state || gvs.state.status === "complete";
     el.changeGameBtn.disabled = !canSwitchGames;
-    // The testing jump is exempt from that guard on purpose -- it's a debug
-    // shortcut, not the in-fiction "Change game" flow, so jumping mid-hand is
-    // allowed and just abandons/resets whatever hand was in progress (the
-    // outgoing orchestrator's async loop naturally stops itself at its next
-    // human-decision checkpoint once nothing is left to call back into it).
-    el.testJumpSelect.disabled = false;
-    el.testJumpSelect.value = "";
+    // "Jump to game" is exempt from that guard on purpose -- it's a debug
+    // shortcut, not the in-fiction "Change game" flow, so jumping mid-hand
+    // is allowed and just abandons/resets whatever hand was in progress
+    // (the outgoing orchestrator's async loop naturally stops itself at
+    // its next human-decision checkpoint once nothing is left to call
+    // back into it). Always enabled -- nothing to reset here.
   }
 
   function renderLog(gvs) {
@@ -473,25 +472,41 @@
     }, 600);
   }
 
+  function gameCardsMarkup(gameList) {
+    return gameList
+      .map((g) => {
+        const data = gameDataFor(g.id);
+        const icon = data ? data.icon : "🎴";
+        const category = data ? data.category : "";
+        return `
+          <button type="button" class="game-pick-card" data-pick-game="${g.id}">
+            <span class="game-pick-icon">${icon}</span>
+            <span class="game-pick-name">${g.name}</span>
+            ${category ? `<span class="game-pick-category">${category}</span>` : ""}
+          </button>
+        `;
+      })
+      .join("");
+  }
+
+  // Jump mode reuses the exact same card-grid picker as the real in-fiction
+  // flow below, just without caring whose turn it actually is to pick --
+  // a debug/testing shortcut, usable anytime (including mid-hand, which
+  // abandons/resets whatever was in progress), not part of the normal
+  // cut-for-deal/rotation ceremony.
   function renderPicker(vs) {
+    if (jumpMode) {
+      el.pickerHeading.textContent = "Jump to a game (testing)";
+      el.pickerMenu.innerHTML = gameCardsMarkup(vs.gameList);
+      el.pickerCancelBtn.hidden = false;
+      return;
+    }
+    el.pickerCancelBtn.hidden = true;
     const pickerSeatId = vs.seatOrder[vs.currentPickerSeatIndex];
     const picker = vs.players.find((p) => p.id === pickerSeatId);
     if (picker.isHuman) {
       el.pickerHeading.textContent = "Pick the next game";
-      el.pickerMenu.innerHTML = vs.gameList
-        .map((g) => {
-          const data = gameDataFor(g.id);
-          const icon = data ? data.icon : "🎴";
-          const category = data ? data.category : "";
-          return `
-            <button type="button" class="game-pick-card" data-pick-game="${g.id}">
-              <span class="game-pick-icon">${icon}</span>
-              <span class="game-pick-name">${g.name}</span>
-              ${category ? `<span class="game-pick-category">${category}</span>` : ""}
-            </button>
-          `;
-        })
-        .join("");
+      el.pickerMenu.innerHTML = gameCardsMarkup(vs.gameList);
     } else {
       el.pickerHeading.textContent = `${picker.name} is picking the next game...`;
       el.pickerMenu.innerHTML = `<div class="picker-waiting">Waiting for ${picker.name} to choose&hellip;</div>`;
@@ -507,7 +522,7 @@
   // behavior) could silently auto-pick and yank the view to the table
   // before the player ever saw the picker screen at all.
   function maybeAutoPickForAI() {
-    if (currentView !== "picker" || TableNight.currentPickerIsHuman() || autoPickTimer) return;
+    if (currentView !== "picker" || jumpMode || TableNight.currentPickerIsHuman() || autoPickTimer) return;
     autoPickTimer = setTimeout(() => {
       autoPickTimer = null;
       TableNight.autoPickForAI();
@@ -541,7 +556,16 @@
       renderLog(gvs);
     }
 
-    if (vs.cutForDealState) {
+    // Jump mode can be entered at ANY point, including mid-hand while a
+    // game is already active -- renderPicker must run regardless of the
+    // cutForDealState/activeGameId gating the real in-fiction picker flow
+    // below relies on (which assumes the picker only ever shows up between
+    // games). Missing this meant the picker screen's own DOM went stale
+    // the instant jump mode set it visible mid-hand -- a real bug, caught
+    // live, not by guessing.
+    if (jumpMode) {
+      renderPicker(vs);
+    } else if (vs.cutForDealState) {
       renderCutForDeal(vs);
       if (vs.cutForDealState.status === "revealing") {
         maybeAutoRevealCutForDeal(vs);
@@ -647,6 +671,7 @@
       const btn = e.target.closest("[data-pick-game]");
       if (!btn) return;
       TableNight.chooseNextGame(btn.dataset.pickGame);
+      jumpMode = false;
       showView("table");
     });
 
@@ -656,16 +681,22 @@
       render(TableNight.getViewState());
     });
 
-    // Testing shortcut: jump straight into any registered game, bypassing
-    // the picker/rotation ceremony entirely -- for trying games out, not
-    // part of the normal in-fiction flow. Same between-hands guard as
-    // "Change game" (the select is disabled otherwise), for the same
-    // stale-async-loop reason.
-    el.testJumpSelect.addEventListener("change", () => {
-      const gameId = el.testJumpSelect.value;
-      if (!gameId) return;
-      TableNight.chooseNextGame(gameId);
+    // Testing shortcut: jump straight into any registered game via the
+    // same card-grid picker used for the real in-fiction flow, bypassing
+    // the picker/rotation ceremony (and whose turn it actually is)
+    // entirely. Unlike "Change game," this is deliberately usable anytime,
+    // including mid-hand -- jumping just abandons/resets whatever hand was
+    // in progress (see chooseNextGame's own comments for why that's safe).
+    el.jumpToGameBtn.addEventListener("click", () => {
+      jumpMode = true;
+      showView("picker");
+      render(TableNight.getViewState());
+    });
+
+    el.pickerCancelBtn.addEventListener("click", () => {
+      jumpMode = false;
       showView("table");
+      render(TableNight.getViewState());
     });
 
     el.historyBtn.addEventListener("click", () => {
