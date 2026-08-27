@@ -1,13 +1,12 @@
 "use strict";
 
-// Orchestrates 3-33. No player decisions exist at all -- every reveal's
-// discard resolution is fully mechanical -- so this session only manages
-// pacing: the human clicks to reveal each of the 5 community cards (or the
-// hand ends early via Ultima/an outright empty-hand win), same click-to-
-// advance rhythm every other game in this app uses for its own reveals.
+// Orchestrates 3-33. The only live decision is the usual fold/call/raise
+// -- one betting round after the deal, another after each of the 5
+// reveals. The reveal itself stays fully mechanical and human-paced (a
+// "Reveal next card" click), same rhythm as before.
 const Session333 = (function () {
   function create(config) {
-    const REVEAL_DELAY_MS = 500;
+    const BET_DELAY_MS = 450;
 
     const players = config.players;
     const settings = config.settings;
@@ -18,6 +17,11 @@ const Session333 = (function () {
     let handNumber = config.handNumber || 0;
     let carriedPotChips = config.carriedPotChips || 0;
     let state = null;
+    let running = false;
+
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
 
     function notify() {
       onUpdate(getViewState());
@@ -54,18 +58,64 @@ const Session333 = (function () {
       state = Rules333.createHandState(players, dealerIndex, settings, carriedPotChips);
       carriedPotChips = 0;
       notify();
-      if (state.status === "complete") finalizeComplete();
+      if (state.status === "complete") {
+        finalizeComplete();
+        return;
+      }
+      processLoop();
+    }
+
+    async function processLoop() {
+      if (running) return;
+      running = true;
+      try {
+        while (state && state.status === "betting") {
+          if (Rules333.isBettingRoundOver(state)) {
+            Rules333.advanceAfterBetting(state);
+            notify();
+            continue;
+          }
+          const bettorId = Rules333.getCurrentBettor(state);
+          const bettor = Rules333.getPlayer(state, bettorId);
+          if (bettor.isHuman) {
+            notify();
+            return;
+          }
+          await sleep(BET_DELAY_MS);
+          const profile = AIProfiles.profileFor(bettor.profileName);
+          const decision = Rules333AIProfiles.decideBet(bettor, state, profile);
+          Rules333.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
+          notify();
+        }
+      } finally {
+        running = false;
+      }
+      if (state && state.status === "complete") finalizeComplete();
+      // else: status is "revealing" -- pause here, waiting for the human's
+      // explicit "reveal next card" click.
+    }
+
+    function humanBet(action, raiseDollars) {
+      const human = getHuman();
+      if (!state.bettingRound || Rules333.getCurrentBettor(state) !== human.id) return;
+      Rules333.submitBet(state, human.id, action, raiseDollars || 0);
+      notify();
+      processLoop();
     }
 
     function humanRevealNext() {
       if (!state || Rules333.isRevealDone(state)) return;
       Rules333.revealNextCommunityCard(state);
       notify();
-      if (state.status === "complete") finalizeComplete();
+      if (state.status === "complete") {
+        finalizeComplete();
+        return;
+      }
+      processLoop();
     }
 
     function finalizeComplete() {
-      onHandComplete({ winnerId: null, rainedOut: false, potChips: 0 });
+      onHandComplete({ winnerId: state.winnerId, rainedOut: false, potChips: 0 });
     }
 
     function getViewState() {
@@ -76,6 +126,7 @@ const Session333 = (function () {
       startFirstHand,
       dealNextHand,
       canDealNextHand,
+      humanBet,
       humanRevealNext,
       getViewState,
     };
