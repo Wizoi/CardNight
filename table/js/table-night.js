@@ -67,7 +67,7 @@ const TableNight = (function () {
 
   function init(config, updateCallback) {
     onUpdate = updateCallback || (() => {});
-    dealMode = config.dealMode === "continuous" ? "continuous" : "dealersChoice";
+    dealMode = config.dealMode === "continuous" || config.dealMode === "humanChoice" ? config.dealMode : "dealersChoice";
     settings = {
       anteDollars: 0.5,
       raiseIncrementDollars: 0.25,
@@ -209,7 +209,13 @@ const TableNight = (function () {
     notify();
   }
 
+  // "My choice" mode (2026-08-29, user's explicit request): the human
+  // picks every game, every time -- the dealer button itself still rotates
+  // normally hand to hand (it's a separate concept from who's choosing the
+  // game), so this deliberately does NOT touch dealerIndex, just overrides
+  // who's asked on the picker screen.
   function currentPickerSeatId() {
+    if (dealMode === "humanChoice") return getHuman().id;
     return seatOrder[dealerIndex];
   }
 
@@ -418,7 +424,8 @@ const TableNight = (function () {
       settings,
       history,
       today,
-      currentPickerSeatIndex: dealerIndex, // the picker IS the upcoming dealer -- see currentPickerSeatId()
+      currentPickerSeatIndex: dealerIndex, // the picker IS the upcoming dealer -- see currentPickerSeatId() -- EXCEPT in "humanChoice" mode; use currentPickerSeatId below, not this, to find who's actually picking
+      currentPickerSeatId: currentPickerSeatId(),
       dealMode,
       cutForDealState,
       activeGameId,

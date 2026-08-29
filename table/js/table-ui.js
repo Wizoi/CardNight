@@ -641,8 +641,7 @@
       return;
     }
 
-    const pickerSeatId = vs.seatOrder[vs.currentPickerSeatIndex];
-    const picker = vs.players.find((p) => p.id === pickerSeatId);
+    const picker = vs.players.find((p) => p.id === vs.currentPickerSeatId);
     if (picker.isHuman) {
       el.pickerHeading.textContent = "Pick the next game";
       el.pickerMenu.innerHTML = gameCardsMarkup(vs.gameList);
@@ -683,10 +682,11 @@
   // alone in "continuous" mode (the old always-on behavior): pick once,
   // keep dealing the same game via "Deal next hand" until "Change game".
   function maybeSwapForNextDealerPick(el, vs) {
-    if (vs.dealMode !== "dealersChoice") return;
+    if (vs.dealMode !== "dealersChoice" && vs.dealMode !== "humanChoice") return;
     const dealBtn = el.actionPanel.querySelector("#deal-next-hand-btn");
     if (!dealBtn) return;
-    dealBtn.outerHTML = `<button data-pick-next-game>Next dealer picks the game →</button>`;
+    const label = vs.dealMode === "humanChoice" ? "Pick the next game →" : "Next dealer picks the game →";
+    dealBtn.outerHTML = `<button data-pick-next-game>${label}</button>`;
   }
 
   // Always refreshes content, regardless of which view is currently
