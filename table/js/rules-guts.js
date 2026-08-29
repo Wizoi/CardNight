@@ -271,15 +271,22 @@ const GutsRules = (function () {
   // Each loser independently matches the just-contested pot amount (not a
   // split share) to keep the cycle going — this is what makes the pot
   // escalate hand over hand. Capped at each loser's wallet, same all-in-short
-  // pattern ChipEconomy uses everywhere else in the project.
+  // pattern ChipEconomy uses everywhere else in the project. Four-Two-Two's
+  // optional "max loss per deal" (gameConfig.maxLossPerDealDollars) caps
+  // what a loser owes below the full pot match too, if set -- a genuine
+  // reduction in what gets carried forward, not just a wallet-affordability
+  // limit like the ChipEconomy.pay cap already provides.
   function collectLoserMatches(state) {
     if (state.noContest) return state.potAtShowdown;
+    const capChips = state.gameConfig.maxLossPerDealDollars
+      ? Math.min(state.potAtShowdown, ChipEconomy.dollarsToChips(state.gameConfig.maxLossPerDealDollars))
+      : state.potAtShowdown;
     let carried = 0;
     for (const loserId of state.loserIds) {
       const loser = getPlayer(state, loserId);
-      const { paid } = ChipEconomy.pay(loser.wallet, state.potAtShowdown);
+      const { paid } = ChipEconomy.pay(loser.wallet, capChips);
       carried += paid;
-      state.log.push(`${loser.name} matches the pot ($${ChipEconomy.chipsToDollars(state.potAtShowdown).toFixed(2)}) to keep the game going.`);
+      state.log.push(`${loser.name} matches ${capChips < state.potAtShowdown ? "the max loss" : "the pot"} ($${ChipEconomy.chipsToDollars(capChips).toFixed(2)}) to keep the game going.`);
     }
     return carried;
   }

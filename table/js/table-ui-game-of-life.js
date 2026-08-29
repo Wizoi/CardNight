@@ -7,6 +7,7 @@
 const TableUIGameOfLife = (function () {
   function cardMarkup(card, faceDown) {
     if (faceDown) return `<div class="card card-back"></div>`;
+    if (card.rank === "JOKER") return `<div class="card card-black">${Deck.cardLabel(card)}<span class="wild-tag">W</span></div>`;
     const red = card.suit === "H" || card.suit === "D";
     return `<div class="card ${red ? "card-red" : "card-black"}">${Deck.cardLabel(card)}</div>`;
   }
@@ -33,7 +34,7 @@ const TableUIGameOfLife = (function () {
             : "";
         let debugLine = "";
         if (peekAi && !p.isHuman && gvs.state && !revealed) {
-          const cards = p.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: false }));
+          const cards = p.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: c.rank === "JOKER" }));
           const hand = HandEvaluator.evaluatePartial(cards);
           debugLine = `<div class="seat-debug">AI's actual hand: ${HandEvaluator.describe(hand)} (${p.hand.length} cards)</div>`;
         }

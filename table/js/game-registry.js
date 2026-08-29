@@ -32,6 +32,34 @@ const GameRegistry = (function () {
     return choices;
   }
 
+  // Free Enterprise's two documented price scales -- defined once so a
+  // variantOptions choice's `value` and its `default` can be the exact same
+  // object reference (variantFormMarkup/describeVariantChoice compare with
+  // ===, not deep equality).
+  const FREE_ENTERPRISE_STANDARD_PRICES = { priceScheduleDollars: [1, 2, 3], finalRoundMultiplier: 2 };
+  const FREE_ENTERPRISE_CHEAP_PRICES = { priceScheduleDollars: [0.5, 1, 1.5], finalRoundMultiplier: 2 };
+
+  // games.md's "House rule: playing with Jokers" -- dealer's choice to add
+  // 1 or 2 Jokers to the deck as extra wildcards, for the specific games
+  // games.md names as having no dedicated wildcard mechanic of their own
+  // (Cincinnati, Criss Cross, Free Enterprise, Anaconda, Game of Life, Pair
+  // of Jacks Trips to Win). Shared across all 6 entries below rather than
+  // duplicated -- `key: "jokerCount"` matches the gameConfig field name
+  // (Cincinnati/Criss Cross/Free Enterprise) read by Deck.buildDeck, or is
+  // read directly off config.variantChoices by the 3 games below that have
+  // no gameConfig object of their own (Anaconda, Game of Life, Pair of
+  // Jacks Trips to Win).
+  const JOKER_COUNT_VARIANT_OPTION = {
+    key: "jokerCount",
+    label: "Jokers in the deck (extra wildcards)",
+    choices: [
+      { value: 0, label: "None" },
+      { value: 1, label: "1 Joker" },
+      { value: 2, label: "2 Jokers" },
+    ],
+    default: 0,
+  };
+
   const games = {
     midnightBaseball: {
       id: "midnightBaseball",
@@ -49,19 +77,53 @@ const GameRegistry = (function () {
       id: "rainyDayBaseball",
       name: "Rainy Day Baseball",
       uiFamily: "stud",
-      createOrchestrator: (config) => SessionStud.create({ ...config, gameConfig: RAINY_DAY_BASEBALL_CONFIG }),
+      variantOptions: [
+        {
+          key: "rainOutScope",
+          label: "Rain-out scope",
+          choices: [
+            { value: undefined, label: "Whole hand rains out (base rule)" },
+            { value: "dealtPlayerOnly", label: `"Once you're out, you're out" — only the dealt player is eliminated` },
+          ],
+          default: undefined,
+        },
+      ],
+      createOrchestrator: (config) => SessionStud.create({ ...config, gameConfig: applyVariants(RAINY_DAY_BASEBALL_CONFIG, config.variantChoices) }),
     },
     freeEnterprise: {
       id: "freeEnterprise",
       name: "Free Enterprise",
       uiFamily: "stud",
-      createOrchestrator: (config) => SessionStud.create({ ...config, gameConfig: FREE_ENTERPRISE_CONFIG }),
+      variantOptions: [
+        {
+          key: "enterprisePile",
+          label: "Enterprise pile price scale",
+          choices: [
+            { value: FREE_ENTERPRISE_STANDARD_PRICES, label: "$1 / $2 / $3 by position" },
+            { value: FREE_ENTERPRISE_CHEAP_PRICES, label: "Cheaper: $0.50 / $1 / $1.50 by position" },
+          ],
+          default: FREE_ENTERPRISE_STANDARD_PRICES,
+        },
+        JOKER_COUNT_VARIANT_OPTION,
+      ],
+      createOrchestrator: (config) => SessionStud.create({ ...config, gameConfig: applyVariants(FREE_ENTERPRISE_CONFIG, config.variantChoices) }),
     },
     followTheQueen: {
       id: "followTheQueen",
       name: "Follow the Queen",
       uiFamily: "stud",
-      createOrchestrator: (config) => SessionStud.create({ ...config, gameConfig: FOLLOW_THE_QUEEN_CONFIG }),
+      variantOptions: [
+        {
+          key: "lowChicago",
+          label: "Low Chicago (best spade in the hole)",
+          choices: [
+            { value: false, label: "Off" },
+            { value: true, label: "On — best concealed spade splits the pot" },
+          ],
+          default: false,
+        },
+      ],
+      createOrchestrator: (config) => SessionStud.create({ ...config, gameConfig: applyVariants(FOLLOW_THE_QUEEN_CONFIG, config.variantChoices) }),
     },
     sevenAndWhatMakesIt: {
       id: "sevenAndWhatMakesIt",
@@ -79,7 +141,18 @@ const GameRegistry = (function () {
       id: "mexicanSweat",
       name: "Mexican Sweat",
       uiFamily: "mexicanSweat",
-      createOrchestrator: (config) => SessionMexicanSweat.create({ ...config, gameConfig: MEXICAN_SWEAT_CONFIG }),
+      variantOptions: [
+        {
+          key: "flipWildcard",
+          label: "Wildcard",
+          choices: [
+            { value: true, label: "Flip a wildcard rank for the hand" },
+            { value: false, label: "None (dealer's choice off)" },
+          ],
+          default: true,
+        },
+      ],
+      createOrchestrator: (config) => SessionMexicanSweat.create({ ...config, gameConfig: applyVariants(MEXICAN_SWEAT_CONFIG, config.variantChoices) }),
     },
     cincinnati: {
       id: "cincinnati",
@@ -95,6 +168,7 @@ const GameRegistry = (function () {
           ],
           default: null,
         },
+        JOKER_COUNT_VARIANT_OPTION,
       ],
       createOrchestrator: (config) => SessionCommunityStud.create({ ...config, gameConfig: applyVariants(CINCINNATI_CONFIG, config.variantChoices) }),
     },
@@ -112,6 +186,16 @@ const GameRegistry = (function () {
           ],
           default: null,
         },
+        {
+          key: "hiLo",
+          label: "Hi-lo",
+          choices: [
+            { value: false, label: "Off (high hand only)" },
+            { value: true, label: "On — best qualifying low (from your high hand's arm) splits the pot" },
+          ],
+          default: false,
+        },
+        JOKER_COUNT_VARIANT_OPTION,
       ],
       createOrchestrator: (config) => SessionCommunityStud.create({ ...config, gameConfig: applyVariants(CRISS_CROSS_CONFIG, config.variantChoices) }),
     },
@@ -137,13 +221,44 @@ const GameRegistry = (function () {
       id: "threeBuyFive",
       name: "3 Buy 5 / 5 Buy 5",
       uiFamily: "guts",
-      createOrchestrator: (config) => SessionGuts.create({ ...config, gameConfig: THREE_BUY_FIVE_CONFIG }),
+      variantOptions: [
+        {
+          key: "dealSize",
+          label: "Deal size",
+          choices: [
+            { value: threeBuyFiveDealSizeFive, label: "5 cards (5 Buy 5)" },
+            { value: threeBuyFiveDealSizeThree, label: "3 cards (3 Buy 5)" },
+          ],
+          default: threeBuyFiveDealSizeFive,
+        },
+        {
+          key: "wildRanks",
+          label: "Extra wildcards (on top of the always-wild 5s)",
+          choices: [
+            { value: THREE_BUY_FIVE_WILD_5S_ONLY, label: "None" },
+            { value: THREE_BUY_FIVE_WILD_5S_AND_2S, label: "2s also wild" },
+          ],
+          default: THREE_BUY_FIVE_WILD_5S_ONLY,
+        },
+      ],
+      createOrchestrator: (config) => SessionGuts.create({ ...config, gameConfig: applyVariants(THREE_BUY_FIVE_CONFIG, config.variantChoices) }),
     },
     fourTwoTwo: {
       id: "fourTwoTwo",
       name: "Four-Two-Two",
       uiFamily: "guts",
-      createOrchestrator: (config) => SessionGuts.create({ ...config, gameConfig: FOUR_TWO_TWO_CONFIG }),
+      variantOptions: [
+        {
+          key: "maxLossPerDealDollars",
+          label: "Max loss per deal",
+          choices: [
+            { value: undefined, label: "None (match the full pot every time)" },
+            { value: 5, label: "$5 cap" },
+          ],
+          default: undefined,
+        },
+      ],
+      createOrchestrator: (config) => SessionGuts.create({ ...config, gameConfig: applyVariants(FOUR_TWO_TWO_CONFIG, config.variantChoices) }),
     },
     threeFiveSeven: {
       id: "threeFiveSeven",
@@ -209,18 +324,32 @@ const GameRegistry = (function () {
       id: "gameOfLife",
       name: "Game of Life",
       uiFamily: "gameOfLife",
+      variantOptions: [JOKER_COUNT_VARIANT_OPTION],
       createOrchestrator: (config) => SessionGameOfLife.create(config),
     },
     pairOfJacksTripsToWin: {
       id: "pairOfJacksTripsToWin",
       name: "Pair of Jacks, Trips to Win",
       uiFamily: "drawPoker",
+      variantOptions: [JOKER_COUNT_VARIANT_OPTION],
       createOrchestrator: (config) => SessionDrawPoker.create(config),
     },
     anaconda: {
       id: "anaconda",
       name: "Anaconda (Pass the Trash)",
       uiFamily: "anaconda",
+      variantOptions: [
+        {
+          key: "hiLo",
+          label: "Hi-lo",
+          choices: [
+            { value: false, label: "Off (high hand only)" },
+            { value: true, label: "On — best qualifying low splits the pot" },
+          ],
+          default: false,
+        },
+        JOKER_COUNT_VARIANT_OPTION,
+      ],
       createOrchestrator: (config) => SessionAnaconda.create(config),
     },
   };

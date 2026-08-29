@@ -10,13 +10,28 @@ const Deck = (function () {
     map[rank] = i + 2;
     return map;
   }, {});
+  // A Joker is never a real rank to compare against another card by value --
+  // but a few AI heuristics (e.g. Anaconda's discard-the-lowest sort) look
+  // up Deck.RANK_VALUES[card.rank] on EVERY card, wild or not, to decide
+  // what to keep. Registering a value one above Ace here means those
+  // heuristics naturally treat a Joker as the best card in hand (never
+  // discarded first) without each caller needing its own Joker special-case.
+  RANK_VALUES.JOKER = RANK_VALUES.A + 1;
 
-  function buildDeck() {
+  // games.md's "House rule: playing with Jokers" -- dealer's choice to add
+  // 1 or 2 Jokers to the deck as extra wildcards, for the handful of games
+  // that have no dedicated wildcard mechanic of their own (see
+  // game-registry.js's jokerCount variantOptions). `jokerCount` defaults to
+  // 0 (a plain 52-card deck) for every game that doesn't opt in.
+  function buildDeck(jokerCount) {
     const cards = [];
     for (const suit of SUITS) {
       for (const rank of RANKS) {
         cards.push({ rank, suit, value: RANK_VALUES[rank] });
       }
+    }
+    for (let i = 0; i < (jokerCount || 0); i++) {
+      cards.push({ rank: "JOKER", suit: null, value: RANK_VALUES.JOKER });
     }
     return cards;
   }
@@ -31,6 +46,7 @@ const Deck = (function () {
   }
 
   function cardLabel(card) {
+    if (card.rank === "JOKER") return "Joker";
     return `${card.rank}${SUIT_SYMBOLS[card.suit] || card.suit}`;
   }
 

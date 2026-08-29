@@ -26,7 +26,11 @@ const CommunityStudRules = (function () {
     return state.players.filter((p) => !p.folded).length;
   }
 
+  // A Joker (games.md's "House rule: playing with Jokers" -- Cincinnati and
+  // Criss Cross both have no fixed wildcard by default, so a dealer's-choice
+  // Joker or two fits cleanly) is wild regardless of wildcardMode.
   function isCardWild(state, card) {
+    if (card.rank === "JOKER") return true;
     return state.wildRank != null && card.rank === state.wildRank;
   }
 
@@ -39,7 +43,7 @@ const CommunityStudRules = (function () {
   }
 
   function createHandState(players, dealerIndex, settings, handNumber, gameConfig) {
-    const deck = Deck.shuffle(Deck.buildDeck());
+    const deck = Deck.shuffle(Deck.buildDeck(gameConfig.jokerCount));
     let cursor = 0;
     for (const p of players) {
       p.hand = deck.slice(cursor, cursor + gameConfig.holeCards).map((c) => ({ rank: c.rank, suit: c.suit, faceUp: false }));
@@ -135,26 +139,66 @@ const CommunityStudRules = (function () {
   // independently and keeps the best. Only REVEALED cards in an arm are
   // usable, so this naturally reflects partial information mid-hand and
   // the full arms once every community card is up by showdown.
-  function crissCrossHandConstruction(state, player) {
+  //
+  // Returns the best {high, low, arm} per arm -- `low` is null if that
+  // arm's cards don't yield a qualifying (8-or-under) low hand. Shared by
+  // crissCrossHandConstruction (high only) and the hi-lo path below, which
+  // needs to know WHICH arm produced the winning high hand (games.md: a
+  // player going for both high and low must use the same single arm for
+  // both, not mix -- since this app has no manual declare step the way a
+  // real table would, the low entry is simply locked to whichever arm
+  // produced that player's best high hand, the one deterministic reading
+  // of "same arm for both" that needs no extra UI).
+  function crissCrossBestByArm(state, player) {
     const myHole = holeCards(state, player);
-    const arms = [state.gameConfig.arms.horizontal, state.gameConfig.arms.vertical];
-    let best = null;
-    for (const armIndices of arms) {
-      const armCards = armIndices
+    const arms = [
+      { name: "horizontal", indices: state.gameConfig.arms.horizontal },
+      { name: "vertical", indices: state.gameConfig.arms.vertical },
+    ];
+    const results = [];
+    for (const arm of arms) {
+      const armCards = arm.indices
         .filter((i) => state.communityCards[i].revealed)
         .map((i) => ({ rank: state.communityCards[i].rank, suit: state.communityCards[i].suit, isWild: isCardWild(state, state.communityCards[i]) }));
+      let bestHigh = null;
+      let bestLow = null;
       for (let h = 2; h <= 4; h++) {
         const armCount = 5 - h;
         if (armCount < 1 || armCount > armCards.length) continue;
         for (const holeCombo of combinations(myHole, h)) {
           for (const armCombo of combinations(armCards, armCount)) {
-            const evaluated = HandEvaluator.bestHand(holeCombo.concat(armCombo));
-            if (best == null || HandEvaluator.isBetter(evaluated, best)) best = evaluated;
+            const five = holeCombo.concat(armCombo);
+            const evaluated = HandEvaluator.bestHand(five);
+            if (bestHigh == null || HandEvaluator.isBetter(evaluated, bestHigh)) bestHigh = evaluated;
+            if (state.gameConfig.hiLo) {
+              const low = HandEvaluator.bestLow([five]);
+              if (low && (bestLow == null || HandEvaluator.isBetterLow(low, bestLow))) bestLow = low;
+            }
           }
         }
       }
+      if (bestHigh) results.push({ arm: arm.name, high: bestHigh, low: bestLow });
+    }
+    return results;
+  }
+
+  function crissCrossHandConstruction(state, player) {
+    const byArm = crissCrossBestByArm(state, player);
+    let best = null;
+    for (const r of byArm) {
+      if (best == null || HandEvaluator.isBetter(r.high, best)) best = r.high;
     }
     return best || { category: -1, categoryName: "No cards", tiebreakers: [] };
+  }
+
+  // Hi-lo entry for Criss Cross: the low hand must come from the SAME arm
+  // that produced this player's best HIGH hand (see crissCrossBestByArm) --
+  // not the best low achievable from either arm independently.
+  function crissCrossLowForBestHighArm(state, player) {
+    const byArm = crissCrossBestByArm(state, player);
+    if (!byArm.length) return null;
+    const bestHighEntry = byArm.reduce((best, r) => (best == null || HandEvaluator.isBetter(r.high, best.high) ? r : best), null);
+    return bestHighEntry.low;
   }
 
   function foldPlayer(state, playerId) {
@@ -228,6 +272,10 @@ const CommunityStudRules = (function () {
 
   function resolveShowdown(state) {
     if (state.status === "complete") return;
+    if (state.gameConfig.hiLo) {
+      resolveShowdownWithHiLo(state);
+      return;
+    }
     let winnerId = null;
     let bestHand = null;
     for (const p of state.players) {
@@ -239,6 +287,72 @@ const CommunityStudRules = (function () {
       }
     }
     completeHand(state, winnerId);
+  }
+
+  function payEvenSplitChips(state, winnerIds, totalChips) {
+    if (winnerIds.length === 0 || totalChips === 0) return;
+    const share = Math.floor(totalChips / winnerIds.length);
+    const remainder = totalChips - share * winnerIds.length;
+    winnerIds.forEach((id, i) => {
+      const player = getPlayer(state, id);
+      ChipEconomy.award(player.wallet, share + (i < remainder ? 1 : 0));
+    });
+  }
+
+  // Criss Cross's optional hi-lo (games.md: "Playable hi-lo. A player
+  // declaring 'both' must use the same single arm for both their high and
+  // low hands" -- documented for years but never implemented, a real gap
+  // surfaced 2026-08-29 alongside Follow the Queen's Low Chicago). Modeled
+  // the same way rules-holdem.js's hi-lo split and rules-stud.js's new Low
+  // Chicago split already work in this codebase: half the pot to the best
+  // high hand, half to the best qualifying low, falling back to awarding
+  // the whole pot to high alone if nobody has a qualifying low. Each
+  // player's low entry is locked to the arm that produced THEIR OWN best
+  // high hand (state.gameConfig.lowHandConstruction), the one deterministic
+  // reading of "same arm for both" that needs no manual declare step.
+  function resolveShowdownWithHiLo(state) {
+    const live = state.players.filter((p) => !p.folded);
+    const highResults = live.map((p) => ({ id: p.id, hand: evaluateBestHand(state, p) }));
+    const bestHigh = highResults.reduce((best, r) => (best == null || HandEvaluator.isBetter(r.hand, best) ? r.hand : best), null);
+    const highWinnerIds = highResults.filter((r) => HandEvaluator.compareEvaluated(r.hand, bestHigh) === 0).map((r) => r.id);
+
+    const lowResults = live
+      .map((p) => ({ id: p.id, low: state.gameConfig.lowHandConstruction(state, p) }))
+      .filter((r) => r.low != null);
+    let lowWinnerIds = [];
+    let bestLow = null;
+    if (lowResults.length) {
+      bestLow = lowResults.reduce((best, r) => (best == null || HandEvaluator.isBetterLow(r.low, best) ? r.low : best), null);
+      lowWinnerIds = lowResults.filter((r) => JSON.stringify(r.low.ranks) === JSON.stringify(bestLow.ranks)).map((r) => r.id);
+    }
+
+    const potChips = state.pot;
+    state.potAtShowdown = potChips;
+    state.pot = 0;
+    state.status = "complete";
+    state.bettingRound = null;
+    state.winnerId = highWinnerIds[0] || null; // back-compat single-winner field, same convention rules-holdem.js/rules-stud.js use
+    state.highWinnerIds = highWinnerIds;
+    state.lowWinnerIds = lowWinnerIds;
+
+    if (lowWinnerIds.length > 0) {
+      const lowHalf = Math.floor(potChips / 2);
+      const highHalf = potChips - lowHalf;
+      payEvenSplitChips(state, highWinnerIds, highHalf);
+      payEvenSplitChips(state, lowWinnerIds, lowHalf);
+      state.log.push(
+        `High: ${highWinnerIds.map((id) => getPlayer(state, id).name).join(", ")} with ${HandEvaluator.describe(bestHigh)}. Low: ${lowWinnerIds
+          .map((id) => getPlayer(state, id).name)
+          .join(", ")} with ${HandEvaluator.describeLow(bestLow)}. Pot: $${ChipEconomy.chipsToDollars(potChips).toFixed(2)}.`
+      );
+    } else {
+      payEvenSplitChips(state, highWinnerIds, potChips);
+      state.log.push(
+        `${highWinnerIds.map((id) => getPlayer(state, id).name).join(", ")} win${highWinnerIds.length === 1 ? "s" : ""} the $${ChipEconomy.chipsToDollars(potChips).toFixed(
+          2
+        )} pot with ${HandEvaluator.describe(bestHigh)} — no qualifying low.`
+      );
+    }
   }
 
   // Advances from the current phase (or completed betting round) to the
@@ -261,8 +375,10 @@ const CommunityStudRules = (function () {
     isRevealComplete,
     revealNextCommunityCard,
     evaluateBestHand,
+    holeCards,
     cincinnatiHandConstruction,
     crissCrossHandConstruction,
+    crissCrossLowForBestHighArm,
     startBettingRound,
     getCurrentBettor,
     isBettingRoundOver,

@@ -21,8 +21,11 @@ const RulesDrawPoker = (function () {
     return state.players.filter((p) => !p.folded).length;
   }
 
+  // A Joker (games.md's "House rule: playing with Jokers" -- our one 5-card
+  // draw game; a Joker in your dealt hand or drawn later is wild like any
+  // other card) is wild wherever it lands.
   function evaluateHand(hand) {
-    return HandEvaluator.bestHand(hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: false })));
+    return HandEvaluator.bestHand(hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: c.rank === "JOKER" })));
   }
 
   function qualifiesToOpen(evaluated) {
@@ -43,8 +46,8 @@ const RulesDrawPoker = (function () {
       .map((p) => p.id);
   }
 
-  function createHandState(players, dealerIndex, settings, carriedPotChips) {
-    const deck = Deck.shuffle(Deck.buildDeck());
+  function createHandState(players, dealerIndex, settings, carriedPotChips, jokerCount) {
+    const deck = Deck.shuffle(Deck.buildDeck(jokerCount));
     let cursor = 0;
     for (const p of players) {
       p.hand = deck.slice(cursor, cursor + 5).map((c) => ({ rank: c.rank, suit: c.suit }));

@@ -481,12 +481,11 @@ const GAMES = [
     players: { min: 5, max: 8 },
     before: [
       "Pick tonight's variant: Omaha, Seattle, Boise, or Jersey Hold'em (New)",
-      "Decide if the hi-lo split (best qualifying low, 8-or-under) is on",
     ],
     betting: `Blinds: $0.50 small / $1 big. No ante, no max bet — standard hold'em raise rules apply (minimum raise = size of the previous bet/raise).`,
     setup: `Deal hole cards face down to each player — 4 for Omaha/Seattle/Boise, 5 for Jersey Hold'em. Standard shared community board.`,
     gameplay: `Standard Texas Hold'em betting rounds — pre-flop, flop, turn, river — with a $0.50 small blind / $1 big blind and no cap on bet size. Hand construction depends on the chosen variant: Omaha uses 2 from hand + 3 from the board; Seattle uses 3 from hand + 2 from the board; Boise and Jersey Hold'em let the player choose 2-and-3 or 3-and-2 at showdown.`,
-    win: `Best 5-card hand, built per the variant's construction rule, wins. If hi-lo is on: low hand is five unpaired cards, each 8 or under — straights and flushes don't count against it, only rank matters. Aces count low, so A-2-3-4-5 is the best possible low (and can double as a straight for high). Built with the same hand/board split as high, but not necessarily the same five cards. No qualifying low among anyone, and the high hand takes the whole pot — a hand can also scoop both halves if it's best on both sides.`,
+    win: `Best 5-card hand, built per the variant's construction rule, wins. Hi-lo is on by default: low hand is five unpaired cards, each 8 or under — straights and flushes don't count against it, only rank matters. Aces count low, so A-2-3-4-5 is the best possible low (and can double as a straight for high). Built with the same hand/board split as high, but not necessarily the same five cards. No qualifying low among anyone, and the high hand takes the whole pot — a hand can also scoop both halves if it's best on both sides.`,
     keyDecisions: [
       "Standard hold'em betting each street",
       "For Boise/Jersey Hold'em: which 2-or-3 split to use — decided at showdown, not before",

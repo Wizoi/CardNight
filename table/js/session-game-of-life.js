@@ -17,6 +17,7 @@ const SessionGameOfLife = (function () {
     const dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
     let carriedPotChips = config.carriedPotChips || 0;
+    const jokerCount = (config.variantChoices && config.variantChoices.jokerCount) || 0;
     let state = null;
     let pending = null; // {kind: 'flipChoice', playerId}
     let running = false;
@@ -75,7 +76,7 @@ const SessionGameOfLife = (function () {
     function beginHand() {
       topUpAIWalletsIfNeeded();
       handNumber += 1;
-      state = RulesGameOfLife.createHandState(players, dealerIndex, settings, carriedPotChips);
+      state = RulesGameOfLife.createHandState(players, dealerIndex, settings, carriedPotChips, jokerCount);
       carriedPotChips = 0;
       pending = null;
       notify();

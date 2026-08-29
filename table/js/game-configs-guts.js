@@ -58,22 +58,44 @@ const DEEP_OR_DOUBLE_SCREW_CONFIG = {
   // underspecified rule as not applicable rather than guessing its shape.
 };
 
+// 2026-08-29: 3 Buy 5 / 5 Buy 5's two documented dealer's-choice options
+// (deal size, and an extra wildcard rank on top of the always-wild 5s) are
+// now real `variantOptions` (see game-registry.js) instead of fixed-forever
+// judgment calls. dealSize functions and wildRanks arrays are named consts
+// here (not inlined into the registry) so a variantOptions choice's `value`
+// can be the exact same reference as THREE_BUY_FIVE_CONFIG's own default
+// field -- variantFormMarkup/describeVariantChoice compare with ===.
+function threeBuyFiveDealSizeFive() {
+  return 5;
+}
+function threeBuyFiveDealSizeThree() {
+  return 3;
+}
+const THREE_BUY_FIVE_WILD_5S_ONLY = ["5"];
+// games.md doesn't specify a shape for "plus optional additional
+// wildcards" -- 2s wild alongside the always-wild 5s is picked as a
+// concrete, reasonably tame default for the "on" choice (a judgment call,
+// same as the exchange price below).
+const THREE_BUY_FIVE_WILD_5S_AND_2S = ["5", "2"];
+
 const THREE_BUY_FIVE_CONFIG = {
   id: "threeBuyFive",
   name: "3 Buy 5 / 5 Buy 5",
   // games.md offers "3 or 5 cards" as two variants, dealer's choice; the
-  // 5-card version is picked as the concrete default here (a normal
-  // 5-card poker hand), leaving the 3-card variant as a documented gap.
-  dealSize() {
-    return 5;
-  },
-  wildRanks: ["5"], // "5s are always wild" -- the base rule; games.md's "plus optional additional wildcards" isn't implemented (dealer's choice, no fixed shape given)
+  // 5-card version is picked as the concrete default (a normal 5-card
+  // poker hand). Now a real variantOptions choice -- see game-registry.js.
+  dealSize: threeBuyFiveDealSizeFive,
+  wildRanks: THREE_BUY_FIVE_WILD_5S_ONLY, // "5s are always wild" -- the base rule; the optional extra wildcard is a variantOptions choice (see game-registry.js)
   exchangePriceDollars: 1, // games.md says "dealer-set price" without a number -- a judgment call
   loserPolicy: "allNonWinners",
   // A bare pair happens close to half the time in a random 5-card hand --
   // shift the stay-in bar up one category so "stay in" stays a genuine
   // signal rather than something most hands clear. See
-  // ai-guts-profiles.js's decideStayIn.
+  // ai-guts-profiles.js's decideStayIn. The 3-card deal-size variant keeps
+  // this same shift rather than a separately-tuned value -- a smaller hand
+  // with 5s (and optionally 2s) wild still collides into a pair often
+  // enough that the same one-category bump is a reasonable starting point;
+  // not empirically re-swept the way Deep or Double Screw's shift was.
   categoryShift: 1,
 };
 
@@ -91,6 +113,9 @@ const FOUR_TWO_TWO_CONFIG = {
   // category bump 3 Buy 5 / 5 Buy 5 uses. See ai-guts-profiles.js's
   // decideStayIn.
   categoryShift: 1,
-  // Known gap: games.md's optional "max loss per deal" cap on how much a
-  // loser has to match isn't implemented — matches the full pot every time.
+  // games.md's optional "agree a max loss per deal (e.g. $5)" cap on how
+  // much a loser has to match -- now a real variantOptions choice (see
+  // game-registry.js). Undefined/off means "match the full pot every
+  // time," the base rule.
+  maxLossPerDealDollars: undefined,
 };

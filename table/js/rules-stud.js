@@ -57,6 +57,10 @@ const StudRules = (function () {
   // time a hand gets scored.
   function isCardWild(state, card) {
     if (card.isWild) return true;
+    // A Joker (games.md's "House rule: playing with Jokers" -- Free
+    // Enterprise has no wildcard rule of its own, so a dealer's-choice
+    // Joker or two fits cleanly) is wild no matter how it was dealt.
+    if (card.rank === "JOKER") return true;
     if (state.gameConfig.rollingWildcard) {
       if (card.rank === state.gameConfig.rollingWildcard.triggerRank) return true;
       if (state.followWildRank && card.rank === state.followWildRank) return true;
@@ -87,7 +91,7 @@ const StudRules = (function () {
   // amount back in here so the next hand starts with it already in the pot,
   // on top of the new antes, per games.md's "pot carries forward" rule.
   function createHandState(players, dealerIndex, settings, handNumber, gameConfig, gameMemory, carriedPotChips) {
-    let deck = Deck.shuffle(Deck.buildDeck());
+    let deck = Deck.shuffle(Deck.buildDeck(gameConfig.jokerCount));
     const streets = gameConfig.streets(players.length);
     const dealerFirst = players.slice(dealerIndex + 1).concat(players.slice(0, dealerIndex + 1));
     const dealOrder = dealerFirst.map((p) => p.id);
@@ -215,9 +219,21 @@ const StudRules = (function () {
     state.dealCursor += 1;
 
     let rainedOut = false;
+    let eliminatedPlayerId = null;
     if (state.gameConfig.rainOutCheck && state.gameConfig.rainOutCheck(state, card, state.gameMemory)) {
-      rainedOut = true;
-      state.rainedOut = true;
+      // games.md's optional "once you're out, you're out" rule (Rainy Day
+      // Baseball): instead of killing the whole hand, only the player just
+      // dealt the rain-out card is eliminated for the rest of THIS hand —
+      // everyone else keeps playing. Off by default (rainOutScope unset ==
+      // the base "whole hand rains out" rule).
+      if (state.gameConfig.rainOutScope === "dealtPlayerOnly") {
+        eliminatedPlayerId = playerId;
+        foldPlayer(state, playerId);
+        state.log.push(`${player.name} is rained out — eliminated for the rest of this hand ("once you're out, you're out").`);
+      } else {
+        rainedOut = true;
+        state.rainedOut = true;
+      }
     }
 
     // Follow the Queen: whatever rank immediately follows an exposed queen
@@ -238,12 +254,12 @@ const StudRules = (function () {
     }
 
     let needsDecision = null;
-    if (!rainedOut && card.faceUp && state.gameConfig.wildcards) {
+    if (!rainedOut && !eliminatedPlayerId && card.faceUp && state.gameConfig.wildcards) {
       if (card.rank === "3") needsDecision = "buy3";
       else if (card.rank === "9") needsDecision = "buy9";
       else if (card.rank === "4") needsDecision = "buy4";
     }
-    return { playerId, card, needsDecision, rainedOut };
+    return { playerId, card, needsDecision, rainedOut, eliminatedPlayerId };
   }
 
   // Free Enterprise's Enterprise pile: a shared 3-card face-up spread a
@@ -537,6 +553,10 @@ const StudRules = (function () {
 
   function resolveShowdown(state) {
     if (state.status === "complete") return;
+    if (state.gameConfig.lowChicago) {
+      resolveShowdownWithLowChicago(state);
+      return;
+    }
     const selfWild = state.gameConfig.selfDeterminedWild;
     let winnerId = null;
     let bestHand = null;
@@ -550,6 +570,92 @@ const StudRules = (function () {
       }
     }
     completeHand(state, winnerId);
+  }
+
+  // Follow the Queen's optional "Low Chicago" companion side pot (games.md:
+  // "best spade in the hole is a separate side pot" -- documented for years
+  // in this game's own description text but never actually implemented
+  // anywhere, a real gap surfaced 2026-08-29). Modeled the same way
+  // rules-holdem.js's hi-lo split already works in this codebase: the pot
+  // is split in half between the best high hand and whoever holds the
+  // lowest concealed (down-card) spade, falling back to awarding the whole
+  // pot to the high hand alone if nobody has a down spade at all. Aces
+  // count LOW for this purpose (games.md: "best low spade" -- the natural
+  // reading of "low" here is rank, not this project's usual Ace-high
+  // convention), unlike every other rank comparison in this engine. Ties on
+  // either side split evenly (games.md's explicit tie-breaker for the low
+  // side; splitting the high side too is this project's general "House
+  // rule: split-pot ties" convention, applied here since a fresh showdown
+  // path was being written anyway -- the shared completeHand() used by
+  // every OTHER stud game still only supports a single high winner, a
+  // separate pre-existing gap not touched by this change).
+  function lowChicagoSpadeValue(card) {
+    return card.rank === "A" ? 1 : Deck.RANK_VALUES[card.rank];
+  }
+
+  function resolveShowdownWithLowChicago(state) {
+    const selfWild = state.gameConfig.selfDeterminedWild;
+    const live = state.players.filter((p) => !p.folded);
+    const highResults = live.map((p) => {
+      const cards = allCards(state, p);
+      const hand = selfWild ? HandEvaluator.bestHandWithSumWild(cards, selfWild.targetSum, selfWild.rankValue) : HandEvaluator.bestHand(cards);
+      return { id: p.id, hand };
+    });
+    const bestHigh = highResults.reduce((best, r) => (best == null || HandEvaluator.isBetter(r.hand, best) ? r.hand : best), null);
+    const highWinnerIds = highResults.filter((r) => HandEvaluator.compareEvaluated(r.hand, bestHigh) === 0).map((r) => r.id);
+
+    const lowResults = live
+      .map((p) => {
+        const downSpades = p.hand.filter((c) => !c.faceUp && c.suit === "S");
+        if (!downSpades.length) return null;
+        const lowest = downSpades.reduce((best, c) => (lowChicagoSpadeValue(c) < lowChicagoSpadeValue(best) ? c : best));
+        return { id: p.id, card: lowest, value: lowChicagoSpadeValue(lowest) };
+      })
+      .filter(Boolean);
+    let lowWinnerIds = [];
+    let bestLowCard = null;
+    if (lowResults.length) {
+      bestLowCard = lowResults.reduce((best, r) => (r.value < best.value ? r : best));
+      lowWinnerIds = lowResults.filter((r) => r.value === bestLowCard.value).map((r) => r.id);
+    }
+
+    const potChips = state.pot;
+    state.potAtShowdown = potChips;
+    state.pot = 0;
+    state.status = "complete";
+    state.bettingRound = null;
+    state.winnerId = highWinnerIds[0] || null; // back-compat single-winner field, same convention rules-holdem.js uses
+    state.highWinnerIds = highWinnerIds;
+    state.lowWinnerIds = lowWinnerIds;
+
+    if (lowWinnerIds.length > 0) {
+      const lowHalf = Math.floor(potChips / 2);
+      const highHalf = potChips - lowHalf;
+      payEvenSplitChips(state, highWinnerIds, highHalf);
+      payEvenSplitChips(state, lowWinnerIds, lowHalf);
+      state.log.push(
+        `High: ${highWinnerIds.map((id) => getPlayer(state, id).name).join(", ")} with ${HandEvaluator.describe(bestHigh)}. Low Chicago: ${lowWinnerIds
+          .map((id) => getPlayer(state, id).name)
+          .join(", ")} with the ${Deck.cardLabel(bestLowCard.card)}. Pot: $${ChipEconomy.chipsToDollars(potChips).toFixed(2)}.`
+      );
+    } else {
+      payEvenSplitChips(state, highWinnerIds, potChips);
+      state.log.push(
+        `${highWinnerIds.map((id) => getPlayer(state, id).name).join(", ")} win${highWinnerIds.length === 1 ? "s" : ""} the $${ChipEconomy.chipsToDollars(potChips).toFixed(
+          2
+        )} pot with ${HandEvaluator.describe(bestHigh)} — nobody held a spade in the hole for Low Chicago.`
+      );
+    }
+  }
+
+  function payEvenSplitChips(state, winnerIds, totalChips) {
+    if (winnerIds.length === 0 || totalChips === 0) return;
+    const share = Math.floor(totalChips / winnerIds.length);
+    const remainder = totalChips - share * winnerIds.length;
+    winnerIds.forEach((id, i) => {
+      const player = getPlayer(state, id);
+      ChipEconomy.award(player.wallet, share + (i < remainder ? 1 : 0));
+    });
   }
 
   // Declining a 3 folds the player outright (required to stay in the hand,

@@ -28,8 +28,8 @@ const RulesGameOfLife = (function () {
     return state.players.filter((p) => !p.folded).length;
   }
 
-  function createHandState(players, dealerIndex, settings, carriedPotChips) {
-    const deck = Deck.shuffle(Deck.buildDeck());
+  function createHandState(players, dealerIndex, settings, carriedPotChips, jokerCount) {
+    const deck = Deck.shuffle(Deck.buildDeck(jokerCount));
     let cursor = 0;
     for (const p of players) {
       p.hand = deck.slice(cursor, cursor + 5).map((c) => ({ rank: c.rank, suit: c.suit }));
@@ -213,7 +213,11 @@ const RulesGameOfLife = (function () {
     let winnerIds = [];
     for (const p of state.players) {
       if (p.folded) continue;
-      const cards = p.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: false }));
+      // A Joker (games.md's "House rule: playing with Jokers" -- Game of
+      // Life has no wildcard rule of its own; its bad-row effect discards/
+      // poisons ranks, it doesn't make anything wild) is wild wherever it
+      // lands in a hand, same as any other card drafted from the good row.
+      const cards = p.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: c.rank === "JOKER" }));
       const hand = HandEvaluator.bestHand(cards);
       if (bestHand == null || HandEvaluator.isBetter(hand, bestHand)) {
         bestHand = hand;

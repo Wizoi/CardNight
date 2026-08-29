@@ -32,8 +32,11 @@ const CRISS_CROSS_CONFIG = {
   centerIndex: 2,
   arms: { horizontal: [1, 2, 3], vertical: [0, 2, 4] },
   handConstruction: CommunityStudRules.crissCrossHandConstruction,
-  // Known gap: games.md documents an optional hi-lo variant (declaring
-  // "both" must use the same single arm for both hands) -- not implemented
-  // here, high-hand-only play, same pattern as Follow the Queen's
-  // unimplemented "Low Chicago" side pot.
+  // games.md's optional hi-lo variant (declaring "both" must use the same
+  // single arm for both hands) -- implemented 2026-08-29 (see
+  // rules-community-stud.js's resolveShowdownWithHiLo/
+  // crissCrossLowForBestHighArm), off by default here; a real
+  // variantOptions choice lets the dealer turn it on (see game-registry.js).
+  hiLo: false,
+  lowHandConstruction: CommunityStudRules.crissCrossLowForBestHighArm,
 };

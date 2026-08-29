@@ -18,6 +18,7 @@ const SessionDrawPoker = (function () {
     const dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
     let carriedPotChips = config.carriedPotChips || 0;
+    const jokerCount = (config.variantChoices && config.variantChoices.jokerCount) || 0;
     let state = null;
     let pending = null; // {kind: 'draw', playerId}
     let running = false;
@@ -76,7 +77,7 @@ const SessionDrawPoker = (function () {
     function beginHand() {
       topUpAIWalletsIfNeeded();
       handNumber += 1;
-      state = RulesDrawPoker.createHandState(players, dealerIndex, settings, carriedPotChips);
+      state = RulesDrawPoker.createHandState(players, dealerIndex, settings, carriedPotChips, jokerCount);
       carriedPotChips = 0;
       pending = null;
       notify();

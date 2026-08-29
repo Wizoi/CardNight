@@ -45,8 +45,8 @@ const RulesAnaconda = (function () {
     return state.players.filter((p) => !p.folded);
   }
 
-  function createHandState(players, dealerIndex, settings, carriedPotChips) {
-    const deck = Deck.shuffle(Deck.buildDeck());
+  function createHandState(players, dealerIndex, settings, carriedPotChips, jokerCount, hiLo) {
+    const deck = Deck.shuffle(Deck.buildDeck(jokerCount));
     const dealOrder = players
       .slice(dealerIndex + 1)
       .concat(players.slice(0, dealerIndex + 1))
@@ -58,7 +58,9 @@ const RulesAnaconda = (function () {
     }
     // 7 cards/player needs a full second deck at 8 players (56 > 52) --
     // the last-seated player in deal order sits out this hand instead.
-    const dealableCount = Math.min(players.length, Math.floor(52 / 7));
+    // Uses the deck's actual size (not a hardcoded 52) so an optional
+    // Joker or two is accounted for too.
+    const dealableCount = Math.min(players.length, Math.floor(deck.length / 7));
     const sittingOutIds = dealOrder.slice(dealableCount);
     for (const pid of sittingOutIds) players.find((p) => p.id === pid).folded = true;
 
@@ -74,6 +76,7 @@ const RulesAnaconda = (function () {
       dealOrder,
       deck: deck.slice(cursor),
       discardPile: [],
+      hiLo: !!hiLo,
       pot: carriedPotChips || 0,
       potAtShowdown: 0, // captured pre-payout -- state.pot itself is always 0 once complete
       anteDollars: settings.anteDollars,
@@ -245,16 +248,27 @@ const RulesAnaconda = (function () {
     startBettingRound(state);
   }
 
+  // A Joker (games.md's "House rule: playing with Jokers" -- Anaconda has
+  // no wildcard mechanic of its own, so a dealer's-choice Joker or two fits
+  // cleanly) is wild wherever it's dealt.
+  function isCardWild(card) {
+    return card.rank === "JOKER";
+  }
+
   function evaluateShowingHand(state, player) {
-    const cards = player.hand.filter((c) => c.faceUp).map((c) => ({ rank: c.rank, suit: c.suit, isWild: false }));
+    const cards = player.hand.filter((c) => c.faceUp).map((c) => ({ rank: c.rank, suit: c.suit, isWild: isCardWild(c) }));
     return HandEvaluator.evaluatePartial(cards);
   }
 
   function resolveShowdown(state) {
+    if (state.hiLo) {
+      resolveShowdownWithHiLo(state);
+      return;
+    }
     let bestHand = null;
     let winnerIds = [];
     for (const p of activePlayers(state)) {
-      const cards = p.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: false }));
+      const cards = p.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: isCardWild(c) }));
       const hand = HandEvaluator.bestHand(cards);
       if (bestHand == null || HandEvaluator.isBetter(hand, bestHand)) {
         bestHand = hand;
@@ -283,6 +297,71 @@ const RulesAnaconda = (function () {
     }
   }
 
+  // games.md's optional hi-lo ("everyone secretly declares going for high,
+  // low, or both") -- implemented 2026-08-29 as an automatic split, the
+  // same simplification rules-holdem.js's own hi-lo already uses in this
+  // codebase (no manual declare step there either): a player doesn't need
+  // to declare anything, their final 5-card hand is just automatically
+  // evaluated for both high and a qualifying (8-or-under) low, and the pot
+  // splits in half between whoever wins each side, falling back to the
+  // whole pot for high alone if nobody has a qualifying low. Anaconda has
+  // no wildcards at all (with or without hi-lo), so no isWild handling is
+  // needed for the low side the way Criss Cross's hi-lo needs.
+  function resolveShowdownWithHiLo(state) {
+    const live = activePlayers(state);
+    const highResults = live.map((p) => ({ id: p.id, hand: HandEvaluator.bestHand(p.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: isCardWild(c) }))) }));
+    const bestHigh = highResults.reduce((best, r) => (best == null || HandEvaluator.isBetter(r.hand, best) ? r.hand : best), null);
+    const highWinnerIds = highResults.filter((r) => HandEvaluator.compareEvaluated(r.hand, bestHigh) === 0).map((r) => r.id);
+
+    const lowResults = live
+      .map((p) => ({ id: p.id, low: HandEvaluator.bestLow([p.hand.map((c) => ({ rank: c.rank, suit: c.suit }))]) }))
+      .filter((r) => r.low != null);
+    let lowWinnerIds = [];
+    let bestLow = null;
+    if (lowResults.length) {
+      bestLow = lowResults.reduce((best, r) => (best == null || HandEvaluator.isBetterLow(r.low, best) ? r.low : best), null);
+      lowWinnerIds = lowResults.filter((r) => JSON.stringify(r.low.ranks) === JSON.stringify(bestLow.ranks)).map((r) => r.id);
+    }
+
+    state.status = "complete";
+    state.bettingRound = null;
+    state.potAtShowdown = state.pot;
+    state.highWinnerIds = highWinnerIds;
+    state.lowWinnerIds = lowWinnerIds;
+    state.winnerIds = highWinnerIds; // back-compat: the board's "showing hand" highlight only knows about the high side
+    state.winnerId = highWinnerIds[0] || null;
+
+    const potChips = state.pot;
+    state.pot = 0;
+    if (lowWinnerIds.length > 0) {
+      const lowHalf = Math.floor(potChips / 2);
+      const highHalf = potChips - lowHalf;
+      payHalf(state, highWinnerIds, highHalf);
+      payHalf(state, lowWinnerIds, lowHalf);
+      state.log.push(
+        `High: ${highWinnerIds.map((id) => getPlayer(state, id).name).join(", ")} with ${HandEvaluator.describe(bestHigh)}. Low: ${lowWinnerIds
+          .map((id) => getPlayer(state, id).name)
+          .join(", ")} with ${HandEvaluator.describeLow(bestLow)}. Pot: $${ChipEconomy.chipsToDollars(potChips).toFixed(2)}.`
+      );
+    } else {
+      payHalf(state, highWinnerIds, potChips);
+      state.log.push(
+        `${highWinnerIds.map((id) => getPlayer(state, id).name).join(", ")} win${highWinnerIds.length === 1 ? "s" : ""} the $${ChipEconomy.chipsToDollars(potChips).toFixed(
+          2
+        )} pot with ${HandEvaluator.describe(bestHigh)} — no qualifying low.`
+      );
+    }
+  }
+
+  function payHalf(state, winnerIds, totalChips) {
+    if (winnerIds.length === 0 || totalChips === 0) return;
+    const share = Math.floor(totalChips / winnerIds.length);
+    const remainder = totalChips - share * winnerIds.length;
+    winnerIds.forEach((id, i) => {
+      ChipEconomy.award(getPlayer(state, id).wallet, share + (i < remainder ? 1 : 0));
+    });
+  }
+
   return {
     createHandState,
     activePlayers,
@@ -299,6 +378,7 @@ const RulesAnaconda = (function () {
     advanceAfterBetting,
     resolveRevealRound,
     evaluateShowingHand,
+    resolveShowdown,
     getPlayer,
   };
 })();

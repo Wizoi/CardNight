@@ -169,6 +169,11 @@ const SessionStud = (function () {
             StudRules.completeHandRainedOut(state);
             break;
           }
+          if (dealt.eliminatedPlayerId) {
+            StudRules.checkForInstantWin(state);
+            notify();
+            if (state.status === "complete") break;
+          }
           if (dealt.exhausted) {
             StudRules.resolveShowdown(state);
             break;

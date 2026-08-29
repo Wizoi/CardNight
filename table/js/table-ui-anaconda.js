@@ -8,6 +8,7 @@
 const TableUIAnaconda = (function () {
   function cardMarkup(card, faceDown) {
     if (faceDown) return `<div class="card card-back"></div>`;
+    if (card.rank === "JOKER") return `<div class="card card-black">${Deck.cardLabel(card)}<span class="wild-tag">W</span></div>`;
     const red = card.suit === "H" || card.suit === "D";
     return `<div class="card ${red ? "card-red" : "card-black"}">${Deck.cardLabel(card)}</div>`;
   }
@@ -101,9 +102,13 @@ const TableUIAnaconda = (function () {
     if (gvs.state.status === "complete") {
       const canDeal = orchestrator.canDealNextHand();
       const names = (gvs.state.winnerIds || []).map((id) => RulesAnaconda.getPlayer(gvs.state, id).name);
-      const resultLine = names.length
-        ? `${names.join(", ")} win${names.length > 1 ? "" : "s"} the ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))} pot.`
-        : "Hand over.";
+      const lowNames = (gvs.state.lowWinnerIds || []).map((id) => RulesAnaconda.getPlayer(gvs.state, id).name);
+      let resultLine = "Hand over.";
+      if (lowNames.length) {
+        resultLine = `High: ${names.join(", ")}. Low: ${lowNames.join(", ")}. Pot: ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))}.`;
+      } else if (names.length) {
+        resultLine = `${names.join(", ")} win${names.length > 1 ? "" : "s"} the ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))} pot.`;
+      }
       el.actionPanel.innerHTML = `
         <div>${resultLine}</div>
         ${canDeal ? `<button id="deal-next-hand-btn">Deal next hand</button>` : `<div>You're out of chips for this hand. Buy more chips or cash out to continue.</div>`}

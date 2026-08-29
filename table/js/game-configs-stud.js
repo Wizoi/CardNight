@@ -77,9 +77,11 @@ const FOLLOW_THE_QUEEN_CONFIG = {
   // deck-size scaling as the rest of the stud family: 4 up-rounds (7 cards
   // total) at 5-7 players, 3 up-rounds (6 total) at a full 8-player table.
   //
-  // Known gap: games.md also documents an optional "Low Chicago" side pot
-  // (best concealed spade in the hole) as a companion rule to this game --
-  // not implemented here, core high-hand-wins play only.
+  // games.md's optional "Low Chicago" side pot (best concealed spade in the
+  // hole) -- implemented 2026-08-29 (see rules-stud.js's
+  // resolveShowdownWithLowChicago), off by default here; a real
+  // variantOptions choice lets the dealer turn it on (see game-registry.js).
+  lowChicago: false,
   streets(playerCount) {
     const upRounds = playerCount >= 8 ? 3 : 4;
     const streets = [

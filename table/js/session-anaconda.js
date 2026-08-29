@@ -17,6 +17,8 @@ const SessionAnaconda = (function () {
     const dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
     let carriedPotChips = config.carriedPotChips || 0;
+    const jokerCount = (config.variantChoices && config.variantChoices.jokerCount) || 0;
+    const hiLo = !!(config.variantChoices && config.variantChoices.hiLo);
     let state = null;
     let pending = null; // {kind: 'discard1'|'discard2', playerId}
     let running = false;
@@ -75,7 +77,7 @@ const SessionAnaconda = (function () {
     function beginHand() {
       topUpAIWalletsIfNeeded();
       handNumber += 1;
-      state = RulesAnaconda.createHandState(players, dealerIndex, settings, carriedPotChips);
+      state = RulesAnaconda.createHandState(players, dealerIndex, settings, carriedPotChips, jokerCount, hiLo);
       carriedPotChips = 0;
       pending = null;
       notify();
