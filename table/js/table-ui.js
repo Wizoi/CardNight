@@ -158,7 +158,8 @@
 
   function playStyleBadge(archetypeId) {
     const profileName = TablePeople.profileFor(archetypeId);
-    return `<span class="play-style-badge play-style-${profileName}">Plays: ${AIProfiles.profileFor(profileName).label}</span>`;
+    const temperamentClass = TablePeople.temperamentClassFor(archetypeId);
+    return `<span class="play-style-badge play-style-${temperamentClass}">Plays: ${AIProfiles.profileFor(profileName).label}</span>`;
   }
 
   // Every visible seat always shows a real person immediately -- no more

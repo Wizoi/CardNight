@@ -34,10 +34,19 @@ const GutsAIProfiles = (function () {
 
   // 3 Buy 5 / 5 Buy 5's optional one-card exchange: worth it only if there's
   // a non-wild card actually worth upgrading (the weakest one in hand) and
-  // the player can afford it. Cautious skips the gamble outright — a fresh
-  // random card is exactly as likely to hurt as help.
+  // the player can afford it. A disciplined profile skips the gamble
+  // outright — a fresh random card is exactly as likely to hurt as help.
+  // Reuses buyWildOnlyOnCategoryGain (the baseball family's own "skip a
+  // marginal gamble unless it's clearly worth it" flag) rather than a
+  // profile-name check. This used to read `profile.name === "cautious"`,
+  // which worked fine when Fortress was the one archetype mapped straight to
+  // the literal "cautious" profile -- but the 2026-08-28 archetype-profile
+  // expansion (every archetype gets its own dedicated profile, named after
+  // itself) meant no real archetype's profile.name is "cautious" anymore,
+  // which would have silently broken this check for everyone. Caught and
+  // fixed in the same pass, not left as a surprise for later.
   function decideBuyExchange(player, state, profile) {
-    if (profile.name === "cautious") return -1;
+    if (profile.buyWildOnlyOnCategoryGain) return -1;
     if (!state.gameConfig.exchangePriceDollars) return -1;
     if (player.wallet.chips < ChipEconomy.dollarsToChips(state.gameConfig.exchangePriceDollars)) return -1;
     let worstIdx = -1;

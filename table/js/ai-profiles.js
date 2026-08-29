@@ -1,9 +1,39 @@
 "use strict";
 
-// Three deterministic AI awareness profiles sharing one heuristic — not random
-// per hand (only the *default assignment* of a profile to a seat is randomized,
-// at setup time). Each function takes the profile as data so all three seats
-// run through the same decision logic with different thresholds.
+// Deterministic AI awareness profiles sharing one heuristic — not random per
+// hand (only the *default assignment* of a profile to a seat is randomized,
+// at setup time). Each function takes the profile as data, so every seat
+// runs through the exact same decision logic with different thresholds; the
+// PROFILES map is the only thing that varies.
+//
+// Originally just three shared buckets (cautious/balanced/aggressive), with
+// all 10 player archetypes (personas/players/OVERVIEW.md) funneled into one
+// of them via table-people.js's ARCHETYPE_PROFILE -- 5 of the 10 landed on
+// "balanced" and played identically, a fidelity gap the Rules Referee
+// persona flagged when the setup UI's play-style badge was first added (see
+// CLAUDE.md). Expanded 2026-08-28 to give each archetype its own tuned
+// profile below, reusing these exact same fields -- no decision function
+// anywhere had to change, since they were always written to read whatever
+// profile object they're handed, never assuming exactly three exist. The
+// original three names are kept as-is (nothing else in the app references
+// them, but removing working, harmless code isn't worth it) as a documented
+// fallback shape/reference point for anything added later.
+//
+// Tuning below is a judgment call, not measured against real play -- each
+// archetype's numbers are pulled toward its OVERVIEW.md psychological sketch
+// (e.g. The Fortress's loss-aversion means the tightest gutsMinCategoryToStay
+// and pressYourLuckStandThreshold in the roster) using the same knobs the
+// original three already established the range for. Two archetypes are
+// explicitly approximated rather than fully modeled: The Storm's tilt spiral
+// and The Streak Chaser's hot-hand/gambler's-fallacy swings are genuinely
+// STATE-DEPENDENT (they change behavior after a win/loss streak within a
+// sitting) -- modeling that for real would mean threading recent-result
+// tracking through every session-*.js, a materially bigger feature than a
+// static profile tuning pass. Both get a fixed baseline approximating their
+// average tendency instead (Storm: confident/sharp; Streak Chaser: loosely
+// aggressive, since chasing both hot and cold streaks nets out to "plays and
+// bets more than a disciplined player would") -- a known simplification, not
+// a bug, flagged here so it isn't mistaken for the real thing later.
 const AIProfiles = (function () {
   const PROFILES = {
     cautious: {
@@ -46,6 +76,201 @@ const AIProfiles = (function () {
       aceyDuceyBetFraction: 1, // goes for broke on any decent-looking gap
       blindBluffScaryRankValue: 99, // never folds -- fits the reckless archetype
       blindBluffRaiseBelowRankValue: 13, // raises unless someone's showing an outright Ace
+    },
+
+    // Tight-aggressive: selective, purposeful, explicit-probability-driven
+    // (Tendler's Process Model, the TAG archetype). Plays a genuinely narrow
+    // range, but presses it on purpose once committed -- not just "cautious
+    // but a little looser."
+    "the-calculator": {
+      name: "the-calculator",
+      label: "Tight-Aggressive",
+      buyWildOnlyOnCategoryGain: true,
+      chancePerCard: 0.75,
+      raiseWhenLeading: true,
+      raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
+      gutsMinCategoryToStay: HandEvaluator.CATEGORY.TWO_PAIR,
+      pressYourLuckStandThreshold: 2,
+      aceyDuceyMinWinProb: 0.4,
+      aceyDuceyBetFraction: 0.35,
+      blindBluffScaryRankValue: 13,
+      blindBluffRaiseBelowRankValue: 9,
+    },
+
+    // Maniac: the loosest, most volatile seat in the roster on purpose --
+    // wide range, raises on nothing, never backs down (LAG/maniac taxonomy,
+    // illusion-of-control bias).
+    "live-wire": {
+      name: "live-wire",
+      label: "Maniac",
+      buyWildOnlyOnCategoryGain: false,
+      chancePerCard: 1.8,
+      raiseWhenLeading: true,
+      raiseMinCategory: HandEvaluator.CATEGORY.HIGH_CARD,
+      gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD,
+      pressYourLuckStandThreshold: 0.25,
+      aceyDuceyMinWinProb: 0.1,
+      aceyDuceyBetFraction: 1,
+      blindBluffScaryRankValue: 99,
+      blindBluffRaiseBelowRankValue: 14,
+    },
+
+    // The nit: the tightest seat in the roster, on purpose -- loss aversion
+    // (Kahneman & Tversky) means a chip lost hurts roughly twice as much as
+    // an equivalent chip won, so almost nothing clears the bar to risk one.
+    fortress: {
+      name: "fortress",
+      label: "Nit",
+      buyWildOnlyOnCategoryGain: true,
+      chancePerCard: 0.3,
+      raiseWhenLeading: false,
+      gutsMinCategoryToStay: HandEvaluator.CATEGORY.TRIPS,
+      pressYourLuckStandThreshold: 4,
+      aceyDuceyMinWinProb: 0.65,
+      aceyDuceyBetFraction: 0.15,
+      blindBluffScaryRankValue: 10,
+      blindBluffRaiseBelowRankValue: 5,
+    },
+
+    // Approximated (see the file-level note above): The Storm's real trait is
+    // a state-dependent tilt spiral after a bad beat, not modeled here.
+    // Baseline is its "even" state -- skilled and confident, a hair sharper
+    // and more willing to press than Balanced, reflecting real skill rather
+    // than recklessness.
+    storm: {
+      name: "storm",
+      label: "Sharp (untilted)",
+      buyWildOnlyOnCategoryGain: false,
+      chancePerCard: 1.1,
+      raiseWhenLeading: true,
+      raiseMinCategory: HandEvaluator.CATEGORY.PAIR,
+      gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
+      pressYourLuckStandThreshold: 1.2,
+      aceyDuceyMinWinProb: 0.25,
+      aceyDuceyBetFraction: 0.6,
+      blindBluffScaryRankValue: 13,
+      blindBluffRaiseBelowRankValue: 11,
+    },
+
+    // Small-ball: plays a lot of hands cheaply to keep gathering information
+    // (Negreanu's documented style) rather than either folding early or
+    // blowing pots up -- lots of calls/continuations, raises only once a
+    // hand is genuinely good, not just "currently ahead."
+    diplomat: {
+      name: "diplomat",
+      label: "Small-Ball",
+      buyWildOnlyOnCategoryGain: false,
+      chancePerCard: 1.1,
+      raiseWhenLeading: true,
+      raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
+      gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
+      pressYourLuckStandThreshold: 1.5,
+      aceyDuceyMinWinProb: 0.3,
+      aceyDuceyBetFraction: 0.4,
+      blindBluffScaryRankValue: 13,
+      blindBluffRaiseBelowRankValue: 10,
+    },
+
+    // Unreadable (Ivey-style): the defining trait is that bet-sizing and
+    // pacing look identical whether the hand is strong or weak -- a genuine
+    // tell-suppression trait none of these numeric bet-shape knobs can
+    // really capture (there's no opponent-facing "tell" to suppress in this
+    // engine at all). Deliberately centered dead-middle of the whole
+    // roster's range instead: a true "textbook, gives away nothing" baseline
+    // rather than leaning tight or loose either way.
+    wall: {
+      name: "wall",
+      label: "Unreadable",
+      buyWildOnlyOnCategoryGain: false,
+      chancePerCard: 1,
+      raiseWhenLeading: true,
+      raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
+      gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
+      pressYourLuckStandThreshold: 1.5,
+      aceyDuceyMinWinProb: 0.3,
+      aceyDuceyBetFraction: 0.5,
+      blindBluffScaryRankValue: 14,
+      blindBluffRaiseBelowRankValue: 10,
+    },
+
+    // Annie Duke's "resulting" concept: judges decisions on their own merit,
+    // not on how the hand happened to turn out -- process-driven and
+    // disciplined like The Calculator, but the trait here is refusing to
+    // overreact to a bad beat rather than raw probability calculation, so
+    // it's tuned a notch looser than the pure-TAG Calculator.
+    statistician: {
+      name: "statistician",
+      label: "Process-Driven",
+      buyWildOnlyOnCategoryGain: true,
+      chancePerCard: 0.9,
+      raiseWhenLeading: true,
+      raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
+      gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
+      pressYourLuckStandThreshold: 1.8,
+      aceyDuceyMinWinProb: 0.35,
+      aceyDuceyBetFraction: 0.4,
+      blindBluffScaryRankValue: 13,
+      blindBluffRaiseBelowRankValue: 10,
+    },
+
+    // Approximated (see the file-level note above): the hot-hand/gambler's-
+    // fallacy swings (bets bigger after wins, chases losses expecting a
+    // correction) are genuinely state-dependent and not modeled here.
+    // Baseline nets those two opposing pulls out to "plays and bets more
+    // than a disciplined player would, most of the time."
+    "streak-chaser": {
+      name: "streak-chaser",
+      label: "Streaky (avg.)",
+      buyWildOnlyOnCategoryGain: false,
+      chancePerCard: 1.3,
+      raiseWhenLeading: true,
+      raiseMinCategory: HandEvaluator.CATEGORY.PAIR,
+      gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD,
+      pressYourLuckStandThreshold: 0.75,
+      aceyDuceyMinWinProb: 0.2,
+      aceyDuceyBetFraction: 0.7,
+      blindBluffScaryRankValue: 14,
+      blindBluffRaiseBelowRankValue: 12,
+    },
+
+    // Low discipline, high creativity (the bridge-player-study "Subversive"
+    // cluster): deliberately plays unconventional, non-optimal lines rather
+    // than simply loose-aggressive ones. Modeled as an unusual mix no other
+    // profile has -- stays in on nearly anything (unconventional starting
+    // range) but, distinctly, does NOT press a lead either (withholds the
+    // "obvious" raise on purpose) -- loose-passive, a genuinely odd
+    // combination that reads as contrarian rather than just reckless.
+    subversive: {
+      name: "subversive",
+      label: "Unconventional",
+      buyWildOnlyOnCategoryGain: false,
+      chancePerCard: 1.4,
+      raiseWhenLeading: false,
+      gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD,
+      pressYourLuckStandThreshold: 0.4,
+      aceyDuceyMinWinProb: 0.12,
+      aceyDuceyBetFraction: 0.85,
+      blindBluffScaryRankValue: 99,
+      blindBluffRaiseBelowRankValue: 14,
+    },
+
+    // Veteran temperament (Brunson-style): even-keeled and consistent
+    // regardless of stakes, essentially immune to tilt. Tuned as a stable,
+    // measured profile -- a notch tighter than Balanced across the board,
+    // reflecting decades of internalized variance rather than caution.
+    "steady-hand": {
+      name: "steady-hand",
+      label: "Veteran",
+      buyWildOnlyOnCategoryGain: true,
+      chancePerCard: 0.85,
+      raiseWhenLeading: true,
+      raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
+      gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
+      pressYourLuckStandThreshold: 1.7,
+      aceyDuceyMinWinProb: 0.35,
+      aceyDuceyBetFraction: 0.35,
+      blindBluffScaryRankValue: 12,
+      blindBluffRaiseBelowRankValue: 9,
     },
   };
 

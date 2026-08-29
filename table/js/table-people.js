@@ -3,21 +3,41 @@
 // Helpers over the TABLE_PEOPLE roster (table-people-data.js) — filtering for
 // the setup-screen picker, and a fixed archetype-to-AI-profile mapping.
 const TablePeople = (function () {
-  // Flavor/identity (name, avatar, backstory) is far richer than this, but
-  // actual gameplay decisions still run through the existing three AI
-  // profiles (Cautious/Balanced/Aggressive) until a deeper per-archetype
-  // decision engine exists — this is today's deliberately simple bridge.
+  // Each archetype maps to its own dedicated AIProfiles entry (2026-08-28) --
+  // previously several archetypes shared one of only 3 buckets (5 of 10
+  // landed on "balanced" and played identically). See ai-profiles.js's
+  // file-level comment for the tuning rationale and the two archetypes
+  // (storm, streak-chaser) whose real trait is state-dependent and only
+  // approximated by a fixed baseline here.
   const ARCHETYPE_PROFILE = {
-    "the-calculator": "balanced",
-    "live-wire": "aggressive",
+    "the-calculator": "the-calculator",
+    "live-wire": "live-wire",
+    fortress: "fortress",
+    storm: "storm",
+    diplomat: "diplomat",
+    wall: "wall",
+    statistician: "statistician",
+    "streak-chaser": "streak-chaser",
+    subversive: "subversive",
+    "steady-hand": "steady-hand",
+  };
+
+  // Purely a badge-coloring bucket, kept separate from the actual AIProfiles
+  // decision data above -- lets the setup UI's play-style badge still show a
+  // quick tight/loose/moderate visual grouping (reusing the original three
+  // CSS colors) even though each archetype now has its own distinct profile
+  // and label text underneath.
+  const TEMPERAMENT_CLASS = {
+    "the-calculator": "cautious",
     fortress: "cautious",
-    storm: "aggressive",
+    statistician: "cautious",
+    "steady-hand": "cautious",
     diplomat: "balanced",
     wall: "balanced",
-    statistician: "balanced",
+    "live-wire": "aggressive",
+    storm: "aggressive",
     "streak-chaser": "aggressive",
     subversive: "aggressive",
-    "steady-hand": "balanced",
   };
 
   function getById(id) {
@@ -26,6 +46,10 @@ const TablePeople = (function () {
 
   function profileFor(archetypeId) {
     return ARCHETYPE_PROFILE[archetypeId] || "balanced";
+  }
+
+  function temperamentClassFor(archetypeId) {
+    return TEMPERAMENT_CLASS[archetypeId] || "balanced";
   }
 
   function archetypeList() {
@@ -63,5 +87,5 @@ const TablePeople = (function () {
     return source[Math.floor(Math.random() * source.length)];
   }
 
-  return { getById, profileFor, archetypeList, filter, randomUnused };
+  return { getById, profileFor, temperamentClassFor, archetypeList, filter, randomUnused };
 })();

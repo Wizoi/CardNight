@@ -37,13 +37,20 @@ const PressYourLuckAIProfiles = (function () {
   }
 
   // 7-27's buy-back: worth it only for a low-value card (face cards, or a
-  // 2-3) that isn't meaningfully close to either target on its own --
-  // cautious/balanced will pay for a fresh chance at a better card;
-  // aggressive embraces whatever it's dealt and never buys back, fitting
-  // the archetype's reckless lean established elsewhere (guts' stay-in bar,
-  // stud's raise threshold).
+  // 2-3) that isn't meaningfully close to either target on its own -- a
+  // disciplined/moderate profile will pay for a fresh chance at a better
+  // card; a genuinely reckless one embraces whatever it's dealt and never
+  // buys back. Judged off pressYourLuckStandThreshold itself (this game's
+  // own recklessness knob) rather than a profile-name check -- fixed
+  // 2026-08-28 alongside the archetype-profile expansion, since a hardcoded
+  // `profile.name === "aggressive"` stopped matching anything the moment no
+  // real archetype's profile was still literally named "aggressive." The
+  // 0.5 cutoff catches the same reckless lean the original "aggressive"
+  // profile had (still exactly 0.5) plus anything looser (e.g. Live Wire's
+  // 0.25), while archetypes that lean loose for other reasons without being
+  // truly reckless (e.g. Streak Chaser's 0.75) still get to buy back.
   function decideBuyBack(player, state, profile) {
-    if (profile.name === "aggressive") return false;
+    if (profile.pressYourLuckStandThreshold <= 0.5) return false;
     const cfg = state.gameConfig;
     if (!cfg.buyBack || player.buyBacksUsed >= cfg.buyBack.maxBuys) return false;
     const priceDollars = cfg.buyBack.priceScheduleDollars[player.buyBacksUsed];
