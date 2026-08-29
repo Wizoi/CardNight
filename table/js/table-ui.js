@@ -434,41 +434,54 @@
     `;
   }
 
-  // Each seat has its own card in a shared fan, face down until revealed --
-  // the human clicks their own to flip it; AI seats reveal on their own
-  // pace (see maybeAutoRevealCutForDeal). A tie redeals a fresh fan of just
-  // the tied seats, flagged with a small notice above the fan.
+  // One shared, anonymous fan of face-down cards -- nobody knows in advance
+  // which position holds which card, so picking one is a genuine choice
+  // (2026-08-29 redesign, at the user's request: the old layout pre-bound
+  // each face-down card to a specific seat's name before it was ever
+  // clicked, which read as trusting a secret pre-assignment rather than an
+  // actual cut). The human can claim any open slot whenever they like; AI
+  // seats claim a random remaining slot on their own pace, in random order
+  // (see maybeAutoRevealCutForDeal) -- not turn-by-turn by seat. Results
+  // (who drew what) populate a list below the fan as each seat claims a
+  // slot. A tie redeals a fresh anonymous fan to just the tied seats,
+  // flagged with a small notice above it.
   function renderCutForDeal(vs) {
     const state = vs.cutForDealState;
     const round = state.currentRound;
+    const eligiblePlayers = state.eligibleSeatIds.map((seatId) => vs.players.find((p) => p.id === seatId));
+    const humanAlreadyClaimed = round.some((e) => e.seatId === vs.humanId);
     const tieNotice =
       state.tieBreakInProgress && state.status !== "complete"
-        ? `<div class="cutfordeal-tie-notice">Tied — cutting again among: ${round.map((e) => vs.players.find((p) => p.id === e.seatId).name).join(", ")}</div>`
+        ? `<div class="cutfordeal-tie-notice">Tied — cutting again among: ${eligiblePlayers.map((p) => p.name).join(", ")}</div>`
         : "";
+    const fanMarkup = round
+      .map((entry) => {
+        if (entry.revealed) {
+          const red = entry.card.suit === "H" || entry.card.suit === "D";
+          return `<div class="card ${red ? "card-red" : "card-black"}">${Deck.cardLabel(entry.card)}</div>`;
+        }
+        if (state.status !== "complete" && !humanAlreadyClaimed) {
+          return `<div class="card card-back cutfordeal-clickable" data-cutfordeal-slot="${entry.slotIndex}"></div>`;
+        }
+        return `<div class="card card-back"></div>`;
+      })
+      .join("");
+    const resultsMarkup = eligiblePlayers
+      .map((player) => {
+        const entry = round.find((e) => e.seatId === player.id);
+        const drawn = entry ? `<div class="card ${entry.card.suit === "H" || entry.card.suit === "D" ? "card-red" : "card-black"}">${Deck.cardLabel(entry.card)}</div>` : `<div class="cutfordeal-waiting">…</div>`;
+        return `
+          <div class="cutfordeal-result-row">
+            <div class="cutfordeal-seat-name">${player.name}${player.isHuman ? " (you)" : ""}</div>
+            ${drawn}
+          </div>
+        `;
+      })
+      .join("");
     el.cutForDealDraws.innerHTML = `
       ${tieNotice}
-      <div class="cutfordeal-fan">
-        ${round
-          .map((entry) => {
-            const player = vs.players.find((p) => p.id === entry.seatId);
-            let cardMarkup;
-            if (entry.revealed) {
-              const red = entry.card.suit === "H" || entry.card.suit === "D";
-              cardMarkup = `<div class="card ${red ? "card-red" : "card-black"}">${Deck.cardLabel(entry.card)}</div>`;
-            } else if (player.isHuman && state.status !== "complete") {
-              cardMarkup = `<div class="card card-back cutfordeal-clickable" data-cutfordeal-seat="${entry.seatId}"></div>`;
-            } else {
-              cardMarkup = `<div class="card card-back"></div>`;
-            }
-            return `
-              <div class="cutfordeal-seat">
-                <div class="cutfordeal-seat-name">${player.name}${player.isHuman ? " (you)" : ""}</div>
-                ${cardMarkup}
-              </div>
-            `;
-          })
-          .join("")}
-      </div>
+      <div class="cutfordeal-fan">${fanMarkup}</div>
+      <div class="cutfordeal-results">${resultsMarkup}</div>
     `;
     if (state.status === "complete") {
       const winner = vs.players.find((p) => p.id === state.winnerSeatId);
@@ -480,16 +493,20 @@
     }
   }
 
-  // AI seats reveal their own card on a steady pace regardless of whether
-  // the human's clicked yet; once only the human is left in the current
-  // round, this just stops and waits for their click.
+  // AI seats claim a random remaining slot on a steady pace regardless of
+  // whether the human's claimed theirs yet, in random order rather than a
+  // fixed seat sequence; once only the human is left with a slot still to
+  // claim, this just stops and waits for their click.
   function maybeAutoRevealCutForDeal(vs) {
     if (cutForDealAutoTimer) return;
-    const nextAI = vs.cutForDealState.currentRound.find((e) => !e.revealed && e.seatId !== vs.humanId);
-    if (!nextAI) return;
+    const state = vs.cutForDealState;
+    const claimedSeatIds = new Set(state.currentRound.filter((e) => e.seatId != null).map((e) => e.seatId));
+    const waitingAiSeatIds = state.eligibleSeatIds.filter((seatId) => seatId !== vs.humanId && !claimedSeatIds.has(seatId));
+    if (!waitingAiSeatIds.length) return;
+    const nextSeatId = waitingAiSeatIds[Math.floor(Math.random() * waitingAiSeatIds.length)];
     cutForDealAutoTimer = setTimeout(() => {
       cutForDealAutoTimer = null;
-      TableNight.revealCutForDealSeat(nextAI.seatId);
+      TableNight.autoClaimCutForDealSlot(nextSeatId);
     }, 600);
   }
 
@@ -794,9 +811,9 @@
     });
 
     el.cutForDealDraws.addEventListener("click", (e) => {
-      const card = e.target.closest("[data-cutfordeal-seat]");
-      if (!card) return;
-      TableNight.revealCutForDealSeat(card.dataset.cutfordealSeat);
+      const card = e.target.closest("[data-cutfordeal-slot]");
+      if (!card || !lastViewState) return;
+      TableNight.claimCutForDealSlot(lastViewState.humanId, Number(card.dataset.cutfordealSlot));
     });
 
     el.cutForDealContinueBtn.addEventListener("click", () => {

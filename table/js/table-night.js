@@ -98,19 +98,26 @@ const TableNight = (function () {
     notify();
   }
 
-  // Every seat draws one card from a shared fan, face down, revealed one at
-  // a time (the human clicks their own card; AI seats reveal on their own
-  // pace) instead of everyone's card being dealt and shown all at once --
-  // a physical cut-for-deal is something each player actually does, not
-  // something that just happens to them. Highest card picks the first
-  // game. A tie redeals a fresh face-down card to just the tied seats
-  // (closer to a physical re-cut than a fresh shuffle for everyone).
+  // Every seat draws one card from a single shared, anonymous fan -- nobody
+  // (the human included) knows in advance which position holds which card,
+  // so picking one is a genuine choice rather than just revealing a value
+  // already secretly assigned to your name (2026-08-29 redesign, at the
+  // user's request: the old per-seat layout telegraphed which face-down
+  // card was already "yours" before you ever clicked it, which read as
+  // trusting the computer's pre-assignment rather than a real cut). Claims
+  // don't have to happen in seat order -- the human can click any open
+  // position whenever they like, and AI seats claim a random remaining
+  // position on their own pace, in random order, not strictly one-by-one
+  // by seat. Highest card picks the first game. A tie redeals a fresh
+  // anonymous fan to just the tied seats (closer to a physical re-cut than
+  // a fresh shuffle for everyone).
   function beginCutForDeal() {
     const deck = Deck.shuffle(Deck.buildDeck());
     cutForDealState = {
       deck,
       cursor: 0,
-      currentRound: seatOrder.map((seatId) => ({ seatId, card: null, revealed: false })),
+      eligibleSeatIds: seatOrder.slice(),
+      currentRound: seatOrder.map((_, slotIndex) => ({ slotIndex, seatId: null, card: null, revealed: false })),
       tieBreakInProgress: false,
       status: "revealing",
       winnerSeatId: null,
@@ -119,16 +126,32 @@ const TableNight = (function () {
     return cutForDealState;
   }
 
-  // Flips one seat's own next card. Safe to call repeatedly / out of order
-  // -- a no-op once that seat's already revealed or the cut is decided.
-  function revealCutForDealSeat(seatId) {
+  // Claims one specific open slot in the shared fan for a seat -- a no-op
+  // if that slot's already taken, or if this seat already claimed a
+  // different slot this round, or once the cut is decided. Safe to call
+  // repeatedly / redundantly.
+  function claimCutForDealSlot(seatId, slotIndex) {
     if (!cutForDealState || cutForDealState.status === "complete") return;
-    const entry = cutForDealState.currentRound.find((e) => e.seatId === seatId);
+    if (!cutForDealState.eligibleSeatIds.includes(seatId)) return;
+    if (cutForDealState.currentRound.some((e) => e.seatId === seatId)) return;
+    const entry = cutForDealState.currentRound[slotIndex];
     if (!entry || entry.revealed) return;
     entry.card = cutForDealState.deck[cutForDealState.cursor++];
     entry.revealed = true;
+    entry.seatId = seatId;
     notify();
     maybeResolveCutForDealRound();
+  }
+
+  // AI seats don't pick a specific position on purpose -- they reach for a
+  // random still-open one, same as a human just grabbing whichever card is
+  // convenient from a real fan.
+  function autoClaimCutForDealSlot(seatId) {
+    if (!cutForDealState) return;
+    const openSlots = cutForDealState.currentRound.filter((e) => !e.revealed);
+    if (!openSlots.length) return;
+    const slot = openSlots[Math.floor(Math.random() * openSlots.length)];
+    claimCutForDealSlot(seatId, slot.slotIndex);
   }
 
   function maybeResolveCutForDealRound() {
@@ -145,7 +168,8 @@ const TableNight = (function () {
       dealerIndex = seatOrder.indexOf(winners[0].seatId);
     } else {
       cutForDealState.tieBreakInProgress = true;
-      cutForDealState.currentRound = winners.map((w) => ({ seatId: w.seatId, card: null, revealed: false }));
+      cutForDealState.eligibleSeatIds = winners.map((w) => w.seatId);
+      cutForDealState.currentRound = winners.map((_, slotIndex) => ({ slotIndex, seatId: null, card: null, revealed: false }));
     }
     notify();
   }
@@ -349,7 +373,8 @@ const TableNight = (function () {
   return {
     init,
     beginCutForDeal,
-    revealCutForDealSeat,
+    claimCutForDealSlot,
+    autoClaimCutForDealSlot,
     currentPickerSeatId,
     currentPickerIsHuman,
     chooseNextGame,
