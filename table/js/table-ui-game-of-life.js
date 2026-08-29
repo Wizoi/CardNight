@@ -106,10 +106,18 @@ const TableUIGameOfLife = (function () {
       return;
     }
     if (gvs.pending && gvs.pending.kind === "flipChoice" && gvs.pending.playerId === humanId) {
+      const required = RulesGameOfLife.requiredRowFor(gvs.state);
+      if (required) {
+        el.actionPanel.innerHTML = `
+          <div>Flips alternate — it's the <strong>${required}</strong> row's turn.</div>
+          <button data-flip-required="${required}">Flip ${required} row</button>
+        `;
+        return;
+      }
       const goodLeft = gvs.state.goodRow.some((c) => !c.flipped);
       const badLeft = gvs.state.badRow.some((c) => !c.flipped);
       el.actionPanel.innerHTML = `
-        <div>Flip a card from the good row (added to your hand) or the bad row (discarded, poisons its rank).</div>
+        <div>You're first to flip this hand — pick good (added to your hand) or bad (discarded, poisons its rank). Every flip after this one alternates automatically.</div>
         <button data-flip-good ${goodLeft ? "" : "disabled"}>Flip good row</button>
         <button data-flip-bad ${badLeft ? "" : "disabled"}>Flip bad row</button>
       `;
@@ -137,6 +145,7 @@ const TableUIGameOfLife = (function () {
       if (e.target.id === "deal-next-hand-btn") return orchestrator.dealNextHand();
       if (e.target.hasAttribute("data-flip-good")) return orchestrator.humanFlipChoice("good");
       if (e.target.hasAttribute("data-flip-bad")) return orchestrator.humanFlipChoice("bad");
+      if (e.target.hasAttribute("data-flip-required")) return orchestrator.humanFlipChoice(e.target.getAttribute("data-flip-required"));
       if (e.target.hasAttribute("data-bet-fold")) return orchestrator.humanBet("fold");
       if (e.target.hasAttribute("data-bet-call")) return orchestrator.humanBet("call");
       if (e.target.hasAttribute("data-bet-raise")) return orchestrator.humanBet("raise", Number(e.target.getAttribute("data-bet-raise")));

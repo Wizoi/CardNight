@@ -19,6 +19,14 @@
 // game in this project. A standard ante+bet round follows every single
 // flip (10 total across a hand), matching the "bet whenever new public
 // information appears" rhythm this codebase already uses everywhere else.
+//
+// Flips strictly ALTERNATE good/bad (2026-08-29, user's explicit rule):
+// only the very first flip of the whole hand is a free choice -- whoever
+// acts first picks good or bad -- and every flip after that is forced to
+// the opposite row of the one before it, regardless of who's acting.
+// Since both rows hold exactly 5 cards and the hand is exactly 10 flips,
+// strict alternation always exhausts both rows evenly with no row ever
+// running out early. See requiredRowFor/resolveFlip below.
 const RulesGameOfLife = (function () {
   function getPlayer(state, playerId) {
     return state.players.find((p) => p.id === playerId);
@@ -50,6 +58,7 @@ const RulesGameOfLife = (function () {
       players,
       goodRow,
       badRow,
+      lastFlippedRow: null, // null until the first flip -- see requiredRowFor
       poisonedRanks: [],
       flipsDone: 0,
       turnOrder,
@@ -112,18 +121,27 @@ const RulesGameOfLife = (function () {
     return !alreadyPoisoned;
   }
 
+  // null (only true before any flip has happened this hand) means a free
+  // choice; otherwise flips are forced to alternate off the last one.
+  function requiredRowFor(state) {
+    if (!state.lastFlippedRow) return null;
+    return state.lastFlippedRow === "good" ? "bad" : "good";
+  }
+
   function resolveFlip(state, playerId, rowChoice) {
     const player = getPlayer(state, playerId);
-    const row = rowChoice === "good" ? state.goodRow : state.badRow;
+    const actualRow = requiredRowFor(state) || rowChoice;
+    const row = actualRow === "good" ? state.goodRow : state.badRow;
     const idx = nextUnflippedIndex(row);
     const card = row[idx];
     card.flipped = true;
     state.flipsDone += 1;
+    state.lastFlippedRow = actualRow;
 
-    const isBad = rowChoice === "bad" || card.poisoned || state.poisonedRanks.includes(card.rank);
+    const isBad = actualRow === "bad" || card.poisoned || state.poisonedRanks.includes(card.rank);
     if (isBad) {
       const cascaded = resolveBadCard(state, card);
-      state.log.push(`${player.name} flips ${Deck.cardLabel(card)} from the ${rowChoice} row — bad${cascaded ? `, ${card.rank}s are now poisoned` : ""}.`);
+      state.log.push(`${player.name} flips ${Deck.cardLabel(card)} from the ${actualRow} row — bad${cascaded ? `, ${card.rank}s are now poisoned` : ""}.`);
     } else {
       player.hand.push({ rank: card.rank, suit: card.suit });
       state.log.push(`${player.name} flips ${Deck.cardLabel(card)} from the good row — added to their hand.`);
@@ -250,6 +268,7 @@ const RulesGameOfLife = (function () {
     createHandState,
     currentFlipPlayerId,
     nextUnflippedIndex,
+    requiredRowFor,
     resolveFlip,
     getCurrentBettor,
     isBettingRoundOver,

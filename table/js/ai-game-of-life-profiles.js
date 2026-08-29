@@ -8,12 +8,13 @@
 const GameOfLifeAIProfiles = (function () {
   const CALL_WORTHY_CATEGORY = HandEvaluator.CATEGORY.PAIR;
 
-  // No signal exists for which row is "better" to flip from -- table cards
-  // are all unknown until flipped, and nobody can see what's poisoned
-  // ahead of time. Good is pure upside (gains a card) vs. bad's pure risk
-  // (discards one), so every profile just prefers good while it still has
-  // cards, only flipping bad once forced to -- a documented simplification
-  // rather than invented strategic depth with no real signal behind it.
+  // Only ever actually consulted for the free choice on the very first
+  // flip of the hand -- every flip after that is forced to alternate
+  // (rules-game-of-life.js's requiredRowFor), so this return value is
+  // simply ignored on every other turn. No signal exists for which row is
+  // "better" anyway -- table cards are all unknown until flipped, and
+  // nobody can see what's poisoned ahead of time -- so good (pure upside)
+  // is always the pick when there's a real choice to make.
   function decideFlipChoice(player, state) {
     return state.goodRow.some((c) => !c.flipped) ? "good" : "bad";
   }
