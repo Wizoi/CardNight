@@ -261,6 +261,10 @@ fieldset {
   text-overflow: ellipsis;
 }
 
+#game-script-toggle-btn[hidden] {
+  display: none;
+}
+
 #game-script-toggle-btn {
   flex: none;
   width: 1.9rem;
@@ -291,6 +295,10 @@ fieldset {
 #game-script-toggle-btn svg {
   width: 1.1rem;
   height: 1.1rem;
+}
+
+#rules-link[hidden] {
+  display: none;
 }
 
 #rules-link {
@@ -388,6 +396,10 @@ fieldset {
 #more-menu-btn svg {
   width: 1.1rem;
   height: 1.1rem;
+}
+
+#more-menu[hidden] {
+  display: none;
 }
 
 #more-menu {
