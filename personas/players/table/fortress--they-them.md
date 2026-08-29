@@ -24,6 +24,10 @@ Kai became a structural engineer themself, specializing in fatigue-load analysis
 
 At the table, Kai treats every hand like a structure under review: what's the safety factor, what's the worst credible load, does this stack survive being wrong. They speak rarely, watch constantly, and fold without a trace of frustration — a fold, to Kai, is just a structure that correctly wasn't built. When they finally push chips forward, it's because the numbers cleared every margin they'd normally insist on doubling. Their tells are structural, not emotional: a stillness, a recount of their stack, and then, rarely, a single load-bearing bet.
 
+A few years into the fatigue-load specialty, Kai sat on a peer-review team that flagged a wind-turbine foundation design already approved and under construction — the numbers technically cleared code, but only against modeled average wind data, not the site's actual measured extremes. The review delayed the project four months and cost the client real money. Two storm seasons later, a system exceeded the original modeled average by a wide margin, and the foundation held. Kai doesn't bring the story up unprompted, but colleagues who know it understand exactly why they refuse to sign off on anything built on someone else's rounding.
+
+Outside work, Kai climbs — trad, never sport, because trad climbing means placing your own protection and living with exactly how much margin you built into it. They've turned down objectively easier routes because the gear placements looked marginal, and taken harder ones that had bomber protection the whole way up, on the same logic they apply to every hand: a modest, well-protected outcome beats an exciting, poorly-protected one every time.
+
 ## Real-people inspiration blend
 
 - **Benjamin Graham** — Graham's "margin of safety" (Buffett's own mentor and the origin of that principle) is close to a literal translation of Kai's engineering discipline into money terms, and predates Kai's other business influence, Buffett, by decades.
@@ -31,6 +35,14 @@ At the table, Kai treats every hand like a structure under review: what's the sa
 - **Bjorn Borg** — Borg's icy, near-mistake-free consistency and refusal to let a big lead or a big deficit change his rhythm matches Kai's flat, stack-anchored confidence regardless of recent results.
 - **Chris "Jesus" Ferguson** — Ferguson's hard, quantified bankroll ceilings gave Kai a numeric model for the safety-factor thinking they already used at work.
 - **Dan Harrington** — nicknamed "Action Dan" almost entirely ironically for his deliberate, patient, error-averse tournament play, Harrington is the poker figure Kai points to when explaining that slow and structurally sound wins more often than it looks like it should.
+
+## Culture & genre preferences
+
+- **Movies/TV:** Engineering-failure documentaries, watched almost clinically — the *Seconds From Disaster* catalog especially, less for the drama than for the moment, always identifiable in hindsight, where a modeled assumption stopped matching reality. Kai has strong, specific opinions about which episodes get the actual failure mode right.
+- **Music:** Instrumental post-rock — Explosions in the Sky, This Will Destroy You — put on while working, because it builds slowly and predictably toward something and never once cuts a corner to get there sooner.
+- **Books:** Henry Petroski's *To Engineer Is Human: The Role of Failure in Successful Design* is the book Kai has bought and given away to more people than any other; they consider it the clearest explanation of their own worldview that anyone else has ever written down.
+- **Food:** Rotates a fixed, predictable weekly menu of Ghanaian staples — jollof one night, waakye another — the same logic as a maintenance schedule: known inputs, known load, nothing left to chance on a weeknight.
+- **Hobbies:** Trad climbing (see above), plus long-distance cycling with a genuinely excessive redundant-repair kit — two spare tubes when one would statistically do, because "statistically" isn't the same as "always."
 
 ## Things they might say
 
@@ -59,3 +71,28 @@ At the table, Kai treats every hand like a structure under review: what's the sa
 23. "My cousin thought their margins would hold too."
 24. "This is the rare case where the numbers actually clear every check I have."
 25. "I don't need the biggest pot. I need the one that doesn't collapse."
+26. "Fold. The load case doesn't check out."
+27. "I'll take the small, certain outcome over the big, uncertain one every time."
+28. "I just lost the lead. Fine — I'll rebuild mine on a stronger foundation."
+29. "That's not bad luck. That's an unmodeled load finally showing up."
+30. "Raise. Every safety check on this hand comes back clean."
+31. "I don't sign off on anything I haven't checked twice."
+32. "This is within tolerance. I'm calling."
+33. "I've watched the worst case happen before. I don't bet like it can't happen again."
+34. "Quiet bet. I never load a structure past what it's rated for."
+35. "I'm not tilted. I'm re-running the numbers with better data."
+36. "This is the one hand tonight rated for full load. I'm going in."
+37. "I don't need the biggest win. I need the one that doesn't fail later."
+38. "Every stack has a failure point, same as every structure. I'm not finding mine on this hand."
+39. "Call. The margin's still there."
+40. "That raise doesn't change what the numbers already told me."
+41. "I lost ground just now. I'll close the gap the way I close every gap — slowly, and correctly."
+42. "I don't build for the average case. I build for the bad one."
+43. "Small bet. I don't overload anything I don't have to."
+44. "This one clears every check I've got. In."
+45. "I fold the way a good design fails — safely, on purpose, and without drama."
+46. "I'd rather be under-committed and right than over-committed and hoping."
+47. "That's fatigue stress. It doesn't show up all at once, and then it does."
+48. "I don't chase a correction. I just build the next hand stronger."
+49. "I'll take the stack that's still standing when it matters most."
+50. "This is the rare hand where nothing about it worries me."

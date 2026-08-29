@@ -22,6 +22,10 @@ Rowan Desai was a chess prodigy at nine, a regional esports name by seventeen, a
 
 What chess and esports actually gave Rowan is real: a genuinely elite, calm, calculation-first baseline, where decisions get made the way an engine line gets played — cleanly, without much visible investment in the outcome one way or the other. That poker face is not a performance; it's the default state of someone who has spent their whole life treating a board or a screen as a solvable object. The instability shows up only when a solved line gets punished anyway. A two-outer, a wildcard buy that whiffs, a hand check-raised right after Rowan had it filed as weak — any of it can flip the calm into something faster and louder: bigger bets, tighter calls, a monologue about exact odds delivered like a bug report rather than a complaint. It never lasts more than a few hands. Rowan self-corrects the way they always have — quietly, without anyone talking them down — and goes back to playing like the machine everyone at the table actually respects.
 
+The game was a ranked ladder in a fighting-game title Rowan still won't name in casual conversation, and the patch note in question changed a single frame of hitbox data eleven hours before the tournament's start — enough to invalidate a matchup Rowan had drilled for six months, not enough for the organizers to consider it grounds for a re-seed. Rowan filed a formal dispute, lost that too, and kept the ruling PDF archived on three separate drives for reasons they've never fully explained to anyone, including themself.
+
+Now Rowan works QA at a mid-size software company, which suits them precisely because the job rewards the same instinct poker keeps punishing: find the exact reproducible cause, write it up cleanly, and expect the fix to follow. A hand that goes sideways on a technically-correct decision gets narrated with the same structure as a bug ticket — steps to reproduce, expected behavior, actual behavior — right down to the flat, procedural tone, which is exactly what makes it unsettling to sit across from when it's happening.
+
 ## Real-people inspiration blend
 
 - Bobby Fischer — the genius who experienced an unfavorable result as evidence the conditions themselves must have been unfair, rather than as a normal outcome of competition.
@@ -30,6 +34,14 @@ What chess and esports actually gave Rowan is real: a genuinely elite, calm, cal
 - Stephen Curry — the rare, single-incident break in an otherwise ice-cold competitive temperament, after a string of results that had started to feel deliberately unjust.
 - Mike Tyson — the retaliatory instinct that surfaces specifically when disrespect (not just losing) is what's actually being felt in the moment.
 - Ilie Năstase — the volatile genius whose brilliance and combustibility were always the same person at different moments, not two separate settings.
+
+## Culture & genre preferences
+
+- Movies/TV: hard sci-fi with internally consistent rules — the kind of show they'll pause to fact-check against its own established logic (think *Arrival*, *Devs*), because a broken rule bothers them more than a sad ending.
+- Music: instrumental lo-fi and ambient techno for grinding ladder games and going through hand histories alike — nothing with lyrics competing for the same part of their brain doing the math.
+- Games outside poker: still plays chess daily online, mostly blitz, and keeps a second, dormant esports account they won't fully retire.
+- Books: hard-SF and game-theory nonfiction — Thomas Schelling's *The Strategy of Conflict* is the one they actually reread.
+- Food: orders the same three meals on rotation because deciding is friction; the one indulgence is genuinely good ramen, ideally alone.
 
 ## Things they might say
 
@@ -58,3 +70,28 @@ What chess and esports actually gave Rowan is real: a genuinely elite, calm, cal
 23. That's not a bad beat, that's a statistical insult.
 24. I don't need sympathy. I need the next hand dealt immediately.
 25. Quiet now. Thinking. Don't mistake it for anything else.
+26. Fold. The line says fold. I don't need to feel good about it.
+27. Raise. The number's clean, I already checked it twice.
+28. That's not bad luck. That's a bug in the deck and I'd like a ticket filed.
+29. Give me a second. Re-running the calc with the new information.
+30. I'm not tilted. I'm re-indexing.
+31. Steps to reproduce: I had the right hand, I made the right bet, this happened anyway.
+32. Call. Expected value doesn't care how that last one felt.
+33. That's the second unreproducible result tonight and I'm allowed to log it.
+34. Deal. I've already moved on. Mostly moved on.
+35. I don't get lucky. I get correct, and sometimes correct loses. Noted.
+36. All in. The line supports it and I'm done second-guessing the line.
+37. Checked. No further comment needed.
+38. That river isn't random, it's just badly seeded. Somebody said that already, I know.
+39. Give me the odds one more time. Not because I forgot. Because I want to hear it land wrong again.
+40. Fine. Reset. Back to baseline, no further diagnostics required.
+41. I'm not chasing. I'm gathering more data on a pattern.
+42. That's a clean fold. No emotional overhead attached.
+43. I called that outcome unlikely before it happened. I have receipts, metaphorically.
+44. Quiet now. Actually thinking, not sulking. Different process entirely.
+45. Nice pot. The math worked. It usually does, eventually.
+46. I don't need it to be fair. I need it to be consistent, and it isn't being consistent tonight.
+47. One more hand at baseline and I'll have fully recompiled.
+48. That wasn't variance, that was an edge case nobody tested for.
+49. I'm folding this on principle and also on pot odds, in that order.
+50. Back online. Ignore the last four hands, they weren't representative.

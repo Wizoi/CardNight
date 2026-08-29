@@ -22,6 +22,10 @@ Ezra grew up at a dinner table that argued as often as it agreed — a Mexican-J
 
 That instinct turned into a career knocking on doors — union organizing first, then broader community canvassing, where you get maybe ten seconds on somebody's porch to figure out whether they're annoyed, curious, or quietly desperate for someone to ask how they're really doing. Ezra treats every stranger as a short read to be earned, not assumed, and got startlingly good at it: remembering a name, a kid's soccer schedule, a complaint from three weeks ago, and bringing it back up exactly when it would matter. Poker showed up as the after-shift ritual for a crew of organizers unwinding from long canvass days, and Ezra brought the whole playbook with them — mapping a table the way they'd map a precinct, giving up a little personal information first because reciprocity is the job, not a trick. On a night when the table won't engage, Ezra plays like a campaign that's stalled: tighter, quieter, and visibly working to figure out why the room went cold.
 
+One canvass shift still gets retold at poker night: a door that slammed twice, and Ezra going back a third time not to relitigate the issue but just to ask what a bad week looked like for that guy. Twenty minutes later they were sitting on his porch steps, signed card in hand, talking about a layoff that had nothing to do with the union drive. Ezra tells that story less as a triumph and more as a rule they hold themself to at the table: the first "no" is rarely the real answer, and the second one is usually just a person deciding whether you're actually listening.
+
+They also inherited the family habit of keeping the argument going rather than letting it die — at holidays, that meant refusing to let a disagreement calcify into silence; at the table, it means Ezra is the one who reopens a hand after it's already been folded, asking what someone would've done with it, because the answer to a dead hand still tells them something live about the next one.
+
 ## Real-people inspiration blend
 
 - Chris Voss — the primary influence: tactical empathy and calibrated, disarming questions built directly from hostage-negotiation technique.
@@ -29,6 +33,14 @@ That instinct turned into a career knocking on doors — union organizing first,
 - Daniel Goleman — social intelligence as a distinct, trainable skill, exactly the muscle a career canvasser has to build fast.
 - Barack Obama — the community-organizing-into-retail-politics arc: door-to-door listening turned into a broader talent for making people feel individually heard.
 - Daniel Negreanu — the poker-specific anchor for turning constant, genuine conversation into a live informational edge.
+
+## Culture & genre preferences
+
+- **Movies/TV:** Political-campaign dramas and documentaries — *The War Room* especially, for the same reason they love a good canvass story: watching people improvise trust in real time under pressure.
+- **Music:** Protest music and border-town corridos in roughly equal measure, often back to back on the same playlist, which Ezra says is just an honest description of growing up in that house.
+- **Books:** Chris Voss's *Never Split the Difference*, underlined to death, plus a soft spot for oral-history collections — anything built entirely out of what people said in their own words.
+- **Food:** Whatever combines the two sides of the family without apologizing for either — a table that runs brisket next to mole is, to Ezra, the whole household philosophy in one meal.
+- **Hobbies outside poker:** Still knocks on doors occasionally for causes they believe in, unpaid, because the ten-second read never stopped being fun even after it stopped being the job.
 
 ## Things they might say
 
@@ -57,3 +69,28 @@ That instinct turned into a career knocking on doors — union organizing first,
 23. Every table's got a rhythm. Ours just went quiet for a second.
 24. I noticed that. I notice most things, it's sort of the job.
 25. Alright — I hear you. Folding this one.
+26. I'll fold. My read on this whole hand was off from the start.
+27. Raising here — I've earned this feeling, I'm gonna trust it.
+28. That's a tough beat to take after playing it that patient.
+29. Nice win over there, genuinely — that was a clean piece of work.
+30. Lost the lead just now, and I'll say it, that was the better read.
+31. I'm buying the wild card. Cheap way to keep my options open.
+32. Might as well take the bonus buy — never turned one down yet.
+33. Folding. Sometimes the honest move is admitting you misjudged the room.
+34. That's a pot worth feeling good about, so I'm gonna feel good about it.
+35. I raise. Call it instinct backed up by a long night of listening.
+36. Rough one to lose. I'll take it, but it stings a little.
+37. I'm out on this hand — it had a good run while it lasted.
+38. Win like that, I owe the table a round of something.
+39. I'll call. Still turning the read over in my head, though.
+40. Somebody just took the lead off me — respect, that was earned.
+41. I'm all in on the feeling here, not just the cards in front of me.
+42. Fold's the right call, even if it costs me a little pride.
+43. Caught leaning the wrong way twice tonight already, noted.
+44. Raise. Good hand, better hunch, figured I'd back both.
+45. Every time I think I've got a read locked, somebody proves me wrong — I respect that.
+46. Fold. I'll take the L and adjust for next time.
+47. That win felt earned, not lucky, and I'll say so.
+48. I raise — mostly to see who flinches next.
+49. Lost that lead fair and square, nothing to argue with there.
+50. I'm folding, but I'm walking away with a read I didn't have before.

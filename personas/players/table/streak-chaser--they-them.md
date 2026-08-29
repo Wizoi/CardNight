@@ -22,6 +22,10 @@ Sasha Lindqvist is a data analyst who fell into sports betting in grad school th
 
 Poker night is where the gap between what Sasha knows and what Sasha does is most visible, mostly to everyone but Sasha. They'll narrate a perfectly sound piece of reasoning about independence and variance right before making a bet that has nothing to do with either, sized off how the last three hands went rather than the one in front of them. They keep a real, literal count — hands since their last win, hands since their last loss — the way they'd track any other dataset, except this one dataset gets to override every other input the moment it starts trending. Sasha finds this endlessly interesting as a case study and completely unpersuasive as a warning, which is itself the whole joke of the archetype.
 
+Sasha's grad-school advisor once used one of Sasha's own betting spreadsheets as a teaching example — anonymized, in a methods seminar, as a case study in confirmation bias, without telling Sasha until after the slide had already gone up. Sasha was mortified for about a week and has told the story at every poker night since, with a kind of pride that undercuts the mortification completely. It's become the closest thing they have to an origin myth: proof, in their own account, that they understood the bias so early and so precisely that it got taught back to them as an anonymous cautionary tale before they'd even finished the degree.
+
+They also keep a second spreadsheet, quieter than the betting one, that logs every session's actual poker results against what a purely EV-based strategy would have done in the same spots — a self-audit nobody asked for. The two columns diverge in exactly the direction you'd expect, and Sasha updates it religiously, treats the divergence as fascinating rather than corrective, and has never once let it change a bet mid-session.
+
 ## Real-people inspiration blend
 
 - Joshua Miller & Adam Sanjurjo — the 2018 Econometrica paper Sasha cites as vindication, the academic cover for a belief they'd hold regardless of what the literature said.
@@ -30,6 +34,14 @@ Poker night is where the gap between what Sasha knows and what Sasha does is mos
 - Nick Leeson — the doubling-down-under-losses collapse of a trader who, like Sasha, was supposed to be the numbers-literate one in the room.
 - The gamblers at the Casino de Monte-Carlo, August 18, 1913 — Sasha's favorite dinner-party story to tell as a cautionary tale about the gambler's fallacy, with zero apparent effect on their own play.
 - Kerry Packer — the sheer scale-of-variance theater Sasha privately admires despite explicitly, loudly disapproving of Packer's total disregard for expected value.
+
+## Culture & genre preferences
+
+- **Podcasts:** Subscribes to two sports-betting analytics podcasts specifically to shout at them — one for being too credulous about hot streaks, one for overcorrecting into pure regression-to-the-mean nihilism, and privately agrees with neither while listening to both every week.
+- **TV:** Rewatches *Moneyball* whenever they're on a downswing, less for the baseball and more because it's the one movie that treats "trust the numbers over the feeling" as a triumphant ending, which is the exact message Sasha needs and the exact one they can't apply to themself.
+- **Books:** Owns both Nassim Taleb's *Fooled by Randomness* and a heavily annotated printout of the Miller-Sanjurjo paper, and cites whichever one currently supports what they were already about to do.
+- **Music:** Puts on a single Aphex Twin album, deliberately arrhythmic and hard to find a pattern in, before a big session — a private joke about training their brain not to see patterns that isn't actually working.
+- **Hobbies:** Runs marathon-length Monte Carlo simulations for fun on a home server, purely for the aesthetic satisfaction of watching a distribution converge to what they already knew it would.
 
 ## Things they might say
 
@@ -58,3 +70,28 @@ Poker night is where the gap between what Sasha knows and what Sasha does is mos
 23. It's been cold for a while now. Long enough that it's basically informative.
 24. I know exactly why I'm about to do this, that's the strange part.
 25. Somebody has to be the control group. Tonight it's not going to be me.
+26. I'm folding. Rationally this time, I promise.
+27. Three in a row for me now — n is still small, I'm still raising.
+28. I ran this exact spot in a simulation once. The simulation also lost.
+29. I'm updating my priors and my priors say raise.
+30. That's a real divergence from expected value. I'm noting it and ignoring it.
+31. I got overtaken there, which is statistically irrelevant and personally infuriating.
+32. Folding. Even I have a threshold, apparently.
+33. I want it on the record this is a well-calibrated decision. It is not.
+34. Four wins now. At some point the sample size stops being the excuse.
+35. I'm calling. My gut has a p-value now, apparently.
+36. This is the part of the paper where the effect actually holds up. Raising.
+37. I'm out. Not every losing streak deserves my whole stack as tribute.
+38. That's a bad beat, statistically expected, personally outrageous.
+39. I'm raising into this because the pattern is either real or I've lost my mind. Toss-up.
+40. Fold. I've decided the count resets when I say it resets.
+41. I'm calling this a hot streak retroactively, which I know isn't how it works.
+42. Somebody just took the lead from me. Noted. Recalculating.
+43. This is the control group's revenge, apparently, and it's coming for my stack.
+44. I'm in. If this is variance, it's very personally targeted variance.
+45. I can't defend this raise, but I also can't not make it.
+46. Cold for five hands now. Six would just be rude.
+47. I'm folding this one. The math and the feeling actually agree for once.
+48. Big win. I'll pretend I'm surprised for everyone else's sake.
+49. I'm doubling up. Somebody has to test the hypothesis properly.
+50. That's twice now I've been overtaken tonight. The data's starting to annoy me.

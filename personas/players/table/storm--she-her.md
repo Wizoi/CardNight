@@ -22,6 +22,10 @@ Camila Vega fenced foil for twelve years, six of them at a level serious enough 
 
 At the table, even, she is exactly the disciplined competitor that produced a near-national-team fencer: precise hand selection, patient lines, real comfort waiting for the right moment rather than forcing one. The trouble starts when a hand she's read correctly loses anyway — a two-outer, a scoop she had locked in that splits instead. To Camila that doesn't register as bad luck; it registers as a touch she landed that didn't get called, and for a few hands afterward she plays like she's trying to convince an invisible referee, betting bigger and calling wider to force the point through. She narrates it out loud, precisely and without much heat, more like she's entering an objection for the record than losing her composure. Then, on her own clock, she resets — visibly, deliberately, the same discipline she used to bring to the strip — and goes back to playing exactly as well as she actually is.
 
+The injury itself has its own story, one she'll tell if asked and sometimes if she isn't: a shoulder that had already been quietly compromised for a season, aggravated in a bout she should have won outright by the extra fifteen seconds it took a referee's overturned call to add back onto the clock. She doesn't blame the shoulder. She blames the fifteen seconds, and the six years since haven't made her let go of the arithmetic — that same specific number surfaces at her poker table, unprompted, whenever a hand runs long enough to turn on one bad card near the end.
+
+These days she coaches youth foil three mornings a week at the same club that trained her, and it's given her a second, gentler vocabulary for the same problem: she'll tell a twelve-year-old to reset between touches exactly the way she resets between hands, four slow breaths and a fresh stance, without ever quite admitting out loud that she's still practicing the lesson on herself.
+
 ## Real-people inspiration blend
 
 - Serena Williams (2018 US Open final) — the clearest real template for turning a disputed ruling into a demand that the room acknowledge the injustice of it, in the moment, out loud.
@@ -29,6 +33,14 @@ At the table, even, she is exactly the disciplined competitor that produced a ne
 - Ronnie O'Sullivan — a genius-level competitor whose frustration is legible as frustration at the gap between how well he played and how it turned out, not simple bad sportsmanship.
 - Nick Kyrgios — the habit of narrating an unlucky bounce as proof the result itself was unjust, loudly, before locking back in a few points later.
 - Jimmy Connors — the fighter's refusal to accept a close loss gracefully, treating the next point (or hand) as a chance to correct the record immediately.
+
+## Culture & genre preferences
+
+- Movies/TV: sports documentaries about disputed officiating — Olympic judging-controversy footage specifically, which she'll rewatch and argue with out loud.
+- Music: flamenco guitar for warming up, something with a fixed, driving tempo she can move to without thinking — the same reason she liked footwork drills.
+- Books: Timothy Gallwey's *The Inner Game of Tennis*, which she recommends to fencing students more than any fencing-specific book, because it's actually about the thing she's still working on.
+- Food: eats like an athlete out of habit — lean, portioned, unglamorous — except for a genuine weakness for good flan, the one dessert her mother made every birthday.
+- Hobbies: still fences for fun twice a month, purely foil, purely for the footwork, and has picked up bouldering for the same precise, one-move-at-a-time feeling.
 
 ## Things they might say
 
@@ -57,3 +69,28 @@ At the table, even, she is exactly the disciplined competitor that produced a ne
 23. I'm recalculating, not panicking. Give me one more hand to prove it.
 24. That was not a fair result, and I would like it noted for the record.
 25. Alright. I'm back to myself. Let's play actual poker now.
+26. En garde, always. Nobody catches me flat-footed twice.
+27. Fold. Clean touch, clean miss, no story attached.
+28. Raise. I'm not asking permission for a hand this good.
+29. That's the second questionable call tonight and I'm keeping a private scoreboard.
+30. I don't need the room to agree with me. I need the next card to behave.
+31. Four breaths. New stance. Deal.
+32. I earned that pot with my hands, not with luck, and I'd like that noted.
+33. I'm not sulking. I'm reviewing the footage in my head.
+34. Call. I've been out-touched by worse and still finished the match.
+35. That river had no business landing there and everybody at this table knows it.
+36. I don't rattle. I recalibrate mid-bout. This is no different.
+37. Give me the pot count again. I like knowing exactly what's on the line.
+38. Fine — I'm back. Reset stance, reset mind, deal the cards.
+39. I read that line correctly. The result just hasn't caught up yet.
+40. All in. I'm done waiting for the deck to be fair about it.
+41. That's a fold I make with my eyes closed. Muck it.
+42. I don't lose composure. I spend it, deliberately, and then I get it back.
+43. Two touches like that in one match and they'd have stopped the bout.
+44. I'll take this pot quietly. I've made enough noise for one night.
+45. Nobody scores off me twice in the same way. Watch.
+46. I'm not chasing the last hand. I'm just not finished with it yet.
+47. Good. Deal. I'm precise again.
+48. That's not variance, that's a scoring error, and I want it on the record.
+49. I don't need sympathy. I need one more clean touch to prove the point.
+50. Steady now. Back to form. Let's actually play.

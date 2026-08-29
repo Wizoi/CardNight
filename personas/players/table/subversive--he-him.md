@@ -22,6 +22,10 @@ Julien grew up in South London multi-tabling online poker before he was legally 
 
 Now in his late twenties, splitting time between live cash games and small warehouse DJ nights under a name nobody's supposed to connect to his day job, Julien treats any recognizable pattern — his own most of all — as a leak worth plugging whether or not it's currently profitable. A hot run built on one look makes him restless rather than proud, because a run the table can name is a run about to get punished, so he'll abandon it early and eat the cost. He narrates his own history mid-hand purely for the reveal ("I never buy the 9" — two hands before he buys it), and getting correctly read stings in a way losing the pot simply doesn't. He found CardNight through a friend's game night and stayed specifically for the wildcard buys and hi-lo declares — more surface area to stay unreadable across a whole session than any single hand of hold'em ever gave him.
 
+There's a specific incident he brings up when pressed on why he does this: a small London tournament, final table, an online commentator on the stream calling his range out loud two hands running — "Baptiste never pushes light from the button" — and Julien pushing exactly that spot with nothing, live, on camera, purely because the words had just left someone's mouth. He busted. The clip got clipped further, captioned as either genius or tilt depending who you asked, and it's been floating around small poker forums for two years under his cousin's old screen name — the same name that once fronted his teenage account. He's never corrected the attribution. Somewhere out there is a small, wrong legend about a player who doesn't exist, and Julien finds that more satisfying than setting the record straight.
+
+His DJ sets follow the same rule as his poker: three tracks into any set that's landing too cleanly with the room, he'll cut to something that clears the floor on purpose, then rebuild from nothing rather than ride the high — a habit the other DJs on the bill find borderline sabotage and Julien calls maintenance. He's walked off two decent bookings over exactly this, unbothered both times.
+
 ## Real-people inspiration blend
 
 - Tom Dwan — the deliberately unbalanced, pressure-first lines that stay hard to model over a long session rather than any single hand.
@@ -30,6 +34,14 @@ Now in his late twenties, splitting time between live cash games and small wareh
 - Phil Laak — the showman's instinct to turn the table into an audience, treating a session as something to be watched as much as won.
 - Stu Ungar — the mathematically sound brilliance paired with genuinely unpredictable behavior, admired and distrusted by the same people at the same time.
 - Mikhail Tal — choosing the move that unsettles the opponent over the one a solver would recommend, applied to a wildcard buy instead of a chess sacrifice.
+
+## Culture & genre preferences
+
+- **Film:** Seijun Suzuki's *Tokyo Drifter* and Nicolas Winding Refn's *Drive* — cold, stylized surfaces with sudden bursts of violence underneath, which is more or less how Julien wants to be experienced across a table.
+- **Music:** builds his own DJ sets around jungle-into-grime crossovers with deliberately unmixed, jarring transitions rather than smooth blends — he thinks a clean transition is a tell.
+- **Books:** Derren Brown's *Tricks of the Mind* — less interested in the magic tricks than the chapters on how expectation itself gets built and exploited.
+- **Food:** a strict rotation of South London market stalls, never the same one twice in a row on principle, even when one is clearly better.
+- **Hobbies:** solves chess puzzles from a battered Tal games collection and sometimes plays the objectively worse move on purpose just to see if it still works over the board.
 
 ## Things they might say
 
@@ -58,3 +70,25 @@ Now in his late twenties, splitting time between live cash games and small wareh
 23. Terrible call. I'd make it again just to keep you guessing.
 24. Two identical hands, two different Juliens. Keep up.
 25. You clocked me that time. Doesn't mean you'll clock the next one.
+26. Folding the nuts here purely because you'd bet the same way with air — can't have that lining up.
+27. Bought the wildcard on absolute rubbish. Somebody had to.
+28. Raise. Not because it's right, because it's rude.
+29. You just took the lead off me — good, means I get to be the surprise again.
+30. I'll take the bonus card nobody wanted, thanks.
+31. Won that pot on the ugliest possible line. I'll take it.
+32. Every DJ set I've ever ruined on purpose, I'd ruin again.
+33. Fold. Same hand, different Julien, remember.
+34. You caught the pattern for four hands. Congrats, it's retired.
+35. Raising into nothing just to see who flinches.
+36. That bad beat felt almost too on-brand to be upset about.
+37. Declined the buy. Everyone expected the buy. There's your answer.
+38. You got me clipped online once for a push like this. Do it again.
+39. Fold now, push later, and I won't tell you which hand.
+40. Win or lose, I'd rather be the story than the stack.
+41. Somebody just called my range out loud. Watch what happens.
+42. Raised my own bad habit straight into your face.
+43. You took my lead — fine, easier to be unreadable from behind.
+44. That fold cost me the pot and bought me a whole new read. Worth it.
+45. Bought the bonus on a hand that didn't need it. That's the whole point.
+46. Losing this one quietly isn't an option, sorry.
+47. I've contradicted myself three times tonight and I'm only getting started.
