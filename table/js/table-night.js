@@ -331,14 +331,15 @@ const TableNight = (function () {
   // AI pickers choose uniformly at random among every registered game for
   // now -- a natural later upgrade is weighting by archetype/house-favorite
   // data once games.md's "house favorite rating" field has real values. An
-  // AI dealer always just plays each variant option's own default (the
-  // standard base rule) rather than gambling on a random variant too --
-  // table-ui.js is responsible for showing the human what was picked,
-  // including any variants, before the table view appears.
+  // AI dealer also gambles on a random variant option per game (2026-08-29,
+  // user's explicit request -- previously always played each option's own
+  // default/standard rule) -- table-ui.js is responsible for showing the
+  // human what was picked, including any variants, before the table view
+  // appears.
   function autoPickForAI() {
     const list = GameRegistry.list();
     const choice = list[Math.floor(Math.random() * list.length)];
-    const variantChoices = GameRegistry.defaultVariantChoices(choice);
+    const variantChoices = GameRegistry.randomVariantChoices(choice);
     chooseNextGame(choice.id, variantChoices);
     return { choice, variantChoices };
   }

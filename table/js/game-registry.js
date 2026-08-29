@@ -32,6 +32,20 @@ const GameRegistry = (function () {
     return choices;
   }
 
+  // Same shape as defaultVariantChoices, but rolls a uniformly random
+  // choice per option instead of always the default -- an AI dealer used
+  // to always play the standard base rule (see the old comment on
+  // autoPickForAI in table-night.js), but per the user's explicit request
+  // (2026-08-29) an AI dealer now gambles on variants too, same as a human
+  // picker could.
+  function randomVariantChoices(entry) {
+    const choices = {};
+    for (const opt of entry.variantOptions || []) {
+      choices[opt.key] = opt.choices[Math.floor(Math.random() * opt.choices.length)].value;
+    }
+    return choices;
+  }
+
   // Free Enterprise's two documented price scales -- defined once so a
   // variantOptions choice's `value` and its `default` can be the exact same
   // object reference (variantFormMarkup/describeVariantChoice compare with
@@ -371,5 +385,5 @@ const GameRegistry = (function () {
     return games[id] || null;
   }
 
-  return { list, get, defaultVariantChoices };
+  return { list, get, defaultVariantChoices, randomVariantChoices };
 })();
