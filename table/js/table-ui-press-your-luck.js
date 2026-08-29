@@ -41,6 +41,20 @@ const TableUIPressYourLuck = (function () {
           const high = PressYourLuckRules.handSumResult(gvs.state, p, cfg.highTarget);
           debugLine = `<div class="seat-debug">AI's actual hand: low ${low.busted ? "busted" : low.value}, high ${high.busted ? "busted" : high.value}</div>`;
         }
+        // Once the hand's over, every contender's actual computed value is
+        // shown -- not just the winner's name -- so a result (especially
+        // with flexible-value cards like Aces or a paid-flexible 10, where
+        // the raw cards on their own don't make the winning value obvious)
+        // can actually be verified. Reported 2026-08-29: a result naming a
+        // winner with no value shown left it looking arbitrary/like a tie
+        // when it demonstrably wasn't.
+        let valueLine = "";
+        if (revealed && !p.folded) {
+          const cfg = gvs.state.gameConfig;
+          const low = PressYourLuckRules.handSumResult(gvs.state, p, cfg.lowTarget);
+          const high = PressYourLuckRules.handSumResult(gvs.state, p, cfg.highTarget);
+          valueLine = `<div class="seat-status">Low: ${low.busted ? "busted" : low.value} · High: ${high.busted ? "busted" : high.value}</div>`;
+        }
         const cards =
           gvs.state && !p.folded ? p.hand.map((c) => cardMarkup(c, revealed ? false : !c.faceUp)).join("") : "";
         return `
@@ -51,6 +65,7 @@ const TableUIPressYourLuck = (function () {
             <div class="seat-chips">${money(ChipEconomy.chipsToDollars(p.wallet.chips))}</div>
             <div class="seat-cards">${cards}</div>
             ${debugLine}
+            ${valueLine}
             ${gvs.state && p.folded ? '<div class="seat-status">Folded</div>' : ""}
             ${gvs.state && p.busted && !p.folded && gvs.state.status !== "complete" ? '<div class="seat-status">Busted</div>' : ""}
             ${gvs.state && p.standing && !p.busted && !p.folded && gvs.state.status !== "complete" ? '<div class="seat-status">Standing</div>' : ""}
@@ -81,8 +96,12 @@ const TableUIPressYourLuck = (function () {
       } else {
         const lowShareChips = Math.floor(potDisplay / 2);
         const highShareChips = potDisplay - lowShareChips;
-        const lowNames = gvs.state.results.lowWinners.map((id) => PressYourLuckRules.getPlayer(gvs.state, id).name);
-        const highNames = gvs.state.results.highWinners.map((id) => PressYourLuckRules.getPlayer(gvs.state, id).name);
+        const nameWithValue = (id, results) => {
+          const r = results.find((x) => x.id === id).result;
+          return `${PressYourLuckRules.getPlayer(gvs.state, id).name} (${r.busted ? "busted" : r.value})`;
+        };
+        const lowNames = gvs.state.results.lowWinners.map((id) => nameWithValue(id, gvs.state.results.lowResults));
+        const highNames = gvs.state.results.highWinners.map((id) => nameWithValue(id, gvs.state.results.highResults));
         resultLine = `
           <div><strong>Low (${formatTarget(cfg.lowTarget)}, ${money(ChipEconomy.chipsToDollars(lowShareChips))}):</strong> ${lowNames.length ? lowNames.join(", ") : "no qualifiers — carries forward"}</div>
           <div><strong>High (${formatTarget(cfg.highTarget)}, ${money(ChipEconomy.chipsToDollars(highShareChips))}):</strong> ${highNames.length ? highNames.join(", ") : "no qualifiers — carries forward"}</div>
@@ -132,21 +151,15 @@ const TableUIPressYourLuck = (function () {
       `;
       return;
     }
-    if (gvs.pending && gvs.pending.kind === "initialBuyback" && gvs.pending.playerId === humanId) {
+    if (gvs.pending && (gvs.pending.kind === "initialBuyback" || gvs.pending.kind === "buyBack") && gvs.pending.playerId === humanId) {
       const priceDollars = cfg.buyBack.priceScheduleDollars[human.buyBacksUsed];
+      const cardLabel = gvs.pending.kind === "initialBuyback" ? "your up-card" : "that card";
+      const canFlex = PressYourLuckRules.canPayFlexTen(gvs.state, humanId);
       el.actionPanel.innerHTML = `
-        <div>Buy back your up-card for ${money(priceDollars)} — replaced, hidden again? (optional)</div>
-        <button data-buyback-yes>Buy it back (${money(priceDollars)})</button>
-        <button data-buyback-no>Keep it</button>
-      `;
-      return;
-    }
-    if (gvs.pending && gvs.pending.kind === "buyBack" && gvs.pending.playerId === humanId) {
-      const priceDollars = cfg.buyBack.priceScheduleDollars[human.buyBacksUsed];
-      el.actionPanel.innerHTML = `
-        <div>Buy back that card for ${money(priceDollars)} — replaced, hidden again? (optional)</div>
-        <button data-buyback-yes>Buy it back (${money(priceDollars)})</button>
-        <button data-buyback-no>Keep it</button>
+        <div>Buy back ${cardLabel} for ${money(priceDollars)} — replaced, still face up? (optional)</div>
+        <button data-buyback-choice="buyBack">Buy it back (${money(priceDollars)})</button>
+        ${canFlex ? `<button data-buyback-choice="payFlex">Pay ${money(cfg.flexTenPriceDollars)} — make it flexible (0 or 10)</button>` : ""}
+        <button data-buyback-choice="keep">Keep it</button>
       `;
       return;
     }
@@ -172,11 +185,9 @@ const TableUIPressYourLuck = (function () {
       if (e.target.id === "deal-next-hand-btn") return orchestrator.dealNextHand();
       if (e.target.hasAttribute("data-hit")) return orchestrator.humanHitOrStand("hit");
       if (e.target.hasAttribute("data-stand")) return orchestrator.humanHitOrStand("stand");
-      if (e.target.hasAttribute("data-buyback-yes")) {
-        return orchestrator.humanInitialBuyback ? tryBoth(orchestrator, true) : null;
-      }
-      if (e.target.hasAttribute("data-buyback-no")) {
-        return tryBoth(orchestrator, false);
+      const buybackBtn = e.target.closest("[data-buyback-choice]");
+      if (buybackBtn) {
+        return tryBoth(orchestrator, buybackBtn.getAttribute("data-buyback-choice"));
       }
       if (e.target.hasAttribute("data-bet-fold")) return orchestrator.humanBet("fold");
       if (e.target.hasAttribute("data-bet-call")) return orchestrator.humanBet("call");
@@ -189,9 +200,9 @@ const TableUIPressYourLuck = (function () {
   // orchestrator method is the real no-op vs. the live one (the other
   // silently no-ops on a pending-kind mismatch, same guard every other
   // family's humanX functions already use).
-  function tryBoth(orchestrator, willBuy) {
-    orchestrator.humanInitialBuyback(willBuy);
-    orchestrator.humanBuyBack(willBuy);
+  function tryBoth(orchestrator, choice) {
+    orchestrator.humanInitialBuyback(choice);
+    orchestrator.humanBuyBack(choice);
   }
 
   return { renderSeats, renderBoard, renderHumanHand, renderActionPanel, wireActions };

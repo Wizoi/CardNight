@@ -111,9 +111,21 @@ const PressYourLuckRules = (function () {
     return state.dealOrder[state.initialBuybackCursor];
   }
 
-  function resolveInitialBuyback(state, playerId, willBuy) {
-    if (willBuy) applyBuyBack(state, playerId);
-    else state.log.push(`${getPlayer(state, playerId).name} keeps the card.`);
+  // choice: "buyBack" | "payFlex" | "keep" -- payFlex only ever applies to a
+  // just-dealt "10" (see applyFlexTenPurchase); a card's buy-back and its
+  // flex purchase are mutually exclusive choices, since buying it back
+  // replaces the card entirely. Returns { needsBuyBack } -- a "buyBack"
+  // choice that still leaves another buy-back available (real bug reported
+  // 2026-08-29: this used to always move on after exactly one buy-back,
+  // when games.md's "down the river" is a genuinely chained decision --
+  // keep re-offering the SAME player a buy-back on the fresh replacement
+  // card, at the next escalating price, until they decline or maxBuys is
+  // reached) keeps the cursor on this same player instead of advancing.
+  function resolveInitialBuyback(state, playerId, choice) {
+    applyCardChoice(state, playerId, choice);
+    if (choice === "buyBack" && canBuyBackNow(state, playerId)) {
+      return { needsBuyBack: true };
+    }
     state.initialBuybackCursor += 1;
     if (state.initialBuybackCursor >= state.dealOrder.length) {
       if (state.gameConfig.bettingEnabled) {
@@ -123,6 +135,50 @@ const PressYourLuckRules = (function () {
         state.status = "playing";
       }
     }
+    return { needsBuyBack: false };
+  }
+
+  // Shared by resolveInitialBuyback and resolveBuyBack -- both offer the
+  // exact same 3-way choice on a just-dealt face-up card.
+  function applyCardChoice(state, playerId, choice) {
+    if (choice === "buyBack") applyBuyBack(state, playerId);
+    else if (choice === "payFlex") applyFlexTenPurchase(state, playerId);
+    else state.log.push(`${getPlayer(state, playerId).name} keeps the card.`);
+  }
+
+  function canBuyBackNow(state, playerId) {
+    const cfg = state.gameConfig;
+    if (!cfg.buyBack) return false;
+    const player = getPlayer(state, playerId);
+    const card = player.hand[player.hand.length - 1];
+    return !!card && card.faceUp && player.buyBacksUsed < cfg.buyBack.maxBuys;
+  }
+
+  // games.md's "$1 buys a specific 10 the flexible 0-or-10 choice" -- a
+  // dealt 10 is normally fixed at value 10 (see SEVEN_TWENTYSEVEN_CONFIG's
+  // cardValue); paying this flips it to genuinely flexible, same as an
+  // Ace's built-in 1-or-11. Implemented 2026-08-29 (previously a documented
+  // known gap) after the user pointed out it wasn't reflected anywhere,
+  // "and if it was a down card, that would be automatically reflected" --
+  // true for a hidden card's ambiguity (achievableSums already tries every
+  // value), but a face-up 10's value is fixed the instant it's dealt, so
+  // flexibility has to be bought explicitly like this instead.
+  function canPayFlexTen(state, playerId) {
+    const priceDollars = state.gameConfig.flexTenPriceDollars;
+    if (!priceDollars) return false;
+    const player = getPlayer(state, playerId);
+    const card = player.hand[player.hand.length - 1];
+    return !!card && card.rank === "10" && !card.flexTen;
+  }
+
+  function applyFlexTenPurchase(state, playerId) {
+    const player = getPlayer(state, playerId);
+    const card = player.hand[player.hand.length - 1];
+    const priceDollars = state.gameConfig.flexTenPriceDollars;
+    const { paid } = ChipEconomy.pay(player.wallet, ChipEconomy.dollarsToChips(priceDollars));
+    state.pot += paid;
+    card.flexTen = true;
+    state.log.push(`${player.name} pays $${priceDollars.toFixed(2)} to make that 10 flexible (0 or 10).`);
   }
 
   function applyBuyBack(state, playerId) {
@@ -134,8 +190,13 @@ const PressYourLuckRules = (function () {
     const oldCard = player.hand[player.hand.length - 1];
     state.discardPile.push({ rank: oldCard.rank, suit: oldCard.suit });
     const replacement = drawCard(state);
-    player.hand[player.hand.length - 1] = { rank: replacement.rank, suit: replacement.suit, faceUp: false };
-    state.log.push(`${player.name} buys back the card for $${priceDollars.toFixed(2)} — hidden again.`);
+    // A bought-back card replaces a face-up card the player didn't want --
+    // the replacement is still dealt face up (same as any other dealt
+    // card in 7-27), not hidden. Real bug, reported 2026-08-29: this used
+    // to hardcode faceUp: false, silently taking a player's card OUT of
+    // view instead of just swapping it for a new one.
+    player.hand[player.hand.length - 1] = { rank: replacement.rank, suit: replacement.suit, faceUp: true };
+    state.log.push(`${player.name} buys back the card for $${priceDollars.toFixed(2)} — new card dealt face up.`);
   }
 
   // --- Main hit-or-stand loop. Turn order is a repeating round-robin over
@@ -323,7 +384,7 @@ const PressYourLuckRules = (function () {
     player.hand.push(card);
     state.lapHitCount += 1;
     state.log.push(`${player.name} takes a card.`);
-    const canBuyBack = card.faceUp && state.gameConfig.buyBack && player.buyBacksUsed < state.gameConfig.buyBack.maxBuys;
+    const canBuyBack = canBuyBackNow(state, playerId);
     if (!canBuyBack) {
       checkAutoStandIfBusted(state, player);
       advanceCursor(state);
@@ -331,11 +392,17 @@ const PressYourLuckRules = (function () {
     return { dealtCard: card, needsBuyBack: canBuyBack };
   }
 
-  function resolveBuyBack(state, playerId, willBuy) {
-    if (willBuy) applyBuyBack(state, playerId);
-    else state.log.push(`${getPlayer(state, playerId).name} keeps the card.`);
+  // choice: "buyBack" | "payFlex" | "keep" -- see resolveInitialBuyback for
+  // why a "buyBack" choice can chain into another needsBuyBack instead of
+  // ending the turn.
+  function resolveBuyBack(state, playerId, choice) {
+    applyCardChoice(state, playerId, choice);
+    if (choice === "buyBack" && canBuyBackNow(state, playerId)) {
+      return { needsBuyBack: true };
+    }
     checkAutoStandIfBusted(state, getPlayer(state, playerId));
     advanceCursor(state);
+    return { needsBuyBack: false };
   }
 
   // Under `bustRule: 'bust'` (5.5-21; never true for 7-27's 'noBust'), once
@@ -454,6 +521,7 @@ const PressYourLuckRules = (function () {
     currentDecisionPlayerId,
     resolveHitOrStand,
     resolveBuyBack,
+    canPayFlexTen,
     getCurrentBettor,
     isBettingRoundOver,
     maxRaiseDollars,

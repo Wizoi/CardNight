@@ -100,8 +100,14 @@ const SessionPressYourLuck = (function () {
             }
             await sleep(DECIDE_DELAY_MS);
             const profile = AIProfiles.profileFor(player.profileName);
-            const willBuy = PressYourLuckAIProfiles.decideBuyBack(player, state, profile);
-            PressYourLuckRules.resolveInitialBuyback(state, playerId, willBuy);
+            const choice = PressYourLuckAIProfiles.decideBuyBack(player, state, profile);
+            // resolveInitialBuyback only advances the cursor once this
+            // player is genuinely done (declines, or hits maxBuys) --
+            // `continue` re-enters this same branch and re-fetches
+            // currentInitialBuybackPlayerId, which naturally chains
+            // another decision for the SAME player when needed, with no
+            // special-casing required here.
+            PressYourLuckRules.resolveInitialBuyback(state, playerId, choice);
             notify();
             continue;
           }
@@ -153,12 +159,16 @@ const SessionPressYourLuck = (function () {
           await sleep(DECIDE_DELAY_MS);
           const profile = AIProfiles.profileFor(player.profileName);
           const action = PressYourLuckAIProfiles.decideHitOrStand(player, state, profile);
-          const { needsBuyBack } = PressYourLuckRules.resolveHitOrStand(state, playerId, action);
+          let { needsBuyBack } = PressYourLuckRules.resolveHitOrStand(state, playerId, action);
           notify();
-          if (needsBuyBack) {
+          // A "buyBack" choice can chain into another needsBuyBack (the
+          // fresh replacement card at the next escalating price) instead
+          // of ending the turn -- loop until this player is genuinely
+          // done, same as the human path's own re-armed pending object.
+          while (needsBuyBack) {
             await sleep(DECIDE_DELAY_MS);
-            const willBuy = PressYourLuckAIProfiles.decideBuyBack(player, state, profile);
-            PressYourLuckRules.resolveBuyBack(state, playerId, willBuy);
+            const choice = PressYourLuckAIProfiles.decideBuyBack(player, state, profile);
+            ({ needsBuyBack } = PressYourLuckRules.resolveBuyBack(state, playerId, choice));
             notify();
           }
         }
@@ -188,12 +198,12 @@ const SessionPressYourLuck = (function () {
       notify();
     }
 
-    function humanInitialBuyback(willBuy) {
+    function humanInitialBuyback(choice) {
       if (!pending || pending.kind !== "initialBuyback") return;
-      PressYourLuckRules.resolveInitialBuyback(state, pending.playerId, willBuy);
-      pending = null;
+      const { needsBuyBack } = PressYourLuckRules.resolveInitialBuyback(state, pending.playerId, choice);
+      pending = needsBuyBack ? { kind: "initialBuyback", playerId: pending.playerId } : null;
       notify();
-      processLoop();
+      if (!needsBuyBack) processLoop();
     }
 
     function humanHitOrStand(action) {
@@ -205,11 +215,12 @@ const SessionPressYourLuck = (function () {
       if (!needsBuyBack) processLoop();
     }
 
-    function humanBuyBack(willBuy) {
+    function humanBuyBack(choice) {
       if (!pending || pending.kind !== "buyBack") return;
-      PressYourLuckRules.resolveBuyBack(state, pending.playerId, willBuy);
-      pending = null;
+      const { needsBuyBack } = PressYourLuckRules.resolveBuyBack(state, pending.playerId, choice);
+      pending = needsBuyBack ? { kind: "buyBack", playerId: pending.playerId } : null;
       notify();
+      if (needsBuyBack) return;
       processLoop();
     }
 

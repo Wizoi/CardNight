@@ -34,20 +34,26 @@ const SEVEN_TWENTYSEVEN_CONFIG = {
   bustRule: "noBust", // going over either target does NOT disqualify a hand -- just whichever's numerically closest wins
   anteDollars: 0.25, // games.md: half the standard 50c default
   // Ace is genuinely flexible (1 or 11); face cards fixed at 0.5. A 10 is
-  // fixed at 10 here -- games.md's "$1 buys a specific 10 the flexible
-  // 0-or-10 choice" sub-mechanic is a known gap, not implemented (a real
-  // per-card micro-decision layered on top of an already-elaborate buy-back
-  // system was judged disproportionate scope for this build pass).
+  // fixed at 10 unless its holder pays flexTenPriceDollars to make it
+  // genuinely flexible too (0 or 10) -- games.md's "$1 buys a specific 10
+  // the flexible 0-or-10 choice," implemented 2026-08-29 (previously a
+  // known gap) via card.flexTen, set by PressYourLuckRules.
+  // applyFlexTenPurchase the moment it's paid for.
   cardValue(card) {
     if (card.rank === "A") return [1, 11];
     if (card.rank === "J" || card.rank === "Q" || card.rank === "K") return [0.5];
+    if (card.rank === "10" && card.flexTen) return [0, 10];
     return [Number(card.rank)];
   },
+  flexTenPriceDollars: 1,
   initialDeal: { faceUp: [false, true] }, // 1 down, then 1 up
   dealtCardsFaceUp: true, // every card after the initial down card is dealt face up, same as the up-card itself
   // "Down the river": escalating buy-back, up to 3 total across the whole
-  // hand, on any face-up card (the initial up-card included). A bought-back
-  // card is replaced and dealt face DOWN ("hidden again").
+  // hand, on any face-up card (the initial up-card included) -- a genuinely
+  // CHAINED decision (buy the $1 replacement, and if it's still eligible,
+  // you're immediately offered the $2 one, then the $3 one, not just one
+  // buy-back per newly-dealt card). A bought-back card is replaced and
+  // dealt face up again, same as any other dealt card here.
   buyBack: { priceScheduleDollars: [1, 2, 3], maxBuys: 3 },
   kitchenSink: true, // exactly 7 for low AND exactly 27 for high at once wins the whole pot outright
   tieBreak: "split", // standard house default -- no exception documented for this game
