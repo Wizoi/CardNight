@@ -109,6 +109,7 @@ const GutsRules = (function () {
       players,
       gameConfig,
       deck: deck.slice(cursor),
+      discardPile: [], // exchanged-away cards from buyExchange -- see there
       wildRanks,
       flippedWildcards,
       dummyHand,
@@ -225,15 +226,23 @@ const GutsRules = (function () {
 
   // 3 Buy 5 / 5 Buy 5's "buy/exchange a card" mechanic: discard one card,
   // draw a replacement, at a dealer-set price (games.md doesn't specify a
-  // number — $1/card here is a judgment call, not a documented rule).
+  // number — $1/card here is a judgment call, not a documented rule). Each
+  // round's own fresh 52+-card deck plus at-most-8-stayers-each-exchanging-
+  // once bound means this can't actually run the deck dry in practice, but
+  // the discarded card still needs a real home (drawWithReshuffle) rather
+  // than silently vanishing from the game's total card count -- the same
+  // "in play vs. discarded vs. still in the deck" bookkeeping every other
+  // reshuffling game in this project already keeps.
   function buyExchange(state, playerId, cardIndex) {
     const player = getPlayer(state, playerId);
     const priceDollars = state.gameConfig.exchangePriceDollars;
     if (player.wallet.chips < ChipEconomy.dollarsToChips(priceDollars)) return false;
-    const replacement = state.deck.shift();
+    const { card: replacement, reshuffled } = Deck.drawWithReshuffle(state);
     if (!replacement) return false;
+    if (reshuffled) state.log.push("The deck ran out — reshuffling exchanged cards back in.");
     const { paid } = ChipEconomy.pay(player.wallet, ChipEconomy.dollarsToChips(priceDollars));
     state.pot += paid;
+    state.discardPile.push(player.hand[cardIndex]);
     player.hand[cardIndex] = { rank: replacement.rank, suit: replacement.suit };
     state.log.push(`${player.name} exchanges a card for $${priceDollars.toFixed(2)}.`);
     return true;

@@ -100,31 +100,55 @@ const SessionGuts = (function () {
     // submitted does resolvePassingFromSelections actually redistribute the
     // cards -- so nobody's choice is informed by having already seen a
     // neighbor's post-pass hand.
+    // `running` is ONE guard shared across all three chained phases
+    // (passing -> declare -> exchange), deliberately: the whole sequence
+    // from "kick off the next phase" to "everyone's resolved this batch,
+    // pausing only where a human needs to act" is one continuous logical
+    // unit of work. Each phase therefore has a thin GATED wrapper (checks/
+    // sets `running`, the real entry point for beginHand and the human-
+    // facing handlers below) plus an ungated `*Inner` body that does the
+    // actual work -- a phase transitioning straight into the next one
+    // (resolvePassingFromSelections -> declare, or declare -> exchange)
+    // calls the next phase's `*Inner` directly, NOT its gated wrapper.
+    //
+    // This split exists because of a real, previously-shipped bug: calling
+    // the gated wrapper from inside another phase's still-running `try`
+    // block always no-oped (the shared flag was already `true`), silently
+    // stalling the hand the moment a phase resolved without ever needing
+    // to pause for a human mid-loop -- which, with exactly one human seat,
+    // is the ONLY way `resolvePassingFromSelections`/afterDeclarePhase's
+    // own chained call could ever actually run. Caught live testing 3 Buy
+    // 5's exchange phase: every hand that reached 2+ stayers got stuck at
+    // "declaring" forever with nothing pending, chips already ante'd.
     async function processPassingLoop() {
       if (running) return;
       running = true;
       try {
-        for (const p of players) {
-          if (state.passSelections[p.id] != null) continue;
-          if (p.isHuman) {
-            pending = { kind: "passSelection" };
-            if (!passSelectionSoFar) passSelectionSoFar = { assignments: {} };
-            notify();
-            return;
-          }
-          await sleep(DECIDE_DELAY_MS);
-          const { toLeftIdx, toRightIdx } = GutsRules.defaultPassSelection(state, p, state.passCounts.left, state.passCounts.right);
-          GutsRules.submitPassSelection(state, p.id, toLeftIdx, toRightIdx);
-          notify();
-        }
-        pending = null;
-        passSelectionSoFar = null;
-        GutsRules.resolvePassingFromSelections(state);
-        notify();
-        await processDeclareLoop();
+        await processPassingLoopInner();
       } finally {
         running = false;
       }
+    }
+
+    async function processPassingLoopInner() {
+      for (const p of players) {
+        if (state.passSelections[p.id] != null) continue;
+        if (p.isHuman) {
+          pending = { kind: "passSelection" };
+          if (!passSelectionSoFar) passSelectionSoFar = { assignments: {} };
+          notify();
+          return;
+        }
+        await sleep(DECIDE_DELAY_MS);
+        const { toLeftIdx, toRightIdx } = GutsRules.defaultPassSelection(state, p, state.passCounts.left, state.passCounts.right);
+        GutsRules.submitPassSelection(state, p.id, toLeftIdx, toRightIdx);
+        notify();
+      }
+      pending = null;
+      passSelectionSoFar = null;
+      GutsRules.resolvePassingFromSelections(state);
+      notify();
+      await processDeclareLoopInner();
     }
 
     // Clicking an unassigned card assigns it to whichever pile still has
@@ -169,24 +193,28 @@ const SessionGuts = (function () {
       if (running) return;
       running = true;
       try {
-        for (const p of players) {
-          if (state.stayDecisions[p.id] != null) continue;
-          if (p.isHuman) {
-            pending = { kind: "stayDecision" };
-            notify();
-            return;
-          }
-          await sleep(DECIDE_DELAY_MS);
-          const profile = AIProfiles.profileFor(p.profileName);
-          const stayingIn = GutsAIProfiles.decideStayIn(p, state, profile);
-          GutsRules.submitStayDecision(state, p.id, stayingIn);
-          notify();
-        }
-        pending = null;
-        await afterDeclarePhase();
+        await processDeclareLoopInner();
       } finally {
         running = false;
       }
+    }
+
+    async function processDeclareLoopInner() {
+      for (const p of players) {
+        if (state.stayDecisions[p.id] != null) continue;
+        if (p.isHuman) {
+          pending = { kind: "stayDecision" };
+          notify();
+          return;
+        }
+        await sleep(DECIDE_DELAY_MS);
+        const profile = AIProfiles.profileFor(p.profileName);
+        const stayingIn = GutsAIProfiles.decideStayIn(p, state, profile);
+        GutsRules.submitStayDecision(state, p.id, stayingIn);
+        notify();
+      }
+      pending = null;
+      await afterDeclarePhase();
     }
 
     function humanDeclare(stayingIn) {
@@ -201,7 +229,7 @@ const SessionGuts = (function () {
       const stayers = GutsRules.inPlayers(state);
       if (stayers.length >= 2 && gameConfig.exchangePriceDollars) {
         exchangeQueue = stayers.map((p) => p.id);
-        await processExchangeLoop();
+        await processExchangeLoopInner();
         return;
       }
       if (stayers.length >= 1 && gameConfig.bonusCards) {
@@ -215,26 +243,30 @@ const SessionGuts = (function () {
       if (running) return;
       running = true;
       try {
-        while (exchangeQueue.length) {
-          const playerId = exchangeQueue[0];
-          const player = GutsRules.getPlayer(state, playerId);
-          if (player.isHuman) {
-            pending = { kind: "exchangeDecision", playerId };
-            notify();
-            return;
-          }
-          exchangeQueue.shift();
-          await sleep(DECIDE_DELAY_MS);
-          const profile = AIProfiles.profileFor(player.profileName);
-          const cardIndex = GutsAIProfiles.decideBuyExchange(player, state, profile);
-          if (cardIndex >= 0) GutsRules.buyExchange(state, playerId, cardIndex);
-          notify();
-        }
-        pending = null;
-        finishRound();
+        await processExchangeLoopInner();
       } finally {
         running = false;
       }
+    }
+
+    async function processExchangeLoopInner() {
+      while (exchangeQueue.length) {
+        const playerId = exchangeQueue[0];
+        const player = GutsRules.getPlayer(state, playerId);
+        if (player.isHuman) {
+          pending = { kind: "exchangeDecision", playerId };
+          notify();
+          return;
+        }
+        exchangeQueue.shift();
+        await sleep(DECIDE_DELAY_MS);
+        const profile = AIProfiles.profileFor(player.profileName);
+        const cardIndex = GutsAIProfiles.decideBuyExchange(player, state, profile);
+        if (cardIndex >= 0) GutsRules.buyExchange(state, playerId, cardIndex);
+        notify();
+      }
+      pending = null;
+      finishRound();
     }
 
     function humanExchangeDecision(cardIndex) {
