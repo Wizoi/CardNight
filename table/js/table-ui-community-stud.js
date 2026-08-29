@@ -20,11 +20,19 @@ const TableUICommunityStud = (function () {
   function renderSeats(el, gvs, debugMode, activeQuip) {
     const currentBettorId = gvs.state && gvs.state.bettingRound ? CommunityStudRules.getCurrentBettor(gvs.state) : null;
     const peekAi = debugMode && gvs.state;
+    // Hole cards stay private the whole hand, but once the hand is
+    // complete every non-folded player's hand is turned face up -- same
+    // showdown-reveal convention rules-anaconda.js/rules-draw-poker.js's
+    // own table-ui files already use. Reported 2026-08-29 (a live Criss
+    // Cross game ended with "no idea what the winning hand was" -- this
+    // family previously never revealed hole cards at all, even at
+    // showdown). A fold-out win (nobody left to compare against) still
+    // just reveals the sole remaining hand, which is harmless.
+    const revealed = gvs.state && gvs.state.status === "complete";
     el.seats.innerHTML = gvs.players
       .map((p, i) => {
         const isDealer = i === gvs.dealerIndex;
         const isTurn = p.id === currentBettorId;
-        const cardCount = gvs.state ? p.hand.length : 0;
         const profileBadge = p.isHuman
           ? ""
           : `<span class="profile-badge">${p.archetypeLabel || AIProfiles.profileFor(p.profileName).label}</span>`;
@@ -35,10 +43,16 @@ const TableUICommunityStud = (function () {
             : "";
         const showPeek = peekAi && !p.isHuman;
         let debugLine = "";
-        if (showPeek && gvs.state && !p.folded) {
+        if (showPeek && gvs.state && !revealed && !p.folded) {
           const showing = CommunityStudRules.evaluateBestHand(gvs.state, p);
           debugLine = `<div class="seat-debug">AI reasons from: ${HandEvaluator.describe(showing)}</div>`;
         }
+        const cardsMarkup =
+          gvs.state && !p.folded
+            ? revealed
+              ? CommunityStudRules.holeCards(gvs.state, p).map((c) => cardMarkup(c, false)).join("")
+              : Array.from({ length: p.hand.length }).map(() => cardMarkup(null, true)).join("")
+            : "";
         return `
           <div class="seat ${p.folded ? "seat-folded" : ""} ${isTurn ? "seat-active" : ""}">
             ${quipMarkup}
@@ -46,7 +60,7 @@ const TableUICommunityStud = (function () {
             <div class="seat-name">${isDealer ? "🎲 " : ""}${p.name}${profileBadge}</div>
             <div class="seat-chips">${money(ChipEconomy.chipsToDollars(p.wallet.chips))}</div>
             <div class="seat-cards">
-              ${Array.from({ length: cardCount }).map(() => cardMarkup(null, true)).join("")}
+              ${cardsMarkup}
             </div>
             ${debugLine}
             ${p.folded ? '<div class="seat-status">Folded</div>' : ""}
@@ -98,9 +112,23 @@ const TableUICommunityStud = (function () {
       return;
     }
     if (gvs.state.status === "complete") {
-      const winner = gvs.state.winnerId ? CommunityStudRules.getPlayer(gvs.state, gvs.state.winnerId) : null;
       const canDeal = orchestrator.canDealNextHand();
-      const resultLine = winner ? `${winner.name} won the hand.` : "Hand over.";
+      const nameFor = (id) => CommunityStudRules.getPlayer(gvs.state, id).name;
+      const handFor = (id) => HandEvaluator.describe(CommunityStudRules.evaluateBestHand(gvs.state, CommunityStudRules.getPlayer(gvs.state, id)));
+      let resultLine = "Hand over.";
+      if (gvs.state.lowWinnerIds && gvs.state.lowWinnerIds.length) {
+        resultLine = `High: ${gvs.state.highWinnerIds.map((id) => `${nameFor(id)} (${handFor(id)})`).join(", ")}. Low: ${gvs.state.lowWinnerIds
+          .map((id) => nameFor(id))
+          .join(", ")}.`;
+      } else if (gvs.state.highWinnerIds && gvs.state.highWinnerIds.length) {
+        resultLine = `${gvs.state.highWinnerIds.map((id) => nameFor(id)).join(", ")} won with ${handFor(gvs.state.highWinnerIds[0])} — no qualifying low.`;
+      } else if (gvs.state.winnerId) {
+        // A genuine multi-player showdown names the winning hand; a
+        // fold-out win (nobody left to compare against) has nothing
+        // meaningful to describe, so it just names the winner.
+        const isShowdown = gvs.players.filter((p) => !p.folded).length > 1;
+        resultLine = isShowdown ? `${nameFor(gvs.state.winnerId)} won with ${handFor(gvs.state.winnerId)}.` : `${nameFor(gvs.state.winnerId)} won the hand.`;
+      }
       el.actionPanel.innerHTML = `
         <div>${resultLine}</div>
         ${canDeal ? `<button id="deal-next-hand-btn">Deal next hand</button>` : `<div>You're out of chips for this hand. Buy more chips or cash out to continue.</div>`}

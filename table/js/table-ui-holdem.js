@@ -20,11 +20,17 @@ const TableUIHoldem = (function () {
   function renderSeats(el, gvs, debugMode, activeQuip) {
     const currentBettorId = gvs.state && gvs.state.bettingRound ? HoldemRules.getCurrentBettor(gvs.state) : null;
     const peekAi = debugMode && gvs.state;
+    // Hole cards stay private the whole hand, but once it's complete every
+    // non-folded player's hand turns face up -- same showdown-reveal
+    // convention rules-anaconda.js/rules-draw-poker.js's own table-ui files
+    // already use (and rules-community-stud.js's just gained 2026-08-29,
+    // after a live Criss Cross game ended with "no idea what the winning
+    // hand was" -- this family had the identical gap).
+    const revealed = gvs.state && gvs.state.status === "complete";
     el.seats.innerHTML = gvs.players
       .map((p, i) => {
         const isDealer = i === gvs.dealerIndex;
         const isTurn = p.id === currentBettorId;
-        const cardCount = gvs.state ? p.hand.length : 0;
         const profileBadge = p.isHuman
           ? ""
           : `<span class="profile-badge">${p.archetypeLabel || AIProfiles.profileFor(p.profileName).label}</span>`;
@@ -35,10 +41,15 @@ const TableUIHoldem = (function () {
             : "";
         const showPeek = peekAi && !p.isHuman;
         let debugLine = "";
-        if (showPeek && gvs.state && !p.folded) {
+        if (showPeek && gvs.state && !revealed && !p.folded) {
           const hand = HoldemRules.bestHighHand(gvs.state, p);
           debugLine = `<div class="seat-debug">AI reasons from: ${hand.category > -1 ? HandEvaluator.describe(hand) : "hole cards only (no board yet)"}</div>`;
         }
+        const cardsMarkup = !gvs.state
+          ? ""
+          : revealed && !p.folded
+          ? p.hand.map((c) => cardMarkup(c, false)).join("")
+          : Array.from({ length: p.hand.length }).map(() => cardMarkup(null, true)).join("");
         return `
           <div class="seat ${p.folded ? "seat-folded" : ""} ${isTurn ? "seat-active" : ""}">
             ${quipMarkup}
@@ -46,7 +57,7 @@ const TableUIHoldem = (function () {
             <div class="seat-name">${isDealer ? "🎲 " : ""}${p.name}${profileBadge}</div>
             <div class="seat-chips">${money(ChipEconomy.chipsToDollars(p.wallet.chips))}</div>
             <div class="seat-cards">
-              ${gvs.state ? Array.from({ length: cardCount }).map(() => cardMarkup(null, true)).join("") : ""}
+              ${cardsMarkup}
             </div>
             ${debugLine}
             ${p.folded ? '<div class="seat-status">Folded</div>' : ""}
