@@ -139,13 +139,27 @@ const PressYourLuckRules = (function () {
   }
 
   // --- Main hit-or-stand loop. Turn order is a repeating round-robin over
-  // EVERY player (standing or not) so lap-completion bookkeeping stays
-  // simple; a standing player is silently skipped rather than asked again.
-  // Ends once `gameConfig.consecutiveStandRoundsToEnd` full laps pass with
-  // zero hits -- 2 for 5.5-21 (games.md's explicit rule: "one more
-  // complete round of no-takers is required"), 1 for 7-27 (confirmed by
-  // the user, not restated in games.md's own entry). Defaults to 2 if a
-  // game config doesn't set it. ---
+  // every non-folded, non-busted player. Ends once
+  // `gameConfig.consecutiveStandRoundsToEnd` full laps pass with zero hits
+  // -- 2 for 5.5-21 (games.md's explicit rule: "one more complete round of
+  // no-takers is required"), 1 for 7-27 (confirmed by the user, not
+  // restated in games.md's own entry). Defaults to 2 if a game config
+  // doesn't set it.
+  //
+  // games.md is explicit that hit-or-stand is a fresh decision EVERY round
+  // ("Each round, players may take another card or pass") -- standing is
+  // NOT a one-way commitment for the rest of the hand the way folding or
+  // busting is. `player.standing` is reset at the start of every new lap
+  // (see below) and only reflects "what this player chose on their most
+  // RECENT decision" (used for the seat's "Standing" badge); the actual
+  // skip condition in currentDecisionPlayerId only ever checks `busted`
+  // (5.5-21's real one-way lock -- nothing left to gain once a hand clears
+  // both targets, see checkAutoStandIfBusted) and `folded`. Real bug fixed
+  // 2026-08-29: this used to also skip anyone with `standing` still true
+  // from an EARLIER lap, permanently locking a player out of ever hitting
+  // again the first time they stood even once -- caught by a user report
+  // ("after I kept a card, I never got another turn") and confirmed against
+  // games.md's own per-round framing, not assumed. ---
 
   // A lap that completes with the hand still going on: if betting is on,
   // that's a genuine "everyone's had a chance to hit or stand" moment, so
@@ -161,23 +175,31 @@ const PressYourLuckRules = (function () {
       state.lapHitCount = 0;
       if (state.consecutiveStandRounds >= roundsToEnd) {
         state.status = "complete";
-      } else if (state.gameConfig.bettingEnabled) {
-        state.status = "betting";
-        startBettingRound(state);
+      } else {
+        // A new lap starts fresh -- everyone who isn't out for real (folded
+        // or, under bustRule 'bust', busted) gets asked again regardless of
+        // what they chose last lap.
+        for (const p of state.players) {
+          if (!p.folded && !p.busted) p.standing = false;
+        }
+        if (state.gameConfig.bettingEnabled) {
+          state.status = "betting";
+          startBettingRound(state);
+        }
       }
     }
   }
 
-  // Skips silently past already-standing OR already-folded players (each
-  // skip still advances the lap-completion bookkeeping), returning
-  // whichever player next genuinely needs a hit-or-stand decision, or null
-  // once the hand is over (or a betting round has opened).
+  // Skips silently past folded players and (under bustRule 'bust' only)
+  // busted players -- both are genuinely, permanently out of further
+  // decisions this hand. A player who merely stood on an earlier lap is NOT
+  // skipped; see the file comment above.
   function currentDecisionPlayerId(state) {
     if (state.status !== "playing") return null;
     while (state.status === "playing") {
       const playerId = state.dealOrder[state.turnCursor];
       const player = getPlayer(state, playerId);
-      if (player.standing || player.folded) {
+      if (player.busted || player.folded) {
         advanceCursor(state);
         continue;
       }
@@ -329,7 +351,7 @@ const PressYourLuckRules = (function () {
   // the UI) makes a bust a real, visible stopping point instead of a
   // passive scoring footnote.
   function checkAutoStandIfBusted(state, player) {
-    if (state.gameConfig.bustRule !== "bust" || player.standing) return;
+    if (state.gameConfig.bustRule !== "bust" || player.busted) return;
     const low = handSumResult(state, player, state.gameConfig.lowTarget);
     const high = handSumResult(state, player, state.gameConfig.highTarget);
     if (low.busted && high.busted) {
