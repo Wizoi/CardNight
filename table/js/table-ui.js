@@ -18,10 +18,15 @@
   const SETUP_PREFS_KEY = "cardnight.table.setupPrefs.v1";
   const SEAT_ASSIGNMENTS_KEY = "cardnight.table.seatAssignments.v1";
   const MAX_AI_SEATS = 7; // 8-player table has 7 AI seats, the most any table size needs
+  const MIN_AI_SEATS = 4; // games.md's house rule: table size is 5-8 players, including the human
 
   // seatAssignments[i] is the tablePersonId chosen for AI seat i (0-based: seat
-  // i corresponds to game seat i+1), or null for "random at deal time."
+  // i corresponds to game seat i+1). Every currently-visible seat (index <
+  // activeAiSeatCount) always has a real assignment, filled in immediately
+  // (see ensureSeatFilled) -- there's no more "random at deal time" state to
+  // show on screen, per the user's request to drop that noise.
   let seatAssignments = new Array(MAX_AI_SEATS).fill(null);
+  let activeAiSeatCount = 5; // 6 players total by default, matching the old dropdown's first option
   let rosterPickingSeatIndex = null;
   let rosterFilters = { archetypeId: "", pronouns: "", search: "" };
 
@@ -71,8 +76,7 @@
     el.pickerView = document.getElementById("picker-view");
 
     el.setupName = document.getElementById("setup-name");
-    el.setupSeats = document.getElementById("setup-seats");
-    el.setupAiProfiles = document.getElementById("setup-ai-profiles");
+    el.setupSeatBoxes = document.getElementById("setup-seat-boxes");
     el.setupBuyIn = document.getElementById("setup-buyin");
     el.setupCap = document.getElementById("setup-cap");
     el.setupStart = document.getElementById("setup-start");
@@ -143,37 +147,38 @@
     return `<span class="play-style-badge play-style-${profileName}">Plays: ${AIProfiles.profileFor(profileName).label}</span>`;
   }
 
-  function renderSetupSeats(seatCount) {
-    const rows = [];
-    for (let i = 1; i < seatCount; i++) {
-      const seatIndex = i - 1;
-      const personId = seatAssignments[seatIndex];
-      const person = personId ? TablePeople.getById(personId) : null;
-      rows.push(`
-        <div class="seat-picker-row">
-          <span class="seat-picker-label">Seat ${i + 1}</span>
-          ${
-            person
-              ? `
-                <div class="seat-picker-chosen">
-                  ${Avatar.render(person.avatar, 40)}
-                  <div class="seat-picker-info">
-                    <div class="seat-picker-name">${person.name} <span class="pronoun-tag">${person.pronouns}</span></div>
-                    <div class="seat-picker-oneliner">${person.archetypeLabel} — ${person.oneLiner}</div>
-                    ${playStyleBadge(person.archetypeId)}
-                  </div>
-                </div>
-              `
-              : `<div class="seat-picker-chosen seat-picker-random">Random — assigned when you sit down</div>`
-          }
-          <div class="seat-picker-actions">
-            <button type="button" data-choose-seat="${seatIndex}">${person ? "Change" : "Choose"}</button>
-            <button type="button" class="dice-btn" data-randomize-seat="${seatIndex}" title="Randomize this seat">🎲</button>
-          </div>
+  // Every visible seat always shows a real person immediately -- no more
+  // "random at deal time" placeholder state. Called whenever a seat becomes
+  // visible with nothing assigned yet (initial load, or a freshly added "+"
+  // seat) so there's never a gap to render.
+  function ensureSeatFilled(seatIndex) {
+    if (seatAssignments[seatIndex]) return;
+    const takenElsewhere = seatAssignments.filter((id, i) => id && i !== seatIndex);
+    seatAssignments[seatIndex] = TablePeople.randomUnused(takenElsewhere).id;
+  }
+
+  function renderSetupSeats() {
+    for (let i = 0; i < activeAiSeatCount; i++) ensureSeatFilled(i);
+    saveSeatAssignments();
+
+    const boxes = [];
+    for (let i = 0; i < activeAiSeatCount; i++) {
+      const person = TablePeople.getById(seatAssignments[i]);
+      const canRemove = activeAiSeatCount > MIN_AI_SEATS;
+      boxes.push(`
+        <div class="seat-box" data-choose-seat="${i}" title="${person.name} — ${person.archetypeLabel}. Click to choose someone else.">
+          ${canRemove ? `<button type="button" class="seat-box-remove" data-remove-seat="${i}" title="Remove this seat">×</button>` : ""}
+          ${Avatar.render(person.avatar, 40)}
+          <div class="seat-box-name">${person.name}</div>
         </div>
       `);
     }
-    el.setupAiProfiles.innerHTML = rows.join("");
+    if (activeAiSeatCount < MAX_AI_SEATS) {
+      boxes.push(`
+        <button type="button" class="seat-box seat-box-add" data-add-seat title="Add a seat">+</button>
+      `);
+    }
+    el.setupSeatBoxes.innerHTML = boxes.join("");
   }
 
   function renderRosterGrid() {
@@ -208,14 +213,6 @@
       .map((a) => `<option value="${a.id}">${a.label}</option>`)
       .join("");
     el.rosterArchetypeFilter.innerHTML = `<option value="">Any archetype</option>${options}`;
-  }
-
-  function nextUnfilledSeatIndex(afterIndex) {
-    const seatCount = Number(el.setupSeats.value);
-    for (let i = afterIndex + 1; i < seatCount - 1; i++) {
-      if (!seatAssignments[i]) return i;
-    }
-    return null;
   }
 
   function openRosterModal(seatIndex) {
@@ -595,27 +592,32 @@
     const savedPrefs = loadSetupPrefs();
     if (savedPrefs) {
       if (savedPrefs.humanName) el.setupName.value = savedPrefs.humanName;
-      if (savedPrefs.seatCount) el.setupSeats.value = String(savedPrefs.seatCount);
+      if (savedPrefs.seatCount) activeAiSeatCount = Math.min(MAX_AI_SEATS, Math.max(MIN_AI_SEATS, savedPrefs.seatCount - 1));
       if (savedPrefs.buyInDollars) el.setupBuyIn.value = String(savedPrefs.buyInDollars);
       if (savedPrefs.rebuyCapDollars != null) el.setupCap.value = String(savedPrefs.rebuyCapDollars);
     }
     loadSeatAssignments();
     populateRosterFilterOptions();
+    renderSetupSeats();
 
-    el.setupSeats.addEventListener("change", () => renderSetupSeats(Number(el.setupSeats.value)));
-    renderSetupSeats(Number(el.setupSeats.value));
-
-    el.setupAiProfiles.addEventListener("click", (e) => {
-      const chooseBtn = e.target.closest("[data-choose-seat]");
-      if (chooseBtn) return openRosterModal(Number(chooseBtn.dataset.chooseSeat));
-      const diceBtn = e.target.closest("[data-randomize-seat]");
-      if (diceBtn) {
-        const seatIndex = Number(diceBtn.dataset.randomizeSeat);
-        const takenElsewhere = seatAssignments.filter((id, i) => id && i !== seatIndex);
-        seatAssignments[seatIndex] = TablePeople.randomUnused(takenElsewhere).id;
-        saveSeatAssignments();
-        renderSetupSeats(Number(el.setupSeats.value));
+    el.setupSeatBoxes.addEventListener("click", (e) => {
+      const removeBtn = e.target.closest("[data-remove-seat]");
+      if (removeBtn) {
+        const seatIndex = Number(removeBtn.dataset.removeSeat);
+        seatAssignments.splice(seatIndex, 1);
+        seatAssignments.push(null);
+        activeAiSeatCount -= 1;
+        renderSetupSeats();
+        return;
       }
+      const addBtn = e.target.closest("[data-add-seat]");
+      if (addBtn) {
+        activeAiSeatCount += 1;
+        renderSetupSeats();
+        return;
+      }
+      const seatBox = e.target.closest("[data-choose-seat]");
+      if (seatBox) openRosterModal(Number(seatBox.dataset.chooseSeat));
     });
 
     el.rosterCloseBtn.addEventListener("click", closeRosterModal);
@@ -640,17 +642,13 @@
     el.rosterGrid.addEventListener("click", (e) => {
       const card = e.target.closest("[data-pick-person]");
       if (!card || card.disabled) return;
-      const filledSeatIndex = rosterPickingSeatIndex;
-      seatAssignments[filledSeatIndex] = card.dataset.pickPerson;
-      saveSeatAssignments();
-      renderSetupSeats(Number(el.setupSeats.value));
-      const nextSeat = nextUnfilledSeatIndex(filledSeatIndex);
-      if (nextSeat != null) openRosterModal(nextSeat);
-      else closeRosterModal();
+      seatAssignments[rosterPickingSeatIndex] = card.dataset.pickPerson;
+      renderSetupSeats();
+      closeRosterModal();
     });
 
     el.setupStart.addEventListener("click", () => {
-      const seatCount = Number(el.setupSeats.value);
+      const seatCount = activeAiSeatCount + 1;
       const humanName = el.setupName.value.trim() || "You";
       const buyInDollars = Number(el.setupBuyIn.value) || 20;
       const rebuyCapDollars = Number(el.setupCap.value) || 60;

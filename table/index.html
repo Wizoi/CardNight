@@ -10,26 +10,17 @@
   <div id="setup-view">
     <h1>Luck of the Deal</h1>
     <p>Sit down for a night of poker against computer opponents — cut for deal, then pick a game.</p>
-    <label>Your name
-      <input id="setup-name" type="text" placeholder="Your name" />
-    </label>
-    <label>Players at the table (including you)
-      <select id="setup-seats">
-        <option value="6">6</option>
-        <option value="7">7</option>
-        <option value="8">8</option>
-      </select>
-    </label>
-    <div id="setup-ai-profiles"></div>
-    <fieldset>
-      <legend>Settings</legend>
+    <input id="setup-name" type="text" placeholder="Your name" />
+    <div id="setup-seat-boxes"></div>
+    <details id="setup-settings-details">
+      <summary>Settings</summary>
       <label>Initial buy-in ($)
         <input id="setup-buyin" type="number" value="20" step="20" min="20" />
       </label>
       <label>Additional rebuy cap ($)
         <input id="setup-cap" type="number" value="60" step="20" min="0" />
       </label>
-    </fieldset>
+    </details>
     <button id="setup-start">Sit down</button>
     <button type="button" id="setup-history-btn">History</button>
   </div>

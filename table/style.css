@@ -75,58 +75,85 @@ input, select {
   margin: 0.75rem 0;
 }
 
-.seat-picker-row {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+#setup-name {
+  display: block;
+  width: 100%;
+  margin: 0.75rem 0;
+  padding: 0.6rem;
 }
 
-.seat-picker-label {
-  min-width: 4.5rem;
+#setup-settings-details {
+  margin: 0.75rem 0;
+}
+
+#setup-settings-details summary {
+  cursor: pointer;
   color: var(--gold-soft);
-  font-size: 0.85rem;
-}
-
-.seat-picker-chosen {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.seat-picker-random {
-  color: var(--cream);
-  opacity: 0.7;
-  font-size: 0.85rem;
-}
-
-.seat-picker-info {
-  min-width: 0;
-}
-
-.seat-picker-name {
   font-weight: 600;
-  font-size: 0.9rem;
+  padding: 0.3rem 0;
 }
 
-.seat-picker-oneliner {
-  font-size: 0.75rem;
-  opacity: 0.8;
+#setup-settings-details label {
+  display: block;
+  margin: 0.6rem 0 0.6rem 1rem;
+}
+
+#setup-seat-boxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 0.6rem;
+  margin: 0.75rem 0;
+}
+
+.seat-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem 0.3rem;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  min-height: 90px;
+}
+
+.seat-box:hover {
+  filter: brightness(1.15);
+}
+
+.seat-box-name {
+  font-size: 0.72rem;
+  text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
 }
 
-.seat-picker-actions {
-  display: flex;
-  gap: 0.3rem;
+.seat-box-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-height: 0;
+  width: 1.2rem;
+  height: 1.2rem;
+  line-height: 1;
+  padding: 0;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  background: var(--danger);
+  color: var(--cream);
 }
 
-.dice-btn {
-  padding: 0.5rem 0.6rem;
+.seat-box-add {
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  color: var(--gold-soft);
+  background: transparent;
+  border-style: dashed;
 }
 
 .play-style-badge {
@@ -831,15 +858,6 @@ header {
   opacity: 0.7;
 }
 
-@media (max-width: 520px) {
-  .seat-picker-row {
-    flex-wrap: wrap;
-  }
-  .seat-picker-chosen {
-    order: 3;
-    width: 100%;
-  }
-}
 
 @media (max-width: 520px) {
   #seats {
