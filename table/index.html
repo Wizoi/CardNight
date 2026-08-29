@@ -29,7 +29,7 @@
     <div id="game-banner">
       <span id="game-name-display"></span>
       <a id="rules-link" href="#" target="_blank" rel="noopener">Rules</a>
-      <button type="button" id="jump-to-game-btn">Jump to game (testing)</button>
+      <button type="button" id="jump-to-game-btn">Jump to game</button>
     </div>
     <details id="game-script-details">
       <summary id="game-script-summary"></summary>
@@ -65,6 +65,9 @@
 
   <div id="picker-view" hidden>
     <h2 id="picker-heading">Pick the next game</h2>
+    <select id="jump-category-filter" hidden>
+      <option value="">All categories</option>
+    </select>
     <div id="picker-menu"></div>
     <button type="button" id="picker-cancel-btn" hidden>Cancel</button>
   </div>

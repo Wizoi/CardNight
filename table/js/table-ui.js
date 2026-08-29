@@ -36,6 +36,7 @@
   let autoPickTimer = null;
   let cutForDealAutoTimer = null;
   let jumpMode = false;
+  let jumpCategoryFilter = ""; // "" = all categories; only meaningful while jumpMode is true
   // Human-picker variant-choice step: set while showing the "choose variants
   // for X" form instead of the game grid; null the rest of the time.
   let pendingVariantGameId = null;
@@ -127,6 +128,7 @@
     el.cutForDealContinueBtn = document.getElementById("cutfordeal-continue-btn");
 
     el.pickerHeading = document.getElementById("picker-heading");
+    el.jumpCategoryFilter = document.getElementById("jump-category-filter");
     el.pickerMenu = document.getElementById("picker-menu");
     el.pickerCancelBtn = document.getElementById("picker-cancel-btn");
   }
@@ -574,13 +576,34 @@
   // ceremony entirely and always just plays each game's defaults, same as
   // an AI dealer would -- jump is for quickly trying a game out, not for
   // exercising the dealer's-choice flow.
+  // Only rebuilds the <option> list when the category set actually changes
+  // (the game list is fixed for the whole app lifetime in practice, but this
+  // keeps a stray re-render from resetting the user's current selection).
+  let jumpCategoryOptionsBuilt = false;
+  function renderJumpCategoryFilter(gameList) {
+    el.jumpCategoryFilter.hidden = false;
+    if (jumpCategoryOptionsBuilt) return;
+    const categories = [...new Set(gameList.map((g) => (gameDataFor(g.id) || {}).category).filter(Boolean))].sort();
+    el.jumpCategoryFilter.innerHTML =
+      `<option value="">All categories</option>` + categories.map((c) => `<option value="${c}">${c}</option>`).join("");
+    jumpCategoryOptionsBuilt = true;
+  }
+
   function renderPicker(vs) {
     if (jumpMode) {
-      el.pickerHeading.textContent = "Jump to a game (testing)";
-      el.pickerMenu.innerHTML = gameCardsMarkup(vs.gameList);
+      el.pickerHeading.textContent = "Jump to a game";
+      renderJumpCategoryFilter(vs.gameList);
+      const filtered = jumpCategoryFilter
+        ? vs.gameList.filter((g) => {
+            const data = gameDataFor(g.id);
+            return data && data.category === jumpCategoryFilter;
+          })
+        : vs.gameList;
+      el.pickerMenu.innerHTML = filtered.length ? gameCardsMarkup(filtered) : `<div class="picker-waiting">No games in that category.</div>`;
       el.pickerCancelBtn.hidden = false;
       return;
     }
+    el.jumpCategoryFilter.hidden = true;
     el.pickerCancelBtn.hidden = true;
 
     if (lastAiPick) {
@@ -838,6 +861,11 @@
     el.jumpToGameBtn.addEventListener("click", () => {
       jumpMode = true;
       showView("picker");
+      render(TableNight.getViewState());
+    });
+
+    el.jumpCategoryFilter.addEventListener("change", () => {
+      jumpCategoryFilter = el.jumpCategoryFilter.value;
       render(TableNight.getViewState());
     });
 
