@@ -40,8 +40,8 @@ const Rules333AIProfiles = (function () {
     // families -- this game's fold check is in raw distance units, a
     // coarser scale, so the bonus is scaled up (x3) for a comparable
     // effect, same treatment as ai-press-your-luck-profiles.js.
-    const potOddsBonus = AIProfiles.potOddsChanceBonus(toCallChips, state.pot) * 3;
-    if (toCallChips > 0 && bestDistance > FOLD_BASE + roundsLeft * (profile.chancePerCard + potOddsBonus)) {
+    const chanceBonus = (AIProfiles.potOddsChanceBonus(toCallChips, state.pot) + AIProfiles.reRaiseChanceAdjustment(br, player.id, profile)) * 3;
+    if (toCallChips > 0 && bestDistance > FOLD_BASE + roundsLeft * (profile.chancePerCard + chanceBonus)) {
       return { action: "fold" };
     }
     const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));

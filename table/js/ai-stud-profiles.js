@@ -104,8 +104,8 @@ const StudAIProfiles = (function () {
     if (!isLeader && toCallChips > 0) {
       const showing = StudRules.evaluateShowingHand(state, player.id);
       const streetsLeft = StudRules.streetsRemaining(state);
-      const potOddsBonus = AIProfiles.potOddsChanceBonus(toCallChips, state.pot);
-      if (!AIProfiles.worthPursuing(showing, best.hand, streetsLeft, profile, potOddsBonus)) {
+      const chanceBonus = AIProfiles.potOddsChanceBonus(toCallChips, state.pot) + AIProfiles.reRaiseChanceAdjustment(br, player.id, profile);
+      if (!AIProfiles.worthPursuing(showing, best.hand, streetsLeft, profile, chanceBonus)) {
         return { action: "fold" };
       }
     }

@@ -43,6 +43,7 @@ const AIProfiles = (function () {
       chancePerCard: 0.5, // how many "hand categories" of gap one more unknown flip is assumed worth closing
       raiseWhenLeading: false,
       bluffFrequency: 0, // never raises on a hand that doesn't actually warrant it
+      reRaiseChanceAdjustment: -0.4, // a renewed raise reads as real strength worth respecting
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.TWO_PAIR, // guts games: a fully-known hand needs to be genuinely strong to risk the ante
       pressYourLuckStandThreshold: 3, // 5.5-21/7-27: stands once already within this far of either target, rather than pushing for exact
       aceyDuceyMinWinProb: 0.5, // Acey Ducey: only bets when the gap between the two shown cards looks genuinely safe
@@ -58,6 +59,7 @@ const AIProfiles = (function () {
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR, // won't raise on a lead this thin
       bluffFrequency: 0.05,
+      reRaiseChanceAdjustment: -0.15,
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
       pressYourLuckStandThreshold: 1.5,
       aceyDuceyMinWinProb: 0.3,
@@ -73,6 +75,7 @@ const AIProfiles = (function () {
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.PAIR, // presses even a modest lead
       bluffFrequency: 0.15,
+      reRaiseChanceAdjustment: 0.1, // doesn't back down from renewed aggression
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD, // stays in almost every guts hand -- fits the reckless archetype
       pressYourLuckStandThreshold: 0.5, // keeps hitting until right on top of a target or busted
       aceyDuceyMinWinProb: 0.15,
@@ -93,6 +96,7 @@ const AIProfiles = (function () {
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
       bluffFrequency: 0.08, // selective and purposeful even when bluffing, not never
+      reRaiseChanceAdjustment: -0.2, // process-driven -- respects a genuine renewed signal
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.TWO_PAIR,
       pressYourLuckStandThreshold: 2,
       aceyDuceyMinWinProb: 0.4,
@@ -112,6 +116,7 @@ const AIProfiles = (function () {
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.HIGH_CARD,
       bluffFrequency: 0.25, // the loosest in the roster -- "raises on nothing" is close to literal
+      reRaiseChanceAdjustment: 0.3, // never backs down -- if anything, digs in harder
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD,
       pressYourLuckStandThreshold: 0.25,
       aceyDuceyMinWinProb: 0.1,
@@ -130,6 +135,7 @@ const AIProfiles = (function () {
       chancePerCard: 0.3,
       raiseWhenLeading: false,
       bluffFrequency: 0, // nothing clears the bar to risk a chip, bluffed or otherwise
+      reRaiseChanceAdjustment: -0.5, // folds hard to any renewed aggression -- loss aversion at its most acute
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.TRIPS,
       pressYourLuckStandThreshold: 4,
       aceyDuceyMinWinProb: 0.65,
@@ -151,6 +157,7 @@ const AIProfiles = (function () {
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.PAIR,
       bluffFrequency: 0.1,
+      reRaiseChanceAdjustment: -0.1,
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
       pressYourLuckStandThreshold: 1.2,
       aceyDuceyMinWinProb: 0.25,
@@ -171,6 +178,7 @@ const AIProfiles = (function () {
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
       bluffFrequency: 0.05,
+      reRaiseChanceAdjustment: -0.2, // small-ball -- avoids blowing up a pot against renewed aggression
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
       pressYourLuckStandThreshold: 1.5,
       aceyDuceyMinWinProb: 0.3,
@@ -194,6 +202,7 @@ const AIProfiles = (function () {
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
       bluffFrequency: 0.1, // a real, unpredictable bluff rate is the whole point of "gives away nothing"
+      reRaiseChanceAdjustment: -0.1, // textbook-steady, dead-middle reaction to match
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
       pressYourLuckStandThreshold: 1.5,
       aceyDuceyMinWinProb: 0.3,
@@ -215,6 +224,7 @@ const AIProfiles = (function () {
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
       bluffFrequency: 0.05,
+      reRaiseChanceAdjustment: -0.15, // disciplined, process-driven response to a real signal
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
       pressYourLuckStandThreshold: 1.8,
       aceyDuceyMinWinProb: 0.35,
@@ -236,6 +246,7 @@ const AIProfiles = (function () {
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.PAIR,
       bluffFrequency: 0.15,
+      reRaiseChanceAdjustment: 0.15, // loose enough to keep chasing rather than back off
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD,
       pressYourLuckStandThreshold: 0.75,
       aceyDuceyMinWinProb: 0.2,
@@ -262,6 +273,7 @@ const AIProfiles = (function () {
       // untethered from actual hand strength IS the "contrarian" trait,
       // not just a flavor add-on the way it is for other profiles.
       bluffFrequency: 0.2,
+      reRaiseChanceAdjustment: 0, // contrarian, not predictably timid or predictably stubborn either way
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD,
       pressYourLuckStandThreshold: 0.4,
       aceyDuceyMinWinProb: 0.12,
@@ -282,6 +294,7 @@ const AIProfiles = (function () {
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
       bluffFrequency: 0.05,
+      reRaiseChanceAdjustment: -0.05, // even-keeled, barely reacts either way
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
       pressYourLuckStandThreshold: 1.7,
       aceyDuceyMinWinProb: 0.35,
@@ -425,6 +438,34 @@ const AIProfiles = (function () {
     return 0;
   }
 
+  // A shallow, one-hand-deep reaction: is this player facing a raise AFTER
+  // already putting some chips into THIS SAME betting round? Genuinely
+  // different from just "toCallChips > 0" (which is also true on a
+  // player's very first action of a round, with nobody having pushed back
+  // on them specifically yet) -- this only fires once someone has raised
+  // OVER a bet this player already committed to, the actual "I got
+  // re-raised" moment. Reads straight off the current hand's own
+  // betting-round state (round.committed), so it stays a pure function of
+  // current game state -- no cross-hand memory needed, unlike genuine
+  // opponent modeling (deliberately NOT attempted here; see CLAUDE.md).
+  function facingReRaise(round, playerId) {
+    const committed = round.committed[playerId] || 0;
+    const toCall = round.currentBetChips - committed;
+    return committed > 0 && toCall > 0;
+  }
+
+  // profile.reRaiseChanceAdjustment: additive, same fractional units as
+  // chancePerCard/potOddsChanceBonus. Negative for timid archetypes (a
+  // renewed raise reads as real strength worth respecting, tightening the
+  // effective fold bar), zero/slightly positive for archetypes that dig in
+  // rather than back down. Returns 0 outright when facingReRaise is false,
+  // so callers can add this unconditionally alongside potOddsChanceBonus
+  // without a separate branch.
+  function reRaiseChanceAdjustment(round, playerId, profile) {
+    if (!facingReRaise(round, playerId)) return 0;
+    return profile.reRaiseChanceAdjustment || 0;
+  }
+
   // Worth continuing/calling without knowing what's actually under the
   // remaining cards: weigh the category gap against how many unknown flips
   // are left to close it, at a profile-scaled optimism per flip. This is the
@@ -483,8 +524,8 @@ const AIProfiles = (function () {
     if (!isLeader && toCallChips > 0) {
       const showing = MidnightBaseball.evaluateShowingHand(state, player.id);
       const remaining = MidnightBaseball.remainingFaceDownCount(state, player.id);
-      const potOddsBonus = potOddsChanceBonus(toCallChips, state.pot);
-      if (!worthPursuing(showing, best.hand, remaining, profile, potOddsBonus)) {
+      const chanceBonus = potOddsChanceBonus(toCallChips, state.pot) + reRaiseChanceAdjustment(br, player.id, profile);
+      if (!worthPursuing(showing, best.hand, remaining, profile, chanceBonus)) {
         return { action: "fold" };
       }
     }
@@ -519,5 +560,7 @@ const AIProfiles = (function () {
     opponentCountBarAdjustment,
     liveOpponentCount,
     potOddsChanceBonus,
+    facingReRaise,
+    reRaiseChanceAdjustment,
   };
 })();

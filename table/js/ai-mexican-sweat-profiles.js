@@ -38,8 +38,8 @@ const MexicanSweatAIProfiles = (function () {
     if (!isLeader && toCallChips > 0) {
       const showing = MexicanSweatRules.evaluateShowingHand(state, player.id);
       const roundsLeft = MexicanSweatRules.roundsRemaining(state);
-      const potOddsBonus = AIProfiles.potOddsChanceBonus(toCallChips, state.pot);
-      if (!AIProfiles.worthPursuing(showing, best.hand, roundsLeft, profile, potOddsBonus)) {
+      const chanceBonus = AIProfiles.potOddsChanceBonus(toCallChips, state.pot) + AIProfiles.reRaiseChanceAdjustment(br, player.id, profile);
+      if (!AIProfiles.worthPursuing(showing, best.hand, roundsLeft, profile, chanceBonus)) {
         return { action: "fold" };
       }
     }

@@ -110,8 +110,8 @@ const PressYourLuckAIProfiles = (function () {
     // units instead, a much coarser scale, so the bonus is scaled up (x3)
     // to have a comparable, meaningful effect here rather than rounding
     // away to nothing against a typical 1.5-4 point threshold.
-    const potOddsBonus = AIProfiles.potOddsChanceBonus(toCallChips, state.pot) * 3;
-    if (toCallChips > 0 && bestDistance > profile.pressYourLuckStandThreshold + 2 + roomToImprove + potOddsBonus) {
+    const chanceBonus = (AIProfiles.potOddsChanceBonus(toCallChips, state.pot) + AIProfiles.reRaiseChanceAdjustment(br, player.id, profile)) * 3;
+    if (toCallChips > 0 && bestDistance > profile.pressYourLuckStandThreshold + 2 + roomToImprove + chanceBonus) {
       return { action: "fold" };
     }
     // Raising means "I'm confident I'm ahead," but a hand that's still
