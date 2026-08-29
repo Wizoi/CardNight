@@ -3,7 +3,35 @@
 // Every playable game, keyed by id. table-night.js dispatches to
 // `createOrchestrator` when a game is picked; table-ui.js dispatches
 // rendering to whichever table-ui-<family>.js module matches `uiFamily`.
+//
+// A game entry MAY declare `variantOptions`: an array of
+// { key, label, choices: [{value, label}], default } describing dealer's-
+// choice options games.md documents as optional on top of that game's base
+// rule (see e.g. Deep or Double Screw's flip-up wildcards, or Cincinnati/
+// Criss Cross's optional wildcard-rank variant). `key` must match a field
+// name on that game's own gameConfig object, since applyVariants below is
+// just a shallow merge -- no per-game translation layer needed. A game with
+// no variantOptions (most of them, for now) skips the whole picker/summary
+// step entirely and behaves exactly as before. table-ui.js is responsible
+// for actually prompting for a choice (human picker) or picking each
+// option's default and showing it clearly (AI picker) before the hand
+// starts; table-night.js just threads whatever `variantChoices` object it's
+// given through to createOrchestrator.
 const GameRegistry = (function () {
+  function applyVariants(baseConfig, variantChoices) {
+    return variantChoices ? { ...baseConfig, ...variantChoices } : baseConfig;
+  }
+
+  // Every registered game's variantOptions default choices -- {} for a game
+  // with no variantOptions at all. Used by table-night.js's autoPickForAI
+  // (an AI dealer just plays the standard base rule) and by table-ui.js to
+  // pre-select each radio group for a human picker.
+  function defaultVariantChoices(entry) {
+    const choices = {};
+    for (const opt of entry.variantOptions || []) choices[opt.key] = opt.default;
+    return choices;
+  }
+
   const games = {
     midnightBaseball: {
       id: "midnightBaseball",
@@ -57,19 +85,53 @@ const GameRegistry = (function () {
       id: "cincinnati",
       name: "Cincinnati",
       uiFamily: "communityStud",
-      createOrchestrator: (config) => SessionCommunityStud.create({ ...config, gameConfig: CINCINNATI_CONFIG }),
+      variantOptions: [
+        {
+          key: "wildcardMode",
+          label: "Wildcard",
+          choices: [
+            { value: null, label: "None (base game)" },
+            { value: "lastRevealed", label: "Last community card's rank is wild" },
+          ],
+          default: null,
+        },
+      ],
+      createOrchestrator: (config) => SessionCommunityStud.create({ ...config, gameConfig: applyVariants(CINCINNATI_CONFIG, config.variantChoices) }),
     },
     crissCross: {
       id: "crissCross",
       name: "Criss Cross (Iron Cross)",
       uiFamily: "communityStud",
-      createOrchestrator: (config) => SessionCommunityStud.create({ ...config, gameConfig: CRISS_CROSS_CONFIG }),
+      variantOptions: [
+        {
+          key: "wildcardMode",
+          label: "Wildcard",
+          choices: [
+            { value: null, label: "None (base game)" },
+            { value: "center", label: "Center card's rank is wild" },
+          ],
+          default: null,
+        },
+      ],
+      createOrchestrator: (config) => SessionCommunityStud.create({ ...config, gameConfig: applyVariants(CRISS_CROSS_CONFIG, config.variantChoices) }),
     },
     deepOrDoubleScrew: {
       id: "deepOrDoubleScrew",
       name: "Deep or Double Screw",
       uiFamily: "guts",
-      createOrchestrator: (config) => SessionGuts.create({ ...config, gameConfig: DEEP_OR_DOUBLE_SCREW_CONFIG }),
+      variantOptions: [
+        {
+          key: "flipWildcardCount",
+          label: "Extra flip-up wildcards (on top of the lowest card, which is always wild)",
+          choices: [
+            { value: 0, label: "None" },
+            { value: 1, label: "1 flip-up wildcard" },
+            { value: 2, label: "2 flip-up wildcards" },
+          ],
+          default: 0,
+        },
+      ],
+      createOrchestrator: (config) => SessionGuts.create({ ...config, gameConfig: applyVariants(DEEP_OR_DOUBLE_SCREW_CONFIG, config.variantChoices) }),
     },
     threeBuyFive: {
       id: "threeBuyFive",
@@ -171,5 +233,5 @@ const GameRegistry = (function () {
     return games[id] || null;
   }
 
-  return { list, get };
+  return { list, get, defaultVariantChoices };
 })();

@@ -611,6 +611,50 @@ header {
   outline-offset: 1px;
 }
 
+.variant-form,
+.ai-pick-summary {
+  grid-column: 1 / -1;
+  text-align: left;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+}
+
+.variant-form h3 {
+  margin-top: 0;
+  color: var(--gold-soft);
+}
+
+.variant-option-group {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 0.75rem 0;
+  padding: 0.5rem 0 0;
+}
+
+.variant-option-group legend {
+  color: var(--gold-soft);
+  font-weight: 600;
+  padding: 0 0 0.3rem;
+}
+
+.variant-choice-label {
+  display: block;
+  margin: 0.3rem 0;
+  cursor: pointer;
+}
+
+.ai-pick-summary {
+  text-align: center;
+}
+
+.ai-pick-summary ul {
+  text-align: left;
+  display: inline-block;
+  margin: 0.5rem 0;
+}
+
 .card-beaten {
   opacity: 0.4;
   filter: grayscale(1);

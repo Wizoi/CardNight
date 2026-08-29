@@ -199,7 +199,13 @@ const TableNight = (function () {
     });
   }
 
-  function chooseNextGame(gameId) {
+  // variantChoices is an optional {key: value} object matching whatever the
+  // chosen game's own variantOptions declare (see game-registry.js) -- a
+  // dealer's-choice pick made before the hand starts, e.g. Deep or Double
+  // Screw's extra flip-up wildcard count. Games with no variantOptions just
+  // ignore an omitted/empty object (createOrchestrator's applyVariants is a
+  // no-op without one).
+  function chooseNextGame(gameId, variantChoices) {
     const entry = GameRegistry.get(gameId);
     if (!entry) return;
     // dealerIndex for the upcoming game is already current by this point --
@@ -229,6 +235,7 @@ const TableNight = (function () {
       handNumber: 0,
       gameMemory: gameMemoryByGameId[gameId],
       carriedPotChips,
+      variantChoices,
       onUpdate: () => notify(),
       onHandComplete,
     });
@@ -237,12 +244,17 @@ const TableNight = (function () {
 
   // AI pickers choose uniformly at random among every registered game for
   // now -- a natural later upgrade is weighting by archetype/house-favorite
-  // data once games.md's "house favorite rating" field has real values.
+  // data once games.md's "house favorite rating" field has real values. An
+  // AI dealer always just plays each variant option's own default (the
+  // standard base rule) rather than gambling on a random variant too --
+  // table-ui.js is responsible for showing the human what was picked,
+  // including any variants, before the table view appears.
   function autoPickForAI() {
     const list = GameRegistry.list();
     const choice = list[Math.floor(Math.random() * list.length)];
-    chooseNextGame(choice.id);
-    return choice;
+    const variantChoices = GameRegistry.defaultVariantChoices(choice);
+    chooseNextGame(choice.id, variantChoices);
+    return { choice, variantChoices };
   }
 
   // Called once the "Change game" button is clicked (only enabled between

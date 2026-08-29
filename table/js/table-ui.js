@@ -36,6 +36,13 @@
   let autoPickTimer = null;
   let cutForDealAutoTimer = null;
   let jumpMode = false;
+  // Human-picker variant-choice step: set while showing the "choose variants
+  // for X" form instead of the game grid; null the rest of the time.
+  let pendingVariantGameId = null;
+  // Set once an AI picker has actually chosen (game + variants) but the
+  // human hasn't clicked "Continue" past the summary yet -- see
+  // maybeAutoPickForAI/renderPicker.
+  let lastAiPick = null;
 
   function loadSetupPrefs() {
     try {
@@ -133,6 +140,13 @@
     if (name !== "picker" && autoPickTimer) {
       clearTimeout(autoPickTimer);
       autoPickTimer = null;
+    }
+    // A variant-choice form or AI-pick summary left mid-flow (e.g. "Jump to
+    // game" interrupting the real picker ceremony) shouldn't linger and
+    // resurface stale the next time the picker screen shows.
+    if (name !== "picker") {
+      pendingVariantGameId = null;
+      lastAiPick = null;
     }
     currentView = name;
     el.setupView.hidden = name !== "setup";
@@ -498,6 +512,67 @@
   // a debug/testing shortcut, usable anytime (including mid-hand, which
   // abandons/resets whatever was in progress), not part of the normal
   // cut-for-deal/rotation ceremony.
+  function describeVariantChoice(opt, value) {
+    const chosen = opt.choices.find((c) => c.value === value);
+    return chosen ? chosen.label : String(value);
+  }
+
+  // The variant-choice form for one game -- a radio group per option,
+  // pre-selected to that option's default, plus Deal/Back buttons. Shown in
+  // place of the game grid once a human picker clicks a game that has
+  // variantOptions; a game with none skips straight to chooseNextGame
+  // instead (see the picker-menu click handler).
+  function variantFormMarkup(entry) {
+    const groups = entry.variantOptions
+      .map(
+        (opt) => `
+          <fieldset class="variant-option-group">
+            <legend>${opt.label}</legend>
+            ${opt.choices
+              .map(
+                (c, i) => `
+                  <label class="variant-choice-label">
+                    <input type="radio" name="variant-${opt.key}" value="${i}" ${c.value === opt.default ? "checked" : ""} />
+                    ${c.label}
+                  </label>
+                `
+              )
+              .join("")}
+          </fieldset>
+        `
+      )
+      .join("");
+    return `
+      <div class="variant-form" data-variant-game="${entry.id}">
+        <h3>${entry.name} — dealer's choice</h3>
+        ${groups}
+        <button type="button" data-deal-with-variants>Deal!</button>
+        <button type="button" data-variant-back>&larr; Back</button>
+      </div>
+    `;
+  }
+
+  function readVariantFormChoices(entry) {
+    const choices = {};
+    for (const opt of entry.variantOptions) {
+      const checked = el.pickerMenu.querySelector(`input[name="variant-${opt.key}"]:checked`);
+      choices[opt.key] = checked ? opt.choices[Number(checked.value)].value : opt.default;
+    }
+    return choices;
+  }
+
+  function variantSummaryLines(entry, variantChoices) {
+    return (entry.variantOptions || []).map((opt) => `${opt.label}: ${describeVariantChoice(opt, variantChoices[opt.key])}`);
+  }
+
+  // Jump mode reuses the exact same card-grid picker as the real in-fiction
+  // flow below, just without caring whose turn it actually is to pick --
+  // a debug/testing shortcut, usable anytime (including mid-hand, which
+  // abandons/resets whatever was in progress), not part of the normal
+  // cut-for-deal/rotation ceremony. It also skips the variant-choice/summary
+  // ceremony entirely and always just plays each game's defaults, same as
+  // an AI dealer would -- jump is for quickly trying a game out, not for
+  // exercising the dealer's-choice flow.
   function renderPicker(vs) {
     if (jumpMode) {
       el.pickerHeading.textContent = "Jump to a game (testing)";
@@ -506,6 +581,31 @@
       return;
     }
     el.pickerCancelBtn.hidden = true;
+
+    if (lastAiPick) {
+      const { choice, variantChoices } = lastAiPick;
+      const data = gameDataFor(choice.id);
+      const icon = data ? data.icon : "🎴";
+      const lines = variantSummaryLines(choice, variantChoices);
+      el.pickerHeading.textContent = "Game selected";
+      el.pickerMenu.innerHTML = `
+        <div class="ai-pick-summary">
+          <div class="game-pick-icon">${icon}</div>
+          <div>The dealer is playing <strong>${choice.name}</strong>.</div>
+          ${lines.length ? `<ul>${lines.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}
+          <button type="button" data-ai-pick-continue>Continue</button>
+        </div>
+      `;
+      return;
+    }
+
+    if (pendingVariantGameId) {
+      const entry = GameRegistry.get(pendingVariantGameId);
+      el.pickerHeading.textContent = "Pick the next game";
+      el.pickerMenu.innerHTML = variantFormMarkup(entry);
+      return;
+    }
+
     const pickerSeatId = vs.seatOrder[vs.currentPickerSeatIndex];
     const picker = vs.players.find((p) => p.id === pickerSeatId);
     if (picker.isHuman) {
@@ -526,11 +626,15 @@
   // behavior) could silently auto-pick and yank the view to the table
   // before the player ever saw the picker screen at all.
   function maybeAutoPickForAI() {
-    if (currentView !== "picker" || jumpMode || TableNight.currentPickerIsHuman() || autoPickTimer) return;
+    if (currentView !== "picker" || jumpMode || lastAiPick || TableNight.currentPickerIsHuman() || autoPickTimer) return;
     autoPickTimer = setTimeout(() => {
       autoPickTimer = null;
-      TableNight.autoPickForAI();
-      showView("table");
+      // Stays on the picker screen showing a summary of what got chosen
+      // (game + any variants) until the human clicks "Continue" -- see
+      // renderPicker's lastAiPick branch and the data-ai-pick-continue
+      // handler below.
+      lastAiPick = TableNight.autoPickForAI();
+      render(TableNight.getViewState());
     }, 900);
   }
 
@@ -573,7 +677,11 @@
       renderCutForDeal(vs);
       if (vs.cutForDealState.status === "revealing") {
         maybeAutoRevealCutForDeal(vs);
-      } else if (!vs.activeGameId) {
+      } else if (!vs.activeGameId || lastAiPick) {
+        // The `|| lastAiPick` half keeps an AI pick's summary screen
+        // rendering even after chooseNextGame has already set activeGameId
+        // -- it's waiting on the human to click "Continue," not blocked by
+        // the normal "nothing picked yet" gate.
         renderPicker(vs);
         maybeAutoPickForAI();
       }
@@ -673,11 +781,45 @@
     });
 
     el.pickerMenu.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-pick-game]");
-      if (!btn) return;
-      TableNight.chooseNextGame(btn.dataset.pickGame);
-      jumpMode = false;
-      showView("table");
+      const pickBtn = e.target.closest("[data-pick-game]");
+      if (pickBtn) {
+        const entry = GameRegistry.get(pickBtn.dataset.pickGame);
+        // Jump mode always just plays the game's defaults -- see
+        // renderPicker's jumpMode branch -- so it skips the variant-choice
+        // step entirely, same as an AI dealer would.
+        if (!jumpMode && entry.variantOptions && entry.variantOptions.length) {
+          pendingVariantGameId = entry.id;
+          render(TableNight.getViewState());
+          return;
+        }
+        TableNight.chooseNextGame(entry.id, GameRegistry.defaultVariantChoices(entry));
+        jumpMode = false;
+        showView("table");
+        return;
+      }
+
+      const dealBtn = e.target.closest("[data-deal-with-variants]");
+      if (dealBtn) {
+        const entry = GameRegistry.get(pendingVariantGameId);
+        const variantChoices = readVariantFormChoices(entry);
+        TableNight.chooseNextGame(entry.id, variantChoices);
+        pendingVariantGameId = null;
+        showView("table");
+        return;
+      }
+
+      const backBtn = e.target.closest("[data-variant-back]");
+      if (backBtn) {
+        pendingVariantGameId = null;
+        render(TableNight.getViewState());
+        return;
+      }
+
+      const continueBtn = e.target.closest("[data-ai-pick-continue]");
+      if (continueBtn) {
+        lastAiPick = null;
+        showView("table");
+      }
     });
 
     el.changeGameBtn.addEventListener("click", () => {
