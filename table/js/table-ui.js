@@ -84,6 +84,10 @@
     el.cutForDealView = document.getElementById("cutfordeal-view");
     el.pickerView = document.getElementById("picker-view");
 
+    el.resumeBanner = document.getElementById("resume-banner");
+    el.resumeNightBtn = document.getElementById("resume-night-btn");
+    el.discardSavedNightBtn = document.getElementById("discard-saved-night-btn");
+
     el.setupName = document.getElementById("setup-name");
     el.setupSeatBoxes = document.getElementById("setup-seat-boxes");
     el.setupBuyIn = document.getElementById("setup-buyin");
@@ -746,6 +750,33 @@
     el.debugToggle.addEventListener("change", () => {
       debugMode = el.debugToggle.checked;
       if (lastViewState) render(lastViewState);
+    });
+
+    el.resumeBanner.hidden = !TableNight.hasSavedSnapshot();
+    el.resumeNightBtn.addEventListener("click", () => {
+      const saved = TableNight.loadSnapshot();
+      if (!saved) {
+        el.resumeBanner.hidden = true;
+        return;
+      }
+      TableNight.restore(saved, render);
+      const vs = TableNight.getViewState();
+      // Same routing a fresh sitting already uses at each of these points
+      // (setup-start's cutfordeal, humanChoice mode's picker, etc.) --
+      // pick the view that matches wherever this saved night actually left
+      // off, based on what actually got restored.
+      if (vs.orchestratorViewState || vs.activeGameId) {
+        showView("table");
+      } else if (vs.cutForDealState) {
+        showView(vs.cutForDealState.status === "revealing" ? "cutfordeal" : "picker");
+      } else {
+        showView("picker");
+      }
+      render(vs);
+    });
+    el.discardSavedNightBtn.addEventListener("click", () => {
+      TableNight.clearSnapshot();
+      el.resumeBanner.hidden = true;
     });
 
     const savedPrefs = loadSetupPrefs();

@@ -55,9 +55,182 @@ const TableNight = (function () {
   // ante chips from silently dropping out of the tracked total; it's handed
   // back to the game as its next carriedPotChips whenever it's next chosen.
   let carriedPotByGameId = {};
+  // The variantChoices a human/AI picker actually chose for the CURRENTLY
+  // active game -- chooseNextGame previously threaded this straight into
+  // createOrchestrator without keeping a copy anywhere, which worked fine
+  // until resume needed to know what to pass when recreating the same
+  // orchestrator later. Reset alongside activeGameId.
+  let activeVariantChoices = null;
   let onUpdate = () => {};
+  // Whether there's a night worth persisting -- true from init()/restore()
+  // until cashOut() ends it. Deliberately NOT just "players.length > 0":
+  // cashOut() leaves `players` populated (other code still reads wallets
+  // off it right up until the view switches away), so that alone can't
+  // tell saveSnapshot() "stop persisting" -- without this flag, the
+  // notify() cashOut() itself triggers would immediately re-write the very
+  // snapshot clearSnapshot() just deleted.
+  let nightActive = false;
+
+  const SAVE_KEY = "cardnight.table.activeNight.v1";
+
+  // A handful of rules-*.js state trees embed real `Set` objects (every
+  // betting-engine.js round's `responded`/`allIn`, and rules-holdem.js's
+  // own hand-built first round) -- plain JSON.stringify silently turns a
+  // Set into `{}` with no error, and JSON.parse has no way to know it was
+  // ever supposed to be one, which crashed the very first bet submitted
+  // after a resumed hold'em resume (round.allIn.has was suddenly `{}`.has,
+  // not a function) the first time this was tested live. A generic
+  // replacer/reviver pair fixes this for every current AND future Set
+  // anywhere in a session's state, not just today's two call sites.
+  function jsonReplacer(key, value) {
+    return value instanceof Set ? { __type: "Set", values: [...value] } : value;
+  }
+
+  function jsonReviver(key, value) {
+    return value && typeof value === "object" && value.__type === "Set" ? new Set(value.values) : value;
+  }
+
+  // Full-night persistence (2026-08-29, user's explicit request after
+  // losing an in-progress night to a page refresh): every notify() also
+  // writes a snapshot of the whole night -- roster/wallets, seat order,
+  // cut-for-deal state, which game's active and with what variants, and
+  // (via activeOrchestrator.snapshot()) exactly where that game's current
+  // hand is, down to an open betting round or a pending human decision.
+  // restore() below is the exact inverse, recreating the orchestrator with
+  // resumeFrom instead of starting a fresh hand. Wrapped in try/catch since
+  // localStorage can throw (quota, private browsing) -- a failed save just
+  // means a refresh loses progress, same as before this feature existed,
+  // not a crash.
+  function saveSnapshot() {
+    try {
+      if (!nightActive) {
+        localStorage.removeItem(SAVE_KEY);
+        return;
+      }
+      localStorage.setItem(SAVE_KEY, JSON.stringify(snapshot(), jsonReplacer));
+    } catch (err) {
+      console.error("Failed to save night snapshot", err);
+    }
+  }
+
+  function hasSavedSnapshot() {
+    try {
+      return localStorage.getItem(SAVE_KEY) != null;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function loadSnapshot() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      return raw ? JSON.parse(raw, jsonReviver) : null;
+    } catch (err) {
+      console.error("Failed to read saved night snapshot", err);
+      return null;
+    }
+  }
+
+  function clearSnapshot() {
+    try {
+      localStorage.removeItem(SAVE_KEY);
+    } catch (err) {
+      // ignore
+    }
+  }
+
+  // Player objects (including AI seats' avatarSpec, a modest-sized embedded
+  // SVG string) are persisted as plain data straight through -- an earlier
+  // version of this tried to strip avatarSpec out and re-derive AI identity
+  // from tablePersonId on restore, but state.players (inside
+  // orchestratorSnapshot below) is the SAME array as this one, and the
+  // per-hand fields it carries (.hand, mid-hand .folded) can't be
+  // reconstructed from tablePersonId at all -- restoring those from a
+  // stripped-down copy silently lost the human's own hole cards on resume
+  // (a real bug caught live, not guessed at). Measured well under 40KB for
+  // a full 6-player hand including every avatar, nowhere near a practical
+  // localStorage concern, so the simpler, correct, un-stripped approach
+  // wins outright -- see restore() below for how state.players, not this
+  // array, ends up as the actual source of truth once a hand is active.
+  function snapshot() {
+    return {
+      version: 1,
+      players,
+      seatOrder,
+      settings,
+      dealerIndex,
+      dealMode,
+      handsWonByPlayerId,
+      nightHandsPlayed,
+      playerBettingStats,
+      cutForDealState,
+      activeGameId,
+      activeVariantChoices,
+      gameMemoryByGameId,
+      carriedPotByGameId,
+      orchestratorSnapshot: activeOrchestrator ? activeOrchestrator.snapshot() : null,
+    };
+  }
+
+  // The exact inverse of snapshot() -- rebuilds every closure variable, then
+  // (if a hand was in progress) recreates that game's orchestrator with
+  // resumeFrom set instead of calling startFirstHand/dealNextHand.
+  function restore(saved, updateCallback) {
+    nightActive = true;
+    onUpdate = updateCallback || (() => {});
+    dealMode = saved.dealMode;
+    settings = saved.settings;
+    history = HistoryStore.load();
+    today = HistoryStore.todayDateString();
+
+    players = saved.players;
+    seatOrder = saved.seatOrder;
+    dealerIndex = saved.dealerIndex;
+    nightHandsPlayed = saved.nightHandsPlayed;
+    handsWonByPlayerId = saved.handsWonByPlayerId;
+    playerBettingStats = saved.playerBettingStats || {};
+    cutForDealState = saved.cutForDealState;
+    activeGameId = saved.activeGameId;
+    activeVariantChoices = saved.activeVariantChoices;
+    gameMemoryByGameId = saved.gameMemoryByGameId || {};
+    carriedPotByGameId = saved.carriedPotByGameId || {};
+    activeOrchestrator = null;
+
+    if (activeGameId && saved.orchestratorSnapshot) {
+      const entry = GameRegistry.get(activeGameId);
+      if (entry) {
+        // state.players (full fidelity: hand, mid-hand folded, wallet,
+        // everything) becomes the ACTUAL `players` array from here on,
+        // rather than the other way around -- table-night.js's own
+        // top-level `players` copy is only ever the source of truth
+        // between hands, when there's no state.players to defer to. Either
+        // way there is exactly ONE array shared by both from this point,
+        // so wallet mutations during the resumed hand stay in sync with
+        // whatever the header/seat rendering reads.
+        if (saved.orchestratorSnapshot.state && saved.orchestratorSnapshot.state.players) {
+          players = saved.orchestratorSnapshot.state.players;
+        }
+        activeOrchestrator = entry.createOrchestrator({
+          players,
+          settings,
+          dealerIndex,
+          handNumber: 0, // overridden by resumeFrom.extra.handNumber inside the session, where that family tracks one
+          gameMemory: gameMemoryByGameId[activeGameId] || (gameMemoryByGameId[activeGameId] = {}),
+          carriedPotChips: 0, // unused on resume -- state already reflects the live pot
+          variantChoices: activeVariantChoices,
+          resumeFrom: saved.orchestratorSnapshot,
+          onUpdate: () => notify(),
+          onHandComplete,
+          opponentStats: playerBettingStats,
+          onBettingAction: recordBettingAction,
+        });
+      }
+    }
+    notify();
+  }
 
   function notify() {
+    saveSnapshot();
     onUpdate(getViewState());
   }
 
@@ -66,6 +239,7 @@ const TableNight = (function () {
   }
 
   function init(config, updateCallback) {
+    nightActive = true;
     onUpdate = updateCallback || (() => {});
     dealMode = config.dealMode === "continuous" || config.dealMode === "humanChoice" ? config.dealMode : "dealersChoice";
     settings = {
@@ -114,8 +288,11 @@ const TableNight = (function () {
     playerBettingStats = {};
     cutForDealState = null;
     activeGameId = null;
+    activeVariantChoices = null;
     activeOrchestrator = null;
     gameMemoryByGameId = {};
+    carriedPotByGameId = {};
+    clearSnapshot();
     recordDayProgress();
     notify();
   }
@@ -300,6 +477,7 @@ const TableNight = (function () {
       refundAbandonedHand(activeOrchestrator.getViewState());
     }
     activeGameId = gameId;
+    activeVariantChoices = variantChoices || null;
     gameMemoryByGameId[gameId] = {};
     // Hand back whatever carried pot this game left outstanding last time it
     // was played (e.g. a Rainy Day rain-out that never got revisited before
@@ -359,6 +537,7 @@ const TableNight = (function () {
       dealerIndex = (vs.dealerIndex + 1) % players.length;
     }
     activeGameId = null;
+    activeVariantChoices = null;
     activeOrchestrator = null;
     notify();
   }
@@ -402,6 +581,8 @@ const TableNight = (function () {
   function cashOut() {
     ChipEconomy.cashOut(getHuman().wallet);
     recordDayProgress();
+    nightActive = false;
+    clearSnapshot();
     notify();
   }
 
@@ -437,6 +618,10 @@ const TableNight = (function () {
 
   return {
     init,
+    restore,
+    hasSavedSnapshot,
+    loadSnapshot,
+    clearSnapshot,
     beginCutForDeal,
     claimCutForDealSlot,
     autoClaimCutForDealSlot,

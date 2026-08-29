@@ -310,6 +310,32 @@ fieldset {
   white-space: nowrap;
 }
 
+#resume-banner[hidden] {
+  display: none;
+}
+
+#resume-banner {
+  background: rgba(212, 175, 55, 0.14);
+  border: 1px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+}
+
+#resume-banner p {
+  margin: 0 0 0.6rem;
+}
+
+#resume-night-btn {
+  margin-right: 0.5rem;
+}
+
+#discard-saved-night-btn {
+  background: transparent;
+  border: 1px solid var(--card-border);
+  color: var(--cream);
+}
+
 #setup-game-list-link {
   margin-top: 1rem;
 }
