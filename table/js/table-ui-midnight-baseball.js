@@ -111,10 +111,12 @@ const TableUIMidnightBaseball = (function () {
       return;
     }
     if (gvs.state.status === "complete") {
-      const winner = gvs.state.winnerId ? MidnightBaseball.getPlayer(gvs.state, gvs.state.winnerId) : null;
+      const winnerIds = gvs.state.winnerIds || (gvs.state.winnerId ? [gvs.state.winnerId] : []);
+      const winnerNames = winnerIds.map((id) => MidnightBaseball.getPlayer(gvs.state, id).name);
       const canDeal = orchestrator.canDealNextHand();
+      const resultLine = winnerNames.length > 1 ? `${winnerNames.join(", ")} tie for the board and split the pot.` : winnerNames.length ? `${winnerNames[0]} won the hand.` : "Hand over.";
       el.actionPanel.innerHTML = `
-        <div>${winner ? `${winner.name} won the hand.` : "Hand over."}</div>
+        <div>${resultLine}</div>
         ${canDeal ? `<button id="deal-next-hand-btn">Deal next hand</button>` : `<div>You're out of chips for this hand. Buy more chips or cash out to continue.</div>`}
       `;
       return;

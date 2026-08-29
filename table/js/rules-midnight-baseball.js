@@ -217,17 +217,27 @@ const MidnightBaseball = (function () {
   // Recomputed from each non-folded player's own recorded best hand (rather than
   // a single cached "leader") so a later fold correctly hands the lead back to
   // whoever's showing hand is actually still best among survivors.
+  // tiedIds collects every player whose bestShowingHand exactly ties the
+  // best hand found -- games.md's "House rule: split-pot ties" applies here
+  // same as everywhere else, so a tie for the board isn't just "whoever got
+  // there first." holderId stays the first tied player, for callers that
+  // only care about board-beating (hasBeatenBoard) and don't need the full
+  // tied list.
   function currentBestHand(state) {
     let best = state.referenceHand;
     let holderId = null;
+    let tiedIds = [];
     for (const p of state.players) {
       if (p.folded || !p.bestShowingHand) continue;
       if (HandEvaluator.isBetter(p.bestShowingHand, best)) {
         best = p.bestShowingHand;
         holderId = p.id;
+        tiedIds = [p.id];
+      } else if (holderId != null && HandEvaluator.compareEvaluated(p.bestShowingHand, best) === 0) {
+        tiedIds.push(p.id);
       }
     }
-    return { hand: best, holderId };
+    return { hand: best, holderId, tiedIds };
   }
 
   function hasBeatenBoard(state, playerId) {
@@ -326,18 +336,36 @@ const MidnightBaseball = (function () {
     if (state.status === "complete") return;
     if (nonFoldedCount(state) <= 1) {
       const winner = state.players.find((p) => !p.folded);
-      completeHand(state, winner ? winner.id : null);
+      completeHand(state, winner ? [winner.id] : []);
     }
   }
 
-  function completeHand(state, winnerId) {
+  // winnerIds.length > 1 means an exact tie for the board -- games.md's
+  // "House rule: split-pot ties" applies here same as everywhere else, so
+  // the pot is split evenly (remainder chips to the earliest winner in list
+  // order, same deterministic-but-arbitrary rounding rule used throughout
+  // this project, e.g. rules-holdem.js's payEvenSplit).
+  // Deliberately does NOT zero state.pot afterward (unlike most other games'
+  // completeHand) -- Midnight Baseball's board has always displayed the
+  // live state.pot value straight through past hand-completion, so leaving
+  // it holding the actual awarded amount is what keeps that display correct.
+  function completeHand(state, winnerIds) {
     state.status = "complete";
-    state.winnerId = winnerId;
+    state.winnerId = winnerIds[0] || null;
+    state.winnerIds = winnerIds;
     state.bettingRound = null;
-    if (winnerId) {
-      const winner = getPlayer(state, winnerId);
-      ChipEconomy.award(winner.wallet, state.pot);
-      state.log.push(`${winner.name} wins the $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)} pot.`);
+    if (winnerIds.length) {
+      const share = Math.floor(state.pot / winnerIds.length);
+      const remainder = state.pot - share * winnerIds.length;
+      winnerIds.forEach((id, i) => {
+        ChipEconomy.award(getPlayer(state, id).wallet, share + (i < remainder ? 1 : 0));
+      });
+      const names = winnerIds.map((id) => getPlayer(state, id).name).join(", ");
+      state.log.push(
+        winnerIds.length > 1
+          ? `${names} tie for the board and split the $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)} pot.`
+          : `${names} wins the $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)} pot.`
+      );
     }
   }
 
@@ -348,7 +376,8 @@ const MidnightBaseball = (function () {
     if (state.status === "complete") return;
     state.bettingRound = null;
     if (currentTurnPlayerId(state) == null) {
-      completeHand(state, currentBestHand(state).holderId);
+      const best = currentBestHand(state);
+      completeHand(state, best.tiedIds);
     }
   }
 

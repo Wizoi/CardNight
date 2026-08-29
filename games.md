@@ -261,7 +261,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
   - **Seattle:** 3 cards from hand + 2 from the board. A local variant — not documented anywhere online under this name, likely specific to our group.
   - **Boise:** Flexible — either 2 from hand / 3 from board, or 3 from hand / 2 from board, player's choice at showdown. Attested as a real pagat-listed variant name (a shared/community-card hi-lo game), though its detailed rules weren't confirmable from available sources.
   - **Jersey Hold'em** (also known as "Cosmic Poker") **(New):** Same flexible 2-or-3 construction as Boise, but dealt 5 hole cards instead of 4 — the closest verified documented relative of Boise. Not currently part of our rotation.
-- **Optional:** Hi-lo split. Low hand: five unpaired cards, each ranked 8 or under — straights and flushes don't count against it, only rank matters. Aces count low, so A-2-3-4-5 ("the wheel") is the best possible low, and can double as a straight for high. Built with the same hand/board split as the high hand, but not necessarily the same five actual cards. If nobody has a qualifying low, the high hand takes the whole pot; a hand can also scoop both halves if it's best on both sides.
+- **Hi-lo:** On by default for all four variants. Low hand: five unpaired cards, each ranked 8 or under — straights and flushes don't count against it, only rank matters. Aces count low, so A-2-3-4-5 ("the wheel") is the best possible low, and can double as a straight for high. Built with the same hand/board split as the high hand, but not necessarily the same five actual cards. If nobody has a qualifying low, the high hand takes the whole pot; a hand can also scoop both halves if it's best on both sides.
 - **Blinds:** $0.50 small blind / $1 big blind. No cap on bet size — standard Texas Hold'em raise rules apply (e.g., minimum raise = size of the previous bet/raise).
 - **Tie-breaker:** None — if multiple players tie for a side of the pot, they split it evenly among themselves.
 - **Sources:** [Wikipedia](https://en.wikipedia.org/wiki/Omaha_hold_%27em); [Omaha – pagat.com](https://www.pagat.com/poker/variants/omaha.html); [Invented shared-card variants (incl. Boise, Jersey Hold'em) – pagat.com](https://www.pagat.com/poker/variants/invented/shared.html)
@@ -351,19 +351,3 @@ Daytime Baseball, Midnight Baseball, and Rainy Day Baseball all share the same w
 
 Typical deal shape for stud-based games: 2 cards dealt down to start, then the remaining cards are dealt face up, one per round, with a betting round in between rounds. Free Enterprise matches this default except its final card is dealt down again rather than up. Follow the Queen and Mexican Sweat both deviate further — see each entry's Deal field for specifics.
 
-## Future app fields (draft)
-
-Fields worth capturing per game once we're ready to structure this for the app (none of these have values populated yet — this is just the proposed schema):
-
-- **Player count:** ideal range and hard min/max (e.g., Omaha needs a real board and scales differently than a 2-3 player game; some guts games get more chaotic — and more fun — with more players).
-- **Hand length:** rough time for one hand/round, so the app can suggest something quick vs. something to settle into.
-- **Session length:** how long the game tends to run overall — guts games in particular can run long since they don't end until someone wins outright, which matters for "we only have an hour" planning.
-- **Betting/bankroll volatility:** how much a single hand can swing a player's stack — guts games and Free Enterprise's escalating wipe cost run hotter than a flat-limit stud hand; useful for matching games to how much the group wants to gamble that night.
-- **Skill vs. luck weighting:** how much reads/strategy matter vs. pure chance.
-- **Complexity/learning curve:** how easy it is to teach a new or occasional player mid-session.
-- **Chaos/spectacle factor:** how much table energy or "everyone's watching" moments a game generates (Midnight Baseball's "beat the card" showdown and Blind Man's Bluff both score high here) — useful for a "we want something loud" pick.
-- **House favorite rating:** how often the group actually picks to play it.
-- **Equipment notes:** anything beyond a standard deck and chips (e.g., something to track a rotating wild card or the current wipe price).
-- **Category:** already captured per entry (Guts / Stud-based / Texas Hold'em variant / Baseball / Other) — useful for "give me something in the X family" filtering.
-
-Worth deciding together whether to fill these in as informed estimates now, or track them going forward as the group actually plays each game (the latter would produce more honest data, especially for hand/session length and house-favorite rating).
