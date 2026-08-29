@@ -95,13 +95,19 @@ const SessionGameOfLife = (function () {
             const playerId = RulesGameOfLife.currentFlipPlayerId(state);
             if (playerId == null) break;
             const player = RulesGameOfLife.getPlayer(state, playerId);
-            if (player.isHuman) {
+            const required = RulesGameOfLife.requiredRowFor(state);
+            // Only the genuine free choice on the very first flip of the
+            // hand ever needs a human decision -- every flip after that is
+            // forced to alternate (rules-game-of-life.js), so there's
+            // nothing to ask anyone: it auto-resolves the same way an AI's
+            // turn does, human or not.
+            if (player.isHuman && required == null) {
               pending = { kind: "flipChoice", playerId };
               notify();
               return;
             }
             await sleep(FLIP_DELAY_MS);
-            const rowChoice = GameOfLifeAIProfiles.decideFlipChoice(player, state);
+            const rowChoice = required || GameOfLifeAIProfiles.decideFlipChoice(player, state);
             RulesGameOfLife.resolveFlip(state, playerId, rowChoice);
             notify();
             continue;
