@@ -342,13 +342,23 @@ const AIProfiles = (function () {
   // A fully-revealed hand has no more upside (every card is already shown)
   // and nothing hidden from opponents either — raising it only makes sense if
   // it's genuinely strong, not just "currently ahead." Still-live hands get
-  // the profile's normal (more lenient) threshold since they might improve.
+  // the profile's normal threshold, tightened by how many of the player's
+  // OWN face-down cards remain -- instead of one flat threshold for the
+  // whole hand regardless of how many are still to flip. Same fix applied
+  // everywhere else this pattern existed (2026-08-29, reported against
+  // Criss Cross): a showing hand that already clears the bar with several
+  // cards still unflipped is a much weaker signal than the same category
+  // with just one card left.
+  function raiseBarForLeader(remaining, profile) {
+    if (remaining === 0) return HandEvaluator.CATEGORY.TRIPS;
+    return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, profile.raiseMinCategory + Math.floor(remaining / 2));
+  }
+
   function worthRaisingAsLeader(player, state, profile) {
     if (!profile.raiseWhenLeading) return false;
     const showing = MidnightBaseball.evaluateShowingHand(state, player.id);
     const remaining = MidnightBaseball.remainingFaceDownCount(state, player.id);
-    const minCategory = remaining === 0 ? HandEvaluator.CATEGORY.TRIPS : profile.raiseMinCategory;
-    return showing.category >= minCategory;
+    return showing.category >= raiseBarForLeader(remaining, profile);
   }
 
   function decideBet(player, state, profile) {

@@ -24,6 +24,18 @@ const GameOfLifeAIProfiles = (function () {
     return flipsLeft * profile.chancePerCard >= gap;
   }
 
+  // The raise bar tightens the more of the 10-flip draft is still to come,
+  // instead of one flat threshold for the whole hand -- same fix applied
+  // everywhere else this pattern existed (2026-08-29, reported against
+  // Criss Cross). Divided by 4 rather than 2 (the smaller-reveal-count
+  // families' divisor) since Game of Life's draft is more than double the
+  // length -- this keeps the maximum shift in the same rough ballpark
+  // (~2 category tiers at the very start) instead of maxing out the scale.
+  function raiseBarFor(flipsLeft, profile) {
+    if (flipsLeft === 0) return HandEvaluator.CATEGORY.TRIPS;
+    return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, profile.raiseMinCategory + Math.floor(flipsLeft / 4));
+  }
+
   function decideBet(player, state, profile) {
     const br = state.bettingRound;
     const toCallChips = br.currentBetChips - br.committed[player.id];
@@ -34,12 +46,9 @@ const GameOfLifeAIProfiles = (function () {
     if (toCallChips > 0 && !worthContinuing(myHand, flipsLeft, profile)) {
       return { action: "fold" };
     }
-    if (profile.raiseWhenLeading) {
-      const minCategory = flipsLeft === 0 ? HandEvaluator.CATEGORY.TRIPS : profile.raiseMinCategory;
-      if (myHand.category >= minCategory) {
-        const maxRaise = RulesGameOfLife.maxRaiseDollars(state, player.id);
-        if (maxRaise > 0) return { action: "raise", raiseDollars: Math.min(state.raiseIncrementDollars, maxRaise) };
-      }
+    if (profile.raiseWhenLeading && myHand.category >= raiseBarFor(flipsLeft, profile)) {
+      const maxRaise = RulesGameOfLife.maxRaiseDollars(state, player.id);
+      if (maxRaise > 0) return { action: "raise", raiseDollars: Math.min(state.raiseIncrementDollars, maxRaise) };
     }
     return { action: "call" };
   }

@@ -30,6 +30,15 @@ const AnacondaAIProfiles = (function () {
     return chooseDiscards(player.hand, 2);
   }
 
+  // The raise bar tightens the more of the 5 reveal rounds are still to
+  // come, instead of one flat threshold for the whole hand -- same fix
+  // applied everywhere else this pattern existed (2026-08-29, reported
+  // against Criss Cross).
+  function raiseBarFor(revealsLeft, profile) {
+    if (revealsLeft <= 0) return HandEvaluator.CATEGORY.TRIPS;
+    return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, profile.raiseMinCategory + Math.floor(revealsLeft / 2));
+  }
+
   function decideBet(player, state, profile) {
     const br = state.bettingRound;
     const toCallChips = br.currentBetChips - br.committed[player.id];
@@ -41,12 +50,9 @@ const AnacondaAIProfiles = (function () {
       const gap = HandEvaluator.CATEGORY.PAIR - myHand.category;
       if (gap > 0 && revealsLeft * profile.chancePerCard < gap) return { action: "fold" };
     }
-    if (profile.raiseWhenLeading) {
-      const minCategory = revealsLeft <= 0 ? HandEvaluator.CATEGORY.TRIPS : profile.raiseMinCategory;
-      if (myHand.category >= minCategory) {
-        const maxRaise = RulesAnaconda.maxRaiseDollars(state, player.id);
-        if (maxRaise > 0) return { action: "raise", raiseDollars: Math.min(state.raiseIncrementDollars, maxRaise) };
-      }
+    if (profile.raiseWhenLeading && myHand.category >= raiseBarFor(revealsLeft, profile)) {
+      const maxRaise = RulesAnaconda.maxRaiseDollars(state, player.id);
+      if (maxRaise > 0) return { action: "raise", raiseDollars: Math.min(state.raiseIncrementDollars, maxRaise) };
     }
     return { action: "call" };
   }

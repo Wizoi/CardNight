@@ -66,12 +66,26 @@ const StudAIProfiles = (function () {
   // A fully-dealt hand (no streets left) has no more upside and nothing
   // hidden from opponents either — same "needs a real hand, not just a
   // lead" bar Midnight Baseball applies once a player's run out of cards.
+  //
+  // With streets still to come, the bar now tightens the more of them
+  // remain, instead of one flat threshold for the whole hand -- real bug
+  // fixed 2026-08-29, reported directly against Criss Cross (this same
+  // flat-bar pattern existed identically across every family) as two AI
+  // seats repeatedly bidding a pot up to the max bet "every time," well
+  // before most of the street was even dealt. A showing hand that already
+  // clears the bar with several streets still to come is a much weaker
+  // signal than the same category on the last street, since there's more
+  // room left for someone else's board (or this one) to change shape.
+  function raiseBarForStud(streetsLeft, profile) {
+    if (streetsLeft === 0) return HandEvaluator.CATEGORY.TRIPS;
+    return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, profile.raiseMinCategory + Math.floor(streetsLeft / 2));
+  }
+
   function worthRaisingAsLeaderStud(player, state, profile) {
     if (!profile.raiseWhenLeading) return false;
     const showing = StudRules.evaluateShowingHand(state, player.id);
     const streetsLeft = StudRules.streetsRemaining(state);
-    const minCategory = streetsLeft === 0 ? HandEvaluator.CATEGORY.TRIPS : profile.raiseMinCategory;
-    return showing.category >= minCategory;
+    return showing.category >= raiseBarForStud(streetsLeft, profile);
   }
 
   function decideBet(player, state, profile) {

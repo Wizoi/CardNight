@@ -27,6 +27,19 @@ const HoldemAIProfiles = (function () {
     return streetsLeft * profile.chancePerCard >= gap;
   }
 
+  // The raise bar tightens the more streets are still to come, instead of
+  // one flat threshold for the whole hand -- real bug fixed 2026-08-29,
+  // reported directly against Criss Cross (this same flat-bar pattern
+  // existed identically across every family) as two AI seats repeatedly
+  // bidding a pot up to the max bet "every time," well before the board
+  // was even half dealt. A hand that already clears the bar on the flop is
+  // a much weaker signal than the same category on the river, since there
+  // are still 1-2 more community cards that could change anyone's hand.
+  function raiseBarFor(streetsLeft, profile) {
+    if (streetsLeft <= 0) return HandEvaluator.CATEGORY.TRIPS;
+    return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, profile.raiseMinCategory + Math.floor(streetsLeft / 2));
+  }
+
   function decideBet(player, state, profile) {
     const br = state.bettingRound;
     const toCallChips = br.currentBetChips - br.committed[player.id];
@@ -36,12 +49,9 @@ const HoldemAIProfiles = (function () {
     if (toCallChips > 0 && !worthContinuing(myHand, streetsLeft, profile)) {
       return { action: "fold" };
     }
-    if (profile.raiseWhenLeading) {
-      const minCategory = streetsLeft <= 0 ? HandEvaluator.CATEGORY.TRIPS : profile.raiseMinCategory;
-      if (myHand.category >= minCategory) {
-        const maxRaise = HoldemRules.maxRaiseDollars(state, player.id);
-        if (maxRaise > 0) return { action: "raise", raiseDollars: Math.min(state.raiseIncrementDollars, maxRaise) };
-      }
+    if (profile.raiseWhenLeading && myHand.category >= raiseBarFor(streetsLeft, profile)) {
+      const maxRaise = HoldemRules.maxRaiseDollars(state, player.id);
+      if (maxRaise > 0) return { action: "raise", raiseDollars: Math.min(state.raiseIncrementDollars, maxRaise) };
     }
     return { action: "call" };
   }
