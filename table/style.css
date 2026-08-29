@@ -244,6 +244,16 @@ header {
   white-space: nowrap;
 }
 
+#setup-game-list-link {
+  margin-top: 1rem;
+}
+
+#setup-game-list-link a {
+  color: var(--gold-soft);
+  text-decoration: underline;
+  font-size: 0.9rem;
+}
+
 #game-script-details {
   margin-bottom: 0.75rem;
   background: var(--felt);
