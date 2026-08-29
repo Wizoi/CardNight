@@ -49,16 +49,23 @@ const PressYourLuckAIProfiles = (function () {
   // profile had (still exactly 0.5) plus anything looser (e.g. Live Wire's
   // 0.25), while archetypes that lean loose for other reasons without being
   // truly reckless (e.g. Streak Chaser's 0.75) still get to buy back.
+  // Returns "buyBack" | "payFlex" | "keep" -- payFlex (7-27's optional $1
+  // flexible-10 purchase) is checked first since it's cheap, pure upside,
+  // and mutually exclusive with buying the card back outright (added
+  // 2026-08-29 alongside the feature itself).
   function decideBuyBack(player, state, profile) {
-    if (profile.pressYourLuckStandThreshold <= 0.5) return false;
+    if (profile.pressYourLuckStandThreshold <= 0.5) return "keep";
     const cfg = state.gameConfig;
-    if (!cfg.buyBack || player.buyBacksUsed >= cfg.buyBack.maxBuys) return false;
+    if (PressYourLuckRules.canPayFlexTen(state, player.id) && player.wallet.chips >= ChipEconomy.dollarsToChips(cfg.flexTenPriceDollars)) {
+      return "payFlex";
+    }
+    if (!cfg.buyBack || player.buyBacksUsed >= cfg.buyBack.maxBuys) return "keep";
     const priceDollars = cfg.buyBack.priceScheduleDollars[player.buyBacksUsed];
-    if (player.wallet.chips < ChipEconomy.dollarsToChips(priceDollars)) return false;
+    if (player.wallet.chips < ChipEconomy.dollarsToChips(priceDollars)) return "keep";
     const justDealt = player.hand[player.hand.length - 1];
     const values = cfg.cardValue(justDealt);
     const bestValue = Math.max(...values);
-    return bestValue <= 1;
+    return bestValue <= 1 ? "buyBack" : "keep";
   }
 
   // Betting (5.5-21 and 7-27, both bettingEnabled now): no hidden info
@@ -80,12 +87,60 @@ const PressYourLuckAIProfiles = (function () {
       return toCallChips > 0 ? { action: "fold" } : { action: "call" };
     }
     const bestDistance = Math.min(low.busted ? Infinity : low.distance, high.busted ? Infinity : high.distance);
-    if (toCallChips > 0 && bestDistance > profile.pressYourLuckStandThreshold + 2) {
+    // A player facing their very first bet has only their 1-2 initial
+    // cards to judge from -- nowhere close to either target yet, with a
+    // whole hand of voluntary hits still ahead to close the gap. Folding
+    // that early off raw current distance was too hasty (reported
+    // 2026-08-29: too many AI seats folding right after the deal in 7-27,
+    // a noBust game where going over doesn't even disqualify a hand, so an
+    // early "far from target" reading is especially weak evidence). Loosen
+    // the fold bar while the hand is still small, tightening back to the
+    // original bar as more cards accumulate and there's genuinely less
+    // room left to close the distance.
+    // A bluff raise here means pushing chips in despite an unsettled (or
+    // outright bad) distance -- independent of isLocked below on purpose,
+    // same shared shape as every other family.
+    if (AIProfiles.shouldBluff(profile)) {
+      const maxRaise = PressYourLuckRules.maxRaiseDollars(state, player.id);
+      if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(1, state.raiseIncrementDollars, maxRaise) };
+    }
+    const roomToImprove = Math.max(0, 4 - player.hand.length);
+    // potOddsChanceBonus's units are "categories per unknown card" in
+    // every other family -- this game measures distance in raw target
+    // units instead, a much coarser scale, so the bonus is scaled up (x3)
+    // to have a comparable, meaningful effect here rather than rounding
+    // away to nothing against a typical 1.5-4 point threshold.
+    const potOddsBonus = AIProfiles.potOddsChanceBonus(toCallChips, state.pot) * 3;
+    if (toCallChips > 0 && bestDistance > profile.pressYourLuckStandThreshold + 2 + roomToImprove + potOddsBonus) {
       return { action: "fold" };
     }
-    if (profile.raiseWhenLeading && bestDistance <= profile.pressYourLuckStandThreshold) {
+    // Raising means "I'm confident I'm ahead," but a hand that's still
+    // actively taking cards (hasn't stood) has no fixed value yet -- its
+    // current distance is just where it happens to be mid-hand, not a
+    // result anyone (including this player, who may well hit again) can
+    // actually bank on. Reported 2026-08-29: an AI raised on an 8 (only
+    // 1 away from the low target) while still planning to take more
+    // cards -- a real distance, but not a settled one. Only a genuinely
+    // locked-in value -- already standing (no more cards coming, so this
+    // IS the final number), or an exact hit on a target (can't get any
+    // closer, whether standing yet or not) -- counts as confident enough
+    // to raise; anything else, even a currently-good distance, calls
+    // instead and waits to see how the hand actually settles.
+    const isLocked = player.standing || bestDistance === 0;
+    // Fewer live opponents justifies raising with a slightly less perfect
+    // locked distance (fewer hands to beat); more live opponents wants a
+    // tighter one -- same opponentCountBarAdjustment units as every other
+    // family, just subtracted from a distance threshold instead of added
+    // to a category one (a category bar goes UP for less confidence, a
+    // distance threshold goes DOWN for the same effect).
+    const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));
+    const raiseThreshold = profile.pressYourLuckStandThreshold - barAdjustment;
+    if (profile.raiseWhenLeading && isLocked && bestDistance <= raiseThreshold) {
       const maxRaise = PressYourLuckRules.maxRaiseDollars(state, player.id);
-      if (maxRaise > 0) return { action: "raise", raiseDollars: Math.min(state.raiseIncrementDollars, maxRaise) };
+      if (maxRaise > 0) {
+        const tier = AIProfiles.confidenceTier(Math.floor(raiseThreshold - bestDistance));
+        return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(tier, state.raiseIncrementDollars, maxRaise) };
+      }
     }
     return { action: "call" };
   }

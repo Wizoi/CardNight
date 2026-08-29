@@ -12,10 +12,10 @@
 const CommunityStudAIProfiles = (function () {
   const CALL_WORTHY_CATEGORY = HandEvaluator.CATEGORY.PAIR;
 
-  function worthContinuing(myHand, revealsLeft, profile) {
+  function worthContinuing(myHand, revealsLeft, profile, chanceBonus) {
     if (myHand.category >= CALL_WORTHY_CATEGORY) return true;
     const gap = CALL_WORTHY_CATEGORY - myHand.category;
-    return revealsLeft * profile.chancePerCard >= gap;
+    return revealsLeft * (profile.chancePerCard + (chanceBonus || 0)) >= gap;
   }
 
   // The raise bar tightens the more uncertainty is still ahead, instead of
@@ -33,10 +33,10 @@ const CommunityStudAIProfiles = (function () {
   // eventual wild rank can reshape EVERY hand at the table at once, so
   // today's category read is even less trustworthy than the reveal count
   // alone would suggest.
-  function raiseBarFor(state, revealsLeft, profile) {
+  function raiseBarFor(state, revealsLeft, profile, barAdjustment) {
     if (revealsLeft === 0) return HandEvaluator.CATEGORY.TRIPS;
     const wildcardPending = !!state.gameConfig.wildcardMode && state.wildRank == null;
-    const shift = Math.floor(revealsLeft / 2) + (wildcardPending ? 1 : 0);
+    const shift = Math.floor(revealsLeft / 2) + (wildcardPending ? 1 : 0) + (barAdjustment || 0);
     return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, profile.raiseMinCategory + shift);
   }
 
@@ -46,12 +46,25 @@ const CommunityStudAIProfiles = (function () {
     const myHand = CommunityStudRules.evaluateBestHand(state, player);
     const revealsLeft = state.communityCards.length - state.revealIndex;
 
-    if (toCallChips > 0 && !worthContinuing(myHand, revealsLeft, profile)) {
+    // Bluff check first, before the fold gate -- same shared pattern as
+    // every other family.
+    if (AIProfiles.shouldBluff(profile)) {
+      const maxRaise = CommunityStudRules.maxRaiseDollars(state, player.id);
+      if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(1, state.raiseIncrementDollars, maxRaise) };
+    }
+
+    const potOddsBonus = AIProfiles.potOddsChanceBonus(toCallChips, state.pot);
+    if (toCallChips > 0 && !worthContinuing(myHand, revealsLeft, profile, potOddsBonus)) {
       return { action: "fold" };
     }
-    if (profile.raiseWhenLeading && myHand.category >= raiseBarFor(state, revealsLeft, profile)) {
+    const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));
+    const bar = raiseBarFor(state, revealsLeft, profile, barAdjustment);
+    if (profile.raiseWhenLeading && myHand.category >= bar) {
       const maxRaise = CommunityStudRules.maxRaiseDollars(state, player.id);
-      if (maxRaise > 0) return { action: "raise", raiseDollars: Math.min(state.raiseIncrementDollars, maxRaise) };
+      if (maxRaise > 0) {
+        const tier = AIProfiles.confidenceTier(myHand.category - bar);
+        return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(tier, state.raiseIncrementDollars, maxRaise) };
+      }
     }
     return { action: "call" };
   }

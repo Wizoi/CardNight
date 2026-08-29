@@ -34,25 +34,36 @@ const AnacondaAIProfiles = (function () {
   // come, instead of one flat threshold for the whole hand -- same fix
   // applied everywhere else this pattern existed (2026-08-29, reported
   // against Criss Cross).
-  function raiseBarFor(revealsLeft, profile) {
+  function raiseBarFor(revealsLeft, profile, barAdjustment) {
     if (revealsLeft <= 0) return HandEvaluator.CATEGORY.TRIPS;
-    return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, profile.raiseMinCategory + Math.floor(revealsLeft / 2));
+    return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, profile.raiseMinCategory + Math.floor(revealsLeft / 2) + (barAdjustment || 0));
   }
 
   function decideBet(player, state, profile) {
     const br = state.bettingRound;
     const toCallChips = br.currentBetChips - br.committed[player.id];
-    const cards = player.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: false }));
+    const cards = player.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: c.rank === "JOKER" }));
     const myHand = HandEvaluator.evaluatePartial(cards);
     const revealsLeft = 5 - state.revealsDone;
 
+    if (AIProfiles.shouldBluff(profile)) {
+      const maxRaise = RulesAnaconda.maxRaiseDollars(state, player.id);
+      if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(1, state.raiseIncrementDollars, maxRaise) };
+    }
+
     if (toCallChips > 0) {
       const gap = HandEvaluator.CATEGORY.PAIR - myHand.category;
-      if (gap > 0 && revealsLeft * profile.chancePerCard < gap) return { action: "fold" };
+      const potOddsBonus = AIProfiles.potOddsChanceBonus(toCallChips, state.pot);
+      if (gap > 0 && revealsLeft * (profile.chancePerCard + potOddsBonus) < gap) return { action: "fold" };
     }
-    if (profile.raiseWhenLeading && myHand.category >= raiseBarFor(revealsLeft, profile)) {
+    const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));
+    const bar = raiseBarFor(revealsLeft, profile, barAdjustment);
+    if (profile.raiseWhenLeading && myHand.category >= bar) {
       const maxRaise = RulesAnaconda.maxRaiseDollars(state, player.id);
-      if (maxRaise > 0) return { action: "raise", raiseDollars: Math.min(state.raiseIncrementDollars, maxRaise) };
+      if (maxRaise > 0) {
+        const tier = AIProfiles.confidenceTier(myHand.category - bar);
+        return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(tier, state.raiseIncrementDollars, maxRaise) };
+      }
     }
     return { action: "call" };
   }

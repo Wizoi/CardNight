@@ -12,16 +12,16 @@ const MexicanSweatAIProfiles = (function () {
   // else this pattern existed (2026-08-29, reported against Criss Cross). A
   // showing hand that already clears the bar with several rounds still left
   // is a much weaker signal than the same category on the last round.
-  function raiseBarFor(roundsLeft, profile) {
+  function raiseBarFor(roundsLeft, profile, barAdjustment) {
     if (roundsLeft <= 0) return HandEvaluator.CATEGORY.TRIPS;
-    return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, profile.raiseMinCategory + Math.floor(roundsLeft / 2));
+    return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, profile.raiseMinCategory + Math.floor(roundsLeft / 2) + (barAdjustment || 0));
   }
 
-  function worthRaisingAsLeader(player, state, profile) {
+  function worthRaisingAsLeader(player, state, profile, barAdjustment) {
     if (!profile.raiseWhenLeading) return false;
     const showing = MexicanSweatRules.evaluateShowingHand(state, player.id);
     const roundsLeft = MexicanSweatRules.roundsRemaining(state);
-    return showing.category >= raiseBarFor(roundsLeft, profile);
+    return showing.category >= raiseBarFor(roundsLeft, profile, barAdjustment);
   }
 
   function decideBet(player, state, profile) {
@@ -30,16 +30,28 @@ const MexicanSweatAIProfiles = (function () {
     const best = MexicanSweatRules.currentBestShowingHand(state);
     const isLeader = best.holderId === player.id;
 
+    if (AIProfiles.shouldBluff(profile)) {
+      const maxRaise = MexicanSweatRules.maxRaiseDollars(state, player.id);
+      if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(1, state.raiseIncrementDollars, maxRaise) };
+    }
+
     if (!isLeader && toCallChips > 0) {
       const showing = MexicanSweatRules.evaluateShowingHand(state, player.id);
       const roundsLeft = MexicanSweatRules.roundsRemaining(state);
-      if (!AIProfiles.worthPursuing(showing, best.hand, roundsLeft, profile)) {
+      const potOddsBonus = AIProfiles.potOddsChanceBonus(toCallChips, state.pot);
+      if (!AIProfiles.worthPursuing(showing, best.hand, roundsLeft, profile, potOddsBonus)) {
         return { action: "fold" };
       }
     }
-    if (isLeader && worthRaisingAsLeader(player, state, profile)) {
+    const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));
+    if (isLeader && worthRaisingAsLeader(player, state, profile, barAdjustment)) {
       const maxRaise = MexicanSweatRules.maxRaiseDollars(state, player.id);
-      if (maxRaise > 0) return { action: "raise", raiseDollars: Math.min(state.raiseIncrementDollars, maxRaise) };
+      if (maxRaise > 0) {
+        const showing = MexicanSweatRules.evaluateShowingHand(state, player.id);
+        const roundsLeft = MexicanSweatRules.roundsRemaining(state);
+        const tier = AIProfiles.confidenceTier(showing.category - raiseBarFor(roundsLeft, profile, barAdjustment));
+        return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(tier, state.raiseIncrementDollars, maxRaise) };
+      }
     }
     return { action: "call" };
   }

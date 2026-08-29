@@ -32,12 +32,26 @@ const Rules333AIProfiles = (function () {
     const bestDistance = Math.min(low.distance, high.distance);
     const roundsLeft = Rules333.TOTAL_ROUNDS - state.roundIndex;
 
-    if (toCallChips > 0 && bestDistance > FOLD_BASE + roundsLeft * profile.chancePerCard) {
+    if (AIProfiles.shouldBluff(profile)) {
+      const maxRaise = Rules333.maxRaiseDollars(state, player.id);
+      if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(1, state.raiseIncrementDollars, maxRaise) };
+    }
+    // potOddsChanceBonus's units are "categories per unknown card" in most
+    // families -- this game's fold check is in raw distance units, a
+    // coarser scale, so the bonus is scaled up (x3) for a comparable
+    // effect, same treatment as ai-press-your-luck-profiles.js.
+    const potOddsBonus = AIProfiles.potOddsChanceBonus(toCallChips, state.pot) * 3;
+    if (toCallChips > 0 && bestDistance > FOLD_BASE + roundsLeft * (profile.chancePerCard + potOddsBonus)) {
       return { action: "fold" };
     }
-    if (profile.raiseWhenLeading && bestDistance <= 2) {
+    const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));
+    const raiseThreshold = 2 - barAdjustment;
+    if (profile.raiseWhenLeading && bestDistance <= raiseThreshold) {
       const maxRaise = Rules333.maxRaiseDollars(state, player.id);
-      if (maxRaise > 0) return { action: "raise", raiseDollars: Math.min(state.raiseIncrementDollars, maxRaise) };
+      if (maxRaise > 0) {
+        const tier = AIProfiles.confidenceTier(Math.floor(raiseThreshold - bestDistance));
+        return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(tier, state.raiseIncrementDollars, maxRaise) };
+      }
     }
     return { action: "call" };
   }

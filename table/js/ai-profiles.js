@@ -42,6 +42,7 @@ const AIProfiles = (function () {
       buyWildOnlyOnCategoryGain: true, // only pays for a 9 if it changes the hand's category, not just a kicker
       chancePerCard: 0.5, // how many "hand categories" of gap one more unknown flip is assumed worth closing
       raiseWhenLeading: false,
+      bluffFrequency: 0, // never raises on a hand that doesn't actually warrant it
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.TWO_PAIR, // guts games: a fully-known hand needs to be genuinely strong to risk the ante
       pressYourLuckStandThreshold: 3, // 5.5-21/7-27: stands once already within this far of either target, rather than pushing for exact
       aceyDuceyMinWinProb: 0.5, // Acey Ducey: only bets when the gap between the two shown cards looks genuinely safe
@@ -56,6 +57,7 @@ const AIProfiles = (function () {
       chancePerCard: 1,
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR, // won't raise on a lead this thin
+      bluffFrequency: 0.05,
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
       pressYourLuckStandThreshold: 1.5,
       aceyDuceyMinWinProb: 0.3,
@@ -70,6 +72,7 @@ const AIProfiles = (function () {
       chancePerCard: 1.5,
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.PAIR, // presses even a modest lead
+      bluffFrequency: 0.15,
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD, // stays in almost every guts hand -- fits the reckless archetype
       pressYourLuckStandThreshold: 0.5, // keeps hitting until right on top of a target or busted
       aceyDuceyMinWinProb: 0.15,
@@ -89,6 +92,7 @@ const AIProfiles = (function () {
       chancePerCard: 0.75,
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
+      bluffFrequency: 0.08, // selective and purposeful even when bluffing, not never
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.TWO_PAIR,
       pressYourLuckStandThreshold: 2,
       aceyDuceyMinWinProb: 0.4,
@@ -107,6 +111,7 @@ const AIProfiles = (function () {
       chancePerCard: 1.8,
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.HIGH_CARD,
+      bluffFrequency: 0.25, // the loosest in the roster -- "raises on nothing" is close to literal
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD,
       pressYourLuckStandThreshold: 0.25,
       aceyDuceyMinWinProb: 0.1,
@@ -124,6 +129,7 @@ const AIProfiles = (function () {
       buyWildOnlyOnCategoryGain: true,
       chancePerCard: 0.3,
       raiseWhenLeading: false,
+      bluffFrequency: 0, // nothing clears the bar to risk a chip, bluffed or otherwise
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.TRIPS,
       pressYourLuckStandThreshold: 4,
       aceyDuceyMinWinProb: 0.65,
@@ -144,6 +150,7 @@ const AIProfiles = (function () {
       chancePerCard: 1.1,
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.PAIR,
+      bluffFrequency: 0.1,
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
       pressYourLuckStandThreshold: 1.2,
       aceyDuceyMinWinProb: 0.25,
@@ -163,6 +170,7 @@ const AIProfiles = (function () {
       chancePerCard: 1.1,
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
+      bluffFrequency: 0.05,
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
       pressYourLuckStandThreshold: 1.5,
       aceyDuceyMinWinProb: 0.3,
@@ -185,6 +193,7 @@ const AIProfiles = (function () {
       chancePerCard: 1,
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
+      bluffFrequency: 0.1, // a real, unpredictable bluff rate is the whole point of "gives away nothing"
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
       pressYourLuckStandThreshold: 1.5,
       aceyDuceyMinWinProb: 0.3,
@@ -205,6 +214,7 @@ const AIProfiles = (function () {
       chancePerCard: 0.9,
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
+      bluffFrequency: 0.05,
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
       pressYourLuckStandThreshold: 1.8,
       aceyDuceyMinWinProb: 0.35,
@@ -225,6 +235,7 @@ const AIProfiles = (function () {
       chancePerCard: 1.3,
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.PAIR,
+      bluffFrequency: 0.15,
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD,
       pressYourLuckStandThreshold: 0.75,
       aceyDuceyMinWinProb: 0.2,
@@ -246,6 +257,11 @@ const AIProfiles = (function () {
       buyWildOnlyOnCategoryGain: false,
       chancePerCard: 1.4,
       raiseWhenLeading: false,
+      // With raiseWhenLeading off, bluffing is this profile's ONLY path to
+      // ever raising at all -- fitting, since an unpredictable raise
+      // untethered from actual hand strength IS the "contrarian" trait,
+      // not just a flavor add-on the way it is for other profiles.
+      bluffFrequency: 0.2,
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD,
       pressYourLuckStandThreshold: 0.4,
       aceyDuceyMinWinProb: 0.12,
@@ -265,6 +281,7 @@ const AIProfiles = (function () {
       chancePerCard: 0.85,
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
+      bluffFrequency: 0.05,
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
       pressYourLuckStandThreshold: 1.7,
       aceyDuceyMinWinProb: 0.35,
@@ -321,14 +338,101 @@ const AIProfiles = (function () {
     return player.hand.findIndex((c) => !c.faceUp);
   }
 
+  // --- Shared betting-flavor helpers (2026-08-29 pass) ---
+  // Reused across every family's own decideBet instead of re-deriving the
+  // same bet-sizing/bluffing/opponent-count/pot-odds logic in each one.
+  // Prompted by two real reports: Omaha AI seats re-raising each other
+  // near-indefinitely on a low TWO_PAIR (fixed narrowly at the time with a
+  // per-player raise-count cap in ai-holdem-profiles.js), and a follow-up
+  // ask for what OTHER poker AI/betting engines do generally to feel more
+  // natural. A background research pass (public/academic poker bots, CMU's
+  // Libratus/Pluribus, general game-AI "believability vs. optimality"
+  // literature) converged on a short list worth building: scaled bet
+  // sizing, occasional bluffing, opponent-count-aware thresholds, and a
+  // pot-odds nudge -- see CLAUDE.md for the full research writeup.
+  //
+  // Deliberately does NOT touch the guts family (Deep or Double Screw, 3
+  // Buy 5, Four-Two-Two, 3-5-7 Guts) -- games.md states it as ante-only,
+  // no raise/max-bet structure exists there at all, so none of this
+  // applies.
+
+  // How far a hand's category clears the raise bar, bucketed into a small
+  // number of bet-sizing tiers (0 = doesn't clear at all -- callers should
+  // never reach scaledRaiseDollars with tier 0 outside a deliberate bluff).
+  function confidenceTier(categoryGapAboveBar) {
+    if (categoryGapAboveBar <= 0) return 0;
+    if (categoryGapAboveBar === 1) return 1;
+    if (categoryGapAboveBar === 2) return 2;
+    return 3;
+  }
+
+  // Scales a raise's SIZE by confidence tier instead of always the flat
+  // increment: a marginal raise-worthy hand still just min-raises, a
+  // clearly-ahead hand raises a few increments, and a near-nuts hand pushes
+  // for as much of maxRaiseDollars as is available -- still bounded by it
+  // (and by whatever cap on ante-based families' own low max bet already
+  // applies). A tier-1 size (a plain, unremarkable-looking raise) is also
+  // what shouldBluff's raises use, specifically so a bluff can't be picked
+  // out by its size alone.
+  function scaledRaiseDollars(tier, raiseIncrementDollars, maxRaiseDollarsAllowed) {
+    if (maxRaiseDollarsAllowed <= 0) return 0;
+    const multiplier = [1, 1, 2, 4][tier] || 1;
+    return Math.min(maxRaiseDollarsAllowed, raiseIncrementDollars * multiplier);
+  }
+
+  // A small, per-archetype chance to raise despite NOT actually clearing
+  // the normal bar -- sized exactly like a real tier-1 value raise (see
+  // scaledRaiseDollars) so it can't be told apart by size. Independent of
+  // profile.raiseWhenLeading on purpose: Subversive has raiseWhenLeading
+  // false (never presses an actual lead) but a real bluffFrequency, since
+  // an unpredictable raise untethered from hand strength IS its defining
+  // trait, not a lead it's declining to press.
+  function shouldBluff(profile) {
+    return Math.random() < (profile.bluffFrequency || 0);
+  }
+
+  // Fewer live opponents justifies looser raising (heads-up: only one hand
+  // to beat); more live opponents calls for tighter raising (a marginal
+  // edge means less against 4-5 live hands than against 1). Returns a
+  // category-tier shift to fold into a raiseBarFor-style calculation, the
+  // same units raiseBarFor's own streets/reveals-remaining term already
+  // uses.
+  function opponentCountBarAdjustment(liveOpponentCount) {
+    if (liveOpponentCount <= 1) return -1;
+    if (liveOpponentCount >= 4) return 1;
+    return 0;
+  }
+
+  function liveOpponentCount(players, selfId) {
+    return players.filter((p) => !p.folded && p.id !== selfId).length;
+  }
+
+  // A crude pot-odds nudge -- NOT real equity estimation, just "how cheap
+  // is this call relative to what's already in the pot." Deliberately
+  // ADDITIVE ONLY: it can make an already-marginal hand a little more
+  // worth chasing when the price is cheap, but can never override a hand
+  // that's already a clear fold under the normal category-gap heuristic --
+  // avoids the two heuristics ever giving flatly contradictory answers.
+  // Returned in the same fractional units as profile.chancePerCard (a
+  // "how many categories of gap one more unknown card is worth," not raw
+  // dollars), so callers just add it directly to chancePerCard before the
+  // usual remainingCards * chancePerCard >= gap comparison.
+  function potOddsChanceBonus(toCallChips, potChips) {
+    if (toCallChips <= 0 || potChips <= 0) return 0;
+    const odds = toCallChips / (potChips + toCallChips);
+    if (odds <= 0.1) return 0.3; // very cheap relative to the pot -- worth stretching for
+    if (odds <= 0.2) return 0.15;
+    return 0;
+  }
+
   // Worth continuing/calling without knowing what's actually under the
   // remaining cards: weigh the category gap against how many unknown flips
   // are left to close it, at a profile-scaled optimism per flip. This is the
   // same reasoning a player watching from outside the hand could make.
-  function worthPursuing(showing, board, remainingCards, profile) {
+  function worthPursuing(showing, board, remainingCards, profile, chanceBonus) {
     if (!HandEvaluator.isBetter(board, showing)) return true;
     const gap = board.category - showing.category;
-    return remainingCards * profile.chancePerCard >= gap;
+    return remainingCards * (profile.chancePerCard + (chanceBonus || 0)) >= gap;
   }
 
   function decideContinue(player, state, profile) {
@@ -349,16 +453,16 @@ const AIProfiles = (function () {
   // Criss Cross): a showing hand that already clears the bar with several
   // cards still unflipped is a much weaker signal than the same category
   // with just one card left.
-  function raiseBarForLeader(remaining, profile) {
+  function raiseBarForLeader(remaining, profile, barAdjustment) {
     if (remaining === 0) return HandEvaluator.CATEGORY.TRIPS;
-    return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, profile.raiseMinCategory + Math.floor(remaining / 2));
+    return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, profile.raiseMinCategory + Math.floor(remaining / 2) + (barAdjustment || 0));
   }
 
-  function worthRaisingAsLeader(player, state, profile) {
+  function worthRaisingAsLeader(player, state, profile, barAdjustment) {
     if (!profile.raiseWhenLeading) return false;
     const showing = MidnightBaseball.evaluateShowingHand(state, player.id);
     const remaining = MidnightBaseball.remainingFaceDownCount(state, player.id);
-    return showing.category >= raiseBarForLeader(remaining, profile);
+    return showing.category >= raiseBarForLeader(remaining, profile, barAdjustment);
   }
 
   function decideBet(player, state, profile) {
@@ -367,16 +471,32 @@ const AIProfiles = (function () {
     const best = MidnightBaseball.currentBestHand(state);
     const isLeader = best.holderId === player.id;
 
+    // A bluff raise here means claiming the lead without actually holding
+    // it -- independent of isLeader on purpose, same as every other
+    // family's shouldBluff check. Checked before the fold gate below so a
+    // hand that would otherwise fold still gets a shot at it.
+    if (shouldBluff(profile)) {
+      const maxRaise = MidnightBaseball.maxRaiseDollars(state, player.id);
+      if (maxRaise > 0) return { action: "raise", raiseDollars: scaledRaiseDollars(1, state.raiseIncrementDollars, maxRaise) };
+    }
+
     if (!isLeader && toCallChips > 0) {
       const showing = MidnightBaseball.evaluateShowingHand(state, player.id);
       const remaining = MidnightBaseball.remainingFaceDownCount(state, player.id);
-      if (!worthPursuing(showing, best.hand, remaining, profile)) {
+      const potOddsBonus = potOddsChanceBonus(toCallChips, state.pot);
+      if (!worthPursuing(showing, best.hand, remaining, profile, potOddsBonus)) {
         return { action: "fold" };
       }
     }
-    if (isLeader && worthRaisingAsLeader(player, state, profile)) {
+    const barAdjustment = opponentCountBarAdjustment(liveOpponentCount(state.players, player.id));
+    if (isLeader && worthRaisingAsLeader(player, state, profile, barAdjustment)) {
       const maxRaise = MidnightBaseball.maxRaiseDollars(state, player.id);
-      if (maxRaise > 0) return { action: "raise", raiseDollars: Math.min(state.raiseIncrementDollars, maxRaise) };
+      if (maxRaise > 0) {
+        const showing = MidnightBaseball.evaluateShowingHand(state, player.id);
+        const remaining = MidnightBaseball.remainingFaceDownCount(state, player.id);
+        const tier = confidenceTier(showing.category - raiseBarForLeader(remaining, profile, barAdjustment));
+        return { action: "raise", raiseDollars: scaledRaiseDollars(tier, state.raiseIncrementDollars, maxRaise) };
+      }
     }
     return { action: "call" };
   }
@@ -393,5 +513,11 @@ const AIProfiles = (function () {
     worthPursuing,
     decideContinue,
     decideBet,
+    confidenceTier,
+    scaledRaiseDollars,
+    shouldBluff,
+    opponentCountBarAdjustment,
+    liveOpponentCount,
+    potOddsChanceBonus,
   };
 })();

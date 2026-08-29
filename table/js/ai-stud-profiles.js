@@ -76,16 +76,16 @@ const StudAIProfiles = (function () {
   // clears the bar with several streets still to come is a much weaker
   // signal than the same category on the last street, since there's more
   // room left for someone else's board (or this one) to change shape.
-  function raiseBarForStud(streetsLeft, profile) {
+  function raiseBarForStud(streetsLeft, profile, barAdjustment) {
     if (streetsLeft === 0) return HandEvaluator.CATEGORY.TRIPS;
-    return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, profile.raiseMinCategory + Math.floor(streetsLeft / 2));
+    return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, profile.raiseMinCategory + Math.floor(streetsLeft / 2) + (barAdjustment || 0));
   }
 
-  function worthRaisingAsLeaderStud(player, state, profile) {
+  function worthRaisingAsLeaderStud(player, state, profile, barAdjustment) {
     if (!profile.raiseWhenLeading) return false;
     const showing = StudRules.evaluateShowingHand(state, player.id);
     const streetsLeft = StudRules.streetsRemaining(state);
-    return showing.category >= raiseBarForStud(streetsLeft, profile);
+    return showing.category >= raiseBarForStud(streetsLeft, profile, barAdjustment);
   }
 
   function decideBet(player, state, profile) {
@@ -94,16 +94,30 @@ const StudAIProfiles = (function () {
     const best = StudRules.currentBestShowingHand(state);
     const isLeader = best.holderId === player.id;
 
+    // Bluff check first, independent of isLeader/raiseWhenLeading, and
+    // before the fold gate -- same shared pattern as every other family.
+    if (AIProfiles.shouldBluff(profile)) {
+      const maxRaise = StudRules.maxRaiseDollars(state, player.id);
+      if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(1, state.raiseIncrementDollars, maxRaise) };
+    }
+
     if (!isLeader && toCallChips > 0) {
       const showing = StudRules.evaluateShowingHand(state, player.id);
       const streetsLeft = StudRules.streetsRemaining(state);
-      if (!AIProfiles.worthPursuing(showing, best.hand, streetsLeft, profile)) {
+      const potOddsBonus = AIProfiles.potOddsChanceBonus(toCallChips, state.pot);
+      if (!AIProfiles.worthPursuing(showing, best.hand, streetsLeft, profile, potOddsBonus)) {
         return { action: "fold" };
       }
     }
-    if (isLeader && worthRaisingAsLeaderStud(player, state, profile)) {
+    const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));
+    if (isLeader && worthRaisingAsLeaderStud(player, state, profile, barAdjustment)) {
       const maxRaise = StudRules.maxRaiseDollars(state, player.id);
-      if (maxRaise > 0) return { action: "raise", raiseDollars: Math.min(state.raiseIncrementDollars, maxRaise) };
+      if (maxRaise > 0) {
+        const showing = StudRules.evaluateShowingHand(state, player.id);
+        const streetsLeft = StudRules.streetsRemaining(state);
+        const tier = AIProfiles.confidenceTier(showing.category - raiseBarForStud(streetsLeft, profile, barAdjustment));
+        return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(tier, state.raiseIncrementDollars, maxRaise) };
+      }
     }
     return { action: "call" };
   }

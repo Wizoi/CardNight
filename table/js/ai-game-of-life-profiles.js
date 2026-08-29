@@ -18,10 +18,10 @@ const GameOfLifeAIProfiles = (function () {
     return state.goodRow.some((c) => !c.flipped) ? "good" : "bad";
   }
 
-  function worthContinuing(myHand, flipsLeft, profile) {
+  function worthContinuing(myHand, flipsLeft, profile, chanceBonus) {
     if (myHand.category >= CALL_WORTHY_CATEGORY) return true;
     const gap = CALL_WORTHY_CATEGORY - myHand.category;
-    return flipsLeft * profile.chancePerCard >= gap;
+    return flipsLeft * (profile.chancePerCard + (chanceBonus || 0)) >= gap;
   }
 
   // The raise bar tightens the more of the 10-flip draft is still to come,
@@ -31,24 +31,35 @@ const GameOfLifeAIProfiles = (function () {
   // families' divisor) since Game of Life's draft is more than double the
   // length -- this keeps the maximum shift in the same rough ballpark
   // (~2 category tiers at the very start) instead of maxing out the scale.
-  function raiseBarFor(flipsLeft, profile) {
+  function raiseBarFor(flipsLeft, profile, barAdjustment) {
     if (flipsLeft === 0) return HandEvaluator.CATEGORY.TRIPS;
-    return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, profile.raiseMinCategory + Math.floor(flipsLeft / 4));
+    return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, profile.raiseMinCategory + Math.floor(flipsLeft / 4) + (barAdjustment || 0));
   }
 
   function decideBet(player, state, profile) {
     const br = state.bettingRound;
     const toCallChips = br.currentBetChips - br.committed[player.id];
-    const cards = player.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: false }));
+    const cards = player.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: c.rank === "JOKER" }));
     const myHand = HandEvaluator.evaluatePartial(cards);
     const flipsLeft = 10 - state.flipsDone;
 
-    if (toCallChips > 0 && !worthContinuing(myHand, flipsLeft, profile)) {
+    if (AIProfiles.shouldBluff(profile)) {
+      const maxRaise = RulesGameOfLife.maxRaiseDollars(state, player.id);
+      if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(1, state.raiseIncrementDollars, maxRaise) };
+    }
+
+    const potOddsBonus = AIProfiles.potOddsChanceBonus(toCallChips, state.pot);
+    if (toCallChips > 0 && !worthContinuing(myHand, flipsLeft, profile, potOddsBonus)) {
       return { action: "fold" };
     }
-    if (profile.raiseWhenLeading && myHand.category >= raiseBarFor(flipsLeft, profile)) {
+    const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));
+    const bar = raiseBarFor(flipsLeft, profile, barAdjustment);
+    if (profile.raiseWhenLeading && myHand.category >= bar) {
       const maxRaise = RulesGameOfLife.maxRaiseDollars(state, player.id);
-      if (maxRaise > 0) return { action: "raise", raiseDollars: Math.min(state.raiseIncrementDollars, maxRaise) };
+      if (maxRaise > 0) {
+        const tier = AIProfiles.confidenceTier(myHand.category - bar);
+        return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(tier, state.raiseIncrementDollars, maxRaise) };
+      }
     }
     return { action: "call" };
   }
