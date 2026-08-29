@@ -98,26 +98,30 @@ const TableNight = (function () {
     notify();
   }
 
-  // Every seat draws one card from a single shared, anonymous fan -- nobody
-  // (the human included) knows in advance which position holds which card,
-  // so picking one is a genuine choice rather than just revealing a value
-  // already secretly assigned to your name (2026-08-29 redesign, at the
-  // user's request: the old per-seat layout telegraphed which face-down
-  // card was already "yours" before you ever clicked it, which read as
-  // trusting the computer's pre-assignment rather than a real cut). Claims
-  // don't have to happen in seat order -- the human can click any open
-  // position whenever they like, and AI seats claim a random remaining
-  // position on their own pace, in random order, not strictly one-by-one
-  // by seat. Highest card picks the first game. A tie redeals a fresh
-  // anonymous fan to just the tied seats (closer to a physical re-cut than
-  // a fresh shuffle for everyone).
+  // The WHOLE shuffled 52-card deck is spread face down as one shared fan --
+  // not just one anonymous slot per seat -- and each seat draws by picking
+  // any single card out of the full spread. Most of the 52 never get
+  // picked at all; that's fine, this is a cut, not a deal. Each fan
+  // position IS a specific, already-shuffled card (`deck[slotIndex]`), so
+  // claiming position K always reveals `deck[K]` -- no separate draw-order
+  // cursor needed, unlike an actual per-hand deal. 2026-08-29 redesign, at
+  // the user's explicit request ("fan out the cards of the entire deck
+  // (52) and we select one of those") after an earlier, smaller-scoped
+  // version of this same redesign only fanned out one anonymous card per
+  // seat -- the point was picking a card out of the full deck, not out of
+  // a pile already trimmed to the seat count. Claims don't have to happen
+  // in seat order -- the human can click any open card whenever they like,
+  // and AI seats claim a random remaining card on their own pace, in
+  // random order, not strictly one-by-one by seat. Highest card picks the
+  // first game. A tie reshuffles a fresh full 52-card fan for just the
+  // tied seats to draw from again (closer to a physical re-cut than
+  // narrowing to a tiny pile).
   function beginCutForDeal() {
     const deck = Deck.shuffle(Deck.buildDeck());
     cutForDealState = {
       deck,
-      cursor: 0,
       eligibleSeatIds: seatOrder.slice(),
-      currentRound: seatOrder.map((_, slotIndex) => ({ slotIndex, seatId: null, card: null, revealed: false })),
+      currentRound: deck.map((_, slotIndex) => ({ slotIndex, seatId: null, card: null, revealed: false })),
       tieBreakInProgress: false,
       status: "revealing",
       winnerSeatId: null,
@@ -126,26 +130,26 @@ const TableNight = (function () {
     return cutForDealState;
   }
 
-  // Claims one specific open slot in the shared fan for a seat -- a no-op
-  // if that slot's already taken, or if this seat already claimed a
-  // different slot this round, or once the cut is decided. Safe to call
-  // repeatedly / redundantly.
+  // Claims one specific open card in the fan for a seat -- a no-op if that
+  // card's already taken, or if this seat already claimed a different one
+  // this round, or once the cut is decided. Safe to call repeatedly /
+  // redundantly.
   function claimCutForDealSlot(seatId, slotIndex) {
     if (!cutForDealState || cutForDealState.status === "complete") return;
     if (!cutForDealState.eligibleSeatIds.includes(seatId)) return;
     if (cutForDealState.currentRound.some((e) => e.seatId === seatId)) return;
     const entry = cutForDealState.currentRound[slotIndex];
     if (!entry || entry.revealed) return;
-    entry.card = cutForDealState.deck[cutForDealState.cursor++];
+    entry.card = cutForDealState.deck[slotIndex];
     entry.revealed = true;
     entry.seatId = seatId;
     notify();
     maybeResolveCutForDealRound();
   }
 
-  // AI seats don't pick a specific position on purpose -- they reach for a
-  // random still-open one, same as a human just grabbing whichever card is
-  // convenient from a real fan.
+  // AI seats don't pick a specific card on purpose -- they reach for a
+  // random still-open one out of the whole spread, same as a human just
+  // grabbing whichever card is convenient from a real fan.
   function autoClaimCutForDealSlot(seatId) {
     if (!cutForDealState) return;
     const openSlots = cutForDealState.currentRound.filter((e) => !e.revealed);
@@ -154,11 +158,15 @@ const TableNight = (function () {
     claimCutForDealSlot(seatId, slot.slotIndex);
   }
 
+  // With the full 52-card deck as the fan, most of `currentRound` is never
+  // claimed at all -- the "everyone's drawn" check is against
+  // `eligibleSeatIds` (who still needs to draw this round), not against
+  // every fan position being revealed.
   function maybeResolveCutForDealRound() {
-    const round = cutForDealState.currentRound;
-    if (!round.every((e) => e.revealed)) return;
-    const maxValue = Math.max(...round.map((e) => Deck.RANK_VALUES[e.card.rank]));
-    const winners = round.filter((e) => Deck.RANK_VALUES[e.card.rank] === maxValue);
+    const claimed = cutForDealState.currentRound.filter((e) => e.seatId != null);
+    if (claimed.length < cutForDealState.eligibleSeatIds.length) return;
+    const maxValue = Math.max(...claimed.map((e) => Deck.RANK_VALUES[e.card.rank]));
+    const winners = claimed.filter((e) => Deck.RANK_VALUES[e.card.rank] === maxValue);
     if (winners.length === 1) {
       cutForDealState.status = "complete";
       cutForDealState.winnerSeatId = winners[0].seatId;
@@ -169,7 +177,12 @@ const TableNight = (function () {
     } else {
       cutForDealState.tieBreakInProgress = true;
       cutForDealState.eligibleSeatIds = winners.map((w) => w.seatId);
-      cutForDealState.currentRound = winners.map((_, slotIndex) => ({ slotIndex, seatId: null, card: null, revealed: false }));
+      // A fresh full 52-card fan for the tied seats to draw from again --
+      // not just a tiny pile sized to the tied count, same as the first
+      // round.
+      const freshDeck = Deck.shuffle(Deck.buildDeck());
+      cutForDealState.deck = freshDeck;
+      cutForDealState.currentRound = freshDeck.map((_, slotIndex) => ({ slotIndex, seatId: null, card: null, revealed: false }));
     }
     notify();
   }
