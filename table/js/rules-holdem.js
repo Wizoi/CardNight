@@ -123,7 +123,7 @@ const HoldemRules = (function () {
     const allIn = new Set();
     if (sbResult.allIn) allIn.add(sbId);
     if (bbResult.allIn) allIn.add(bbId);
-    state.bettingRound = { order: state.actionOrder.slice(), committed, currentBetChips: Math.max(sbResult.paid, bbResult.paid), responded: new Set(), allIn };
+    state.bettingRound = { order: state.actionOrder.slice(), committed, currentBetChips: Math.max(sbResult.paid, bbResult.paid), responded: new Set(), allIn, raiseCounts: {} };
     state.log.push(`${sbPlayer.name} posts small blind ($${state.smallBlindDollars.toFixed(2)}), ${bbPlayer.name} posts big blind ($${state.bigBlindDollars.toFixed(2)}).`);
   }
 

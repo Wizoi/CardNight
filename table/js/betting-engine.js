@@ -12,7 +12,13 @@ const BettingEngine = (function () {
   function startRound(activePlayerIds) {
     const committed = {};
     activePlayerIds.forEach((id) => (committed[id] = 0));
-    return { order: activePlayerIds.slice(), committed, currentBetChips: 0, responded: new Set(), allIn: new Set() };
+    // raiseCounts: how many times each player has raised THIS round --
+    // generic, cheap bookkeeping every family gets for free, but currently
+    // only actually read by ai-holdem-profiles.js (see raiseBarFor there),
+    // since hold'em's genuinely uncapped bet size is what let two AI seats
+    // ping-pong re-raises indefinitely (reported 2026-08-29) -- every other
+    // family's own low fixed max-bet already bounds how far that can go.
+    return { order: activePlayerIds.slice(), committed, currentBetChips: 0, responded: new Set(), allIn: new Set(), raiseCounts: {} };
   }
 
   // isFolded(playerId) -> bool. round.order is fixed at round start (the
@@ -83,6 +89,7 @@ const BettingEngine = (function () {
       round.committed[player.id] += paid;
       round.currentBetChips = Math.max(round.currentBetChips, round.committed[player.id]);
       round.responded = new Set([player.id]);
+      round.raiseCounts[player.id] = (round.raiseCounts[player.id] || 0) + 1;
       if (allIn) round.allIn.add(player.id);
       return { action, paidChips: paid, toCallChips, newCurrentBetChips: round.currentBetChips };
     }
