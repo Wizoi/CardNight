@@ -100,7 +100,9 @@
     el.gameNameDisplay = document.getElementById("game-name-display");
     el.rulesLink = document.getElementById("rules-link");
     el.gameScriptDetails = document.getElementById("game-script-details");
+    el.gameScriptToggleBtn = document.getElementById("game-script-toggle-btn");
     el.gameScriptBody = document.getElementById("game-script-body");
+    el.gameScriptVariants = document.getElementById("game-script-variants");
     el.potDisplay = document.getElementById("pot-display");
     el.walletDisplay = document.getElementById("wallet-display");
     el.rebuyBtn = document.getElementById("rebuy-btn");
@@ -315,9 +317,21 @@
     return GAMES.find((g) => g.id === appId) || null;
   }
 
+  // Collapsed by default, toggled open by clicking the "i" button next to
+  // the game name (2026-08-29 -- previously always-expanded, deliberately
+  // left undecided at the time). Reset to collapsed the moment the active
+  // game actually changes, so a new game doesn't inherit the last one's
+  // open/closed state.
+  let gameScriptExpanded = false;
+  let lastBannerGameId = undefined;
+
   function renderGameBanner(vs) {
     const entry = GameRegistry.get(vs.activeGameId);
     el.gameNameDisplay.textContent = entry ? entry.name : "";
+    if (vs.activeGameId !== lastBannerGameId) {
+      lastBannerGameId = vs.activeGameId;
+      gameScriptExpanded = false;
+    }
     const rulesId = RULES_PAGE_ID_BY_GAME[vs.activeGameId];
     if (rulesId) {
       el.rulesLink.href = `../app/index.html#/game/${rulesId}`;
@@ -328,6 +342,7 @@
 
     const data = entry ? gameDataFor(vs.activeGameId) : null;
     el.gameIconDisplay.textContent = data ? data.icon : "";
+    el.gameScriptToggleBtn.hidden = !data;
     if (data) {
       // Every entry's `script` is a plain string EXCEPT the combined
       // Omaha/Seattle/Boise/Jersey Hold'em entry, whose one games-data.js
@@ -340,10 +355,9 @@
       } else {
         el.gameScriptBody.textContent = data.script || "No dealer script written for this game yet.";
       }
-      el.gameScriptDetails.hidden = false;
-    } else {
-      el.gameScriptDetails.hidden = true;
     }
+    el.gameScriptToggleBtn.setAttribute("aria-expanded", String(gameScriptExpanded));
+    el.gameScriptDetails.hidden = !data || !gameScriptExpanded;
   }
 
   function renderHeader(vs) {
@@ -839,25 +853,30 @@
       render(TableNight.getViewState());
     });
 
+    el.gameScriptToggleBtn.addEventListener("click", () => {
+      gameScriptExpanded = !gameScriptExpanded;
+      el.gameScriptToggleBtn.setAttribute("aria-expanded", String(gameScriptExpanded));
+      el.gameScriptDetails.hidden = !gameScriptExpanded;
+    });
+
     // The "⋯" menu tucks the less-common actions (Change game/Cash out/
-    // History) out of the always-visible bar. Toggled on its own button;
-    // any click inside the menu (i.e. one of those three buttons actually
-    // firing) closes it too, same as a real dropdown.
-    el.moreMenuBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const isOpen = !el.moreMenu.hidden;
-      el.moreMenu.hidden = isOpen;
-      el.moreMenuBtn.setAttribute("aria-expanded", String(!isOpen));
-    });
-    el.moreMenu.addEventListener("click", () => {
-      el.moreMenu.hidden = true;
-      el.moreMenuBtn.setAttribute("aria-expanded", "false");
-    });
+    // History) out of the always-visible bar. One single delegated
+    // listener handles the toggle, closing on an item click, AND closing
+    // on an outside click -- deliberately not split across separate
+    // listeners with stopPropagation (the previous shape), which reads
+    // correct in isolation but is easy to get subtly wrong under real
+    // click ordering; one listener with one clear branch order is safer.
     document.addEventListener("click", (e) => {
-      if (el.moreMenu.hidden) return;
-      if (el.moreMenu.contains(e.target) || el.moreMenuBtn.contains(e.target)) return;
-      el.moreMenu.hidden = true;
-      el.moreMenuBtn.setAttribute("aria-expanded", "false");
+      if (el.moreMenuBtn.contains(e.target)) {
+        const isOpen = !el.moreMenu.hidden;
+        el.moreMenu.hidden = isOpen;
+        el.moreMenuBtn.setAttribute("aria-expanded", String(!isOpen));
+        return;
+      }
+      if (!el.moreMenu.hidden) {
+        el.moreMenu.hidden = true;
+        el.moreMenuBtn.setAttribute("aria-expanded", "false");
+      }
     });
 
     // Delegated on the container (not the button itself, which gets
