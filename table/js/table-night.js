@@ -15,12 +15,26 @@ const TableNight = (function () {
   let today = null;
   let handsWonByPlayerId = {}; // across every game played this whole night
   let nightHandsPlayed = 0; // never resets; what actually lands in history
-  let dealerIndex = 0; // continuous across game changes -- see chooseNextGame
-  let currentPickerSeatIndex = 0;
+  // Whoever holds the dealer button for the upcoming game is also the picker
+  // for it -- games.md doesn't document a picker mechanic at all (it's an
+  // app-only meta-layer), but "the next dealer picks" is the natural fit,
+  // and used to NOT be true: an earlier version tracked a separate
+  // currentPickerSeatIndex that just advanced one seat per game-end,
+  // completely independent of the dealer button. There is deliberately no
+  // separate picker-seat variable anymore -- currentPickerSeatId() below
+  // just reads dealerIndex directly.
+  let dealerIndex = 0; // continuous across game changes -- advanced in rotatePickerAfterGameEnds, BEFORE the picker screen shows (not in chooseNextGame, which only consumes the already-current value)
   let cutForDealState = null; // stepwise reveal state for the cut-for-deal screen, once per night -- see beginCutForDeal
   let activeGameId = null;
   let activeOrchestrator = null;
   let gameMemoryByGameId = {}; // fresh {} each time a game is (freshly) started
+  // A rained-out hand's pot is meant to carry into that SAME game's next
+  // hand -- but if the table switches away before that game comes back
+  // around, the orchestrator holding it in memory gets discarded outright.
+  // Stashing it here (rather than losing it) keeps those already-collected
+  // ante chips from silently dropping out of the tracked total; it's handed
+  // back to the game as its next carriedPotChips whenever it's next chosen.
+  let carriedPotByGameId = {};
   let onUpdate = () => {};
 
   function notify() {
@@ -76,7 +90,6 @@ const TableNight = (function () {
     dealerIndex = 0;
     nightHandsPlayed = 0;
     handsWonByPlayerId = {};
-    currentPickerSeatIndex = 0;
     cutForDealState = null;
     activeGameId = null;
     activeOrchestrator = null;
@@ -126,7 +139,10 @@ const TableNight = (function () {
     if (winners.length === 1) {
       cutForDealState.status = "complete";
       cutForDealState.winnerSeatId = winners[0].seatId;
-      currentPickerSeatIndex = seatOrder.indexOf(winners[0].seatId);
+      // High card both deals AND picks the night's first game -- the two
+      // were already meant to be the same seat, just tracked separately
+      // before.
+      dealerIndex = seatOrder.indexOf(winners[0].seatId);
     } else {
       cutForDealState.tieBreakInProgress = true;
       cutForDealState.currentRound = winners.map((w) => ({ seatId: w.seatId, card: null, revealed: false }));
@@ -135,7 +151,7 @@ const TableNight = (function () {
   }
 
   function currentPickerSeatId() {
-    return seatOrder[currentPickerSeatIndex];
+    return seatOrder[dealerIndex];
   }
 
   function currentPickerIsHuman() {
@@ -147,28 +163,72 @@ const TableNight = (function () {
     if (result.winnerId) {
       handsWonByPlayerId[result.winnerId] = (handsWonByPlayerId[result.winnerId] || 0) + 1;
     }
+    // Mirror the outgoing orchestrator's own "carry to next hand" state
+    // against the game it belongs to (see carriedPotByGameId above) -- an
+    // overwrite, not an accumulator, so it always reflects "what's currently
+    // outstanding for this game," not a running total. potChips > 0 covers
+    // every game's own reason for carrying a pot forward (a stud rain-out,
+    // a guts family cycle nobody's won outright yet, draw poker's "nobody
+    // qualified" redeal, etc.) -- not just rainedOut, which only guts' own
+    // hi-lo-style sibling games ever actually set.
+    carriedPotByGameId[activeGameId] = result.potChips || 0;
     recordDayProgress();
+  }
+
+  // Switching games abandons whatever hand is currently in progress (via
+  // "Change game" between hands, or the debug "Jump to game" control mid-hand
+  // -- see the note on that control below). A hand that already finished
+  // (status === "complete") is left alone -- it's already been paid out (or,
+  // for a rain-out/no-contest/cycle-continues completion, its outstanding
+  // pot is already tracked via carriedPotByGameId through onHandComplete).
+  // A genuinely UNFINISHED hand, though, can be sitting on real ante/bet
+  // chips already taken out of players' wallets with nobody ever awarded
+  // them -- discarding the orchestrator would let those chips silently drop
+  // out of the tracked total. Refunding state.pot evenly back to every
+  // dealt player is an approximation (it doesn't reconstruct exactly who
+  // contributed how much through folds/raises), but it keeps the total chips
+  // in the system conserved, which is the substantive part of "as though
+  // this hand never started."
+  function refundAbandonedHand(vs) {
+    const state = vs.state;
+    if (!state || state.status === "complete" || !state.pot) return;
+    const share = Math.floor(state.pot / vs.players.length);
+    const remainder = state.pot - share * vs.players.length;
+    vs.players.forEach((p, i) => {
+      ChipEconomy.award(p.wallet, share + (i < remainder ? 1 : 0));
+    });
   }
 
   function chooseNextGame(gameId) {
     const entry = GameRegistry.get(gameId);
     if (!entry) return;
-    // The dealer button keeps rotating continuously across the whole night,
-    // ignoring game boundaries -- seed the new orchestrator one seat past
-    // wherever the outgoing one's dealer landed (or seat 0 for the night's
-    // very first game).
+    // dealerIndex for the upcoming game is already current by this point --
+    // rotatePickerAfterGameEnds() advances it (from wherever the outgoing
+    // game's own per-hand dealer rotation landed) BEFORE the picker screen
+    // ever shows, since the picker IS the upcoming dealer and needs to be
+    // known before anyone (human or AI) picks. Calling chooseNextGame
+    // directly without going through that first -- only the debug "Jump to
+    // game" shortcut does this, bypassing the whole ceremony on purpose --
+    // just leaves dealerIndex wherever it already was.
     if (activeOrchestrator) {
-      const vs = activeOrchestrator.getViewState();
-      dealerIndex = (vs.dealerIndex + 1) % players.length;
+      refundAbandonedHand(activeOrchestrator.getViewState());
     }
     activeGameId = gameId;
     gameMemoryByGameId[gameId] = {};
+    // Hand back whatever carried pot this game left outstanding last time it
+    // was played (e.g. a Rainy Day rain-out that never got revisited before
+    // the table switched games) -- see carriedPotByGameId above. Cleared
+    // once consumed so it isn't re-applied a second time if this game is
+    // picked again later without ever completing a hand in between.
+    const carriedPotChips = carriedPotByGameId[gameId] || 0;
+    carriedPotByGameId[gameId] = 0;
     activeOrchestrator = entry.createOrchestrator({
       players,
       settings,
       dealerIndex,
       handNumber: 0,
       gameMemory: gameMemoryByGameId[gameId],
+      carriedPotChips,
       onUpdate: () => notify(),
       onHandComplete,
     });
@@ -185,8 +245,20 @@ const TableNight = (function () {
     return choice;
   }
 
+  // Called once the "Change game" button is clicked (only enabled between
+  // hands, per its own gating in table-ui.js) to end the current game and
+  // show the picker for the next one. The dealer button keeps rotating
+  // continuously across the whole night, ignoring game boundaries -- seed it
+  // one seat past wherever the outgoing game's own per-hand dealer rotation
+  // landed. Since the picker for the upcoming game IS the upcoming dealer
+  // (currentPickerSeatId() just reads dealerIndex), this has to happen here,
+  // before the picker screen shows -- not in chooseNextGame, which only
+  // runs once someone's already made their choice.
   function rotatePickerAfterGameEnds() {
-    currentPickerSeatIndex = (currentPickerSeatIndex + 1) % seatOrder.length;
+    if (activeOrchestrator) {
+      const vs = activeOrchestrator.getViewState();
+      dealerIndex = (vs.dealerIndex + 1) % players.length;
+    }
     activeGameId = null;
     activeOrchestrator = null;
     notify();
@@ -254,7 +326,7 @@ const TableNight = (function () {
       settings,
       history,
       today,
-      currentPickerSeatIndex,
+      currentPickerSeatIndex: dealerIndex, // the picker IS the upcoming dealer -- see currentPickerSeatId()
       cutForDealState,
       activeGameId,
       gameList: GameRegistry.list(),
