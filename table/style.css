@@ -808,7 +808,7 @@ fieldset {
 }
 
 .variant-form,
-.ai-pick-summary {
+.confirm-screen {
   grid-column: 1 / -1;
   text-align: left;
   background: rgba(0, 0, 0, 0.18);
@@ -841,14 +841,43 @@ fieldset {
   cursor: pointer;
 }
 
-.ai-pick-summary {
+.confirm-screen {
   text-align: center;
 }
 
-.ai-pick-summary ul {
+.confirm-variant-lines {
   text-align: left;
   display: inline-block;
   margin: 0.5rem 0;
+}
+
+.confirm-instructions {
+  text-align: left;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  color: var(--cream);
+  line-height: 1.5;
+}
+
+.confirm-instructions p {
+  margin: 0.4rem 0;
+}
+
+.confirm-instructions p:first-child {
+  margin-top: 0;
+}
+
+.confirm-instructions p:last-child {
+  margin-bottom: 0;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
 }
 
 .card-beaten {

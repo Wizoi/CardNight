@@ -38,10 +38,13 @@
   // Human-picker variant-choice step: set while showing the "choose variants
   // for X" form instead of the game grid; null the rest of the time.
   let pendingVariantGameId = null;
-  // Set once an AI picker has actually chosen (game + variants) but the
-  // human hasn't clicked "Continue" past the summary yet -- see
-  // maybeAutoPickForAI/renderPicker.
-  let lastAiPick = null;
+  // Set once a game (+ variants) has actually been chosen -- by an AI
+  // picker, or by the human via the grid/variant-form -- but the human
+  // hasn't clicked "Continue" past the game-selected/instructions screen
+  // yet. chooseNextGame() itself doesn't run until that click, so
+  // activeGameId stays unset the whole time this is set -- see
+  // maybeAutoPickForAI/renderPicker and the picker-menu click handler.
+  let pendingConfirm = null;
 
   function loadSetupPrefs() {
     try {
@@ -147,7 +150,7 @@
     // resurface stale the next time the picker screen shows.
     if (name !== "picker") {
       pendingVariantGameId = null;
-      lastAiPick = null;
+      pendingConfirm = null;
     }
     currentView = name;
     el.setupView.hidden = name !== "setup";
@@ -317,6 +320,20 @@
     return GAMES.find((g) => g.id === appId) || null;
   }
 
+  // Every entry's `script` is a plain string EXCEPT the combined
+  // Omaha/Seattle/Boise/Jersey Hold'em entry, whose one games-data.js
+  // record covers 4 variants at once -- there it's an array of
+  // {label, text} instead, one per variant (plus a hi-lo add-on). Shared by
+  // the in-game "how to describe it" box and the game-selected transition
+  // screen so both render dealer-script text identically.
+  function scriptHtml(data) {
+    if (!data) return "";
+    if (Array.isArray(data.script)) {
+      return data.script.map((part) => `<p><strong>${part.label}:</strong> ${part.text}</p>`).join("");
+    }
+    return `<p>${data.script || "No dealer script written for this game yet."}</p>`;
+  }
+
   // Collapsed by default, toggled open by clicking the "i" button next to
   // the game name (2026-08-29 -- previously always-expanded, deliberately
   // left undecided at the time). Reset to collapsed the moment the active
@@ -344,17 +361,7 @@
     el.gameIconDisplay.textContent = data ? data.icon : "";
     el.gameScriptToggleBtn.hidden = !data;
     if (data) {
-      // Every entry's `script` is a plain string EXCEPT the combined
-      // Omaha/Seattle/Boise/Jersey Hold'em entry, whose one games-data.js
-      // record covers 4 variants at once -- there it's an array of
-      // {label, text} instead, one per variant (plus a hi-lo add-on).
-      if (Array.isArray(data.script)) {
-        el.gameScriptBody.innerHTML = data.script
-          .map((part) => `<p><strong>${part.label}:</strong> ${part.text}</p>`)
-          .join("");
-      } else {
-        el.gameScriptBody.textContent = data.script || "No dealer script written for this game yet.";
-      }
+      el.gameScriptBody.innerHTML = scriptHtml(data);
     }
     el.gameScriptToggleBtn.setAttribute("aria-expanded", String(gameScriptExpanded));
     el.gameScriptDetails.hidden = !data || !gameScriptExpanded;
@@ -596,21 +603,34 @@
     return (entry.variantOptions || []).map((opt) => `${opt.label}: ${describeVariantChoice(opt, variantChoices[opt.key])}`);
   }
 
-  function renderPicker(vs) {
-    if (lastAiPick) {
-      const { choice, variantChoices } = lastAiPick;
-      const data = gameDataFor(choice.id);
-      const icon = data ? data.icon : "🎴";
-      const lines = variantSummaryLines(choice, variantChoices);
-      el.pickerHeading.textContent = "Game selected";
-      el.pickerMenu.innerHTML = `
-        <div class="ai-pick-summary">
-          <div class="game-pick-icon">${icon}</div>
-          <div>The dealer is playing <strong>${choice.name}</strong>.</div>
-          ${lines.length ? `<ul>${lines.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}
-          <button type="button" data-ai-pick-continue>Continue</button>
+  // The transition screen shown once a game (+ variants) is actually
+  // decided -- by an AI picker, or by the human finishing the grid/variant
+  // flow -- before the table itself appears. Doubles as an instructions
+  // screen: the same dealer-script text the in-game info box shows, so a
+  // game nobody's played in a while gets a refresher right when it matters
+  // instead of only being one click away mid-hand.
+  function renderConfirmScreen(entry, variantChoices, isAi) {
+    const data = gameDataFor(entry.id);
+    const icon = data ? data.icon : "🎴";
+    const lines = variantSummaryLines(entry, variantChoices);
+    el.pickerHeading.textContent = "Game selected";
+    el.pickerMenu.innerHTML = `
+      <div class="confirm-screen">
+        <div class="game-pick-icon">${icon}</div>
+        <div>${isAi ? `The dealer is playing <strong>${entry.name}</strong>.` : `You're playing <strong>${entry.name}</strong>.`}</div>
+        ${lines.length ? `<ul class="confirm-variant-lines">${lines.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}
+        <div class="confirm-instructions">${scriptHtml(data)}</div>
+        <div class="confirm-actions">
+          ${isAi ? "" : `<button type="button" data-confirm-back>&larr; Back</button>`}
+          <button type="button" data-confirm-continue>Continue</button>
         </div>
-      `;
+      </div>
+    `;
+  }
+
+  function renderPicker(vs) {
+    if (pendingConfirm) {
+      renderConfirmScreen(pendingConfirm.entry, pendingConfirm.variantChoices, pendingConfirm.isAi);
       return;
     }
 
@@ -641,14 +661,14 @@
   // behavior) could silently auto-pick and yank the view to the table
   // before the player ever saw the picker screen at all.
   function maybeAutoPickForAI() {
-    if (currentView !== "picker" || lastAiPick || TableNight.currentPickerIsHuman() || autoPickTimer) return;
+    if (currentView !== "picker" || pendingConfirm || TableNight.currentPickerIsHuman() || autoPickTimer) return;
     autoPickTimer = setTimeout(() => {
       autoPickTimer = null;
-      // Stays on the picker screen showing a summary of what got chosen
-      // (game + any variants) until the human clicks "Continue" -- see
-      // renderPicker's lastAiPick branch and the data-ai-pick-continue
-      // handler below.
-      lastAiPick = TableNight.autoPickForAI();
+      // Stays on the picker screen showing the game-selected/instructions
+      // screen until the human clicks "Continue" -- see renderPicker's
+      // pendingConfirm branch and the data-confirm-continue handler below.
+      const { choice, variantChoices } = TableNight.autoPickForAI();
+      pendingConfirm = { entry: choice, variantChoices, isAi: true };
       render(TableNight.getViewState());
     }, 900);
   }
@@ -700,11 +720,14 @@
       renderCutForDeal(vs);
       if (vs.cutForDealState.status === "revealing") {
         maybeAutoRevealCutForDeal(vs);
-      } else if (!vs.activeGameId || lastAiPick) {
-        // The `|| lastAiPick` half keeps an AI pick's summary screen
-        // rendering even after chooseNextGame has already set activeGameId
-        // -- it's waiting on the human to click "Continue," not blocked by
-        // the normal "nothing picked yet" gate.
+      } else if (!vs.activeGameId || pendingConfirm) {
+        // The `|| pendingConfirm` half keeps the game-selected/instructions
+        // screen rendering even after chooseNextGame has already set
+        // activeGameId -- it's waiting on the human to click "Continue,"
+        // not blocked by the normal "nothing picked yet" gate. (In
+        // practice chooseNextGame doesn't run until that click anyway --
+        // see the picker-menu click handler -- so activeGameId is still
+        // unset here too; this condition is belt-and-suspenders.)
         renderPicker(vs);
         maybeAutoPickForAI();
       }
@@ -818,8 +841,11 @@
           render(TableNight.getViewState());
           return;
         }
-        TableNight.chooseNextGame(entry.id, GameRegistry.defaultVariantChoices(entry));
-        showView("table");
+        // No variants to choose -- straight to the game-selected/
+        // instructions screen (chooseNextGame itself waits for Continue,
+        // same as the variant-form path below).
+        pendingConfirm = { entry, variantChoices: GameRegistry.defaultVariantChoices(entry), isAi: false };
+        render(TableNight.getViewState());
         return;
       }
 
@@ -827,9 +853,9 @@
       if (dealBtn) {
         const entry = GameRegistry.get(pendingVariantGameId);
         const variantChoices = readVariantFormChoices(entry);
-        TableNight.chooseNextGame(entry.id, variantChoices);
         pendingVariantGameId = null;
-        showView("table");
+        pendingConfirm = { entry, variantChoices, isAi: false };
+        render(TableNight.getViewState());
         return;
       }
 
@@ -840,9 +866,18 @@
         return;
       }
 
-      const continueBtn = e.target.closest("[data-ai-pick-continue]");
+      const confirmBackBtn = e.target.closest("[data-confirm-back]");
+      if (confirmBackBtn) {
+        pendingConfirm = null;
+        render(TableNight.getViewState());
+        return;
+      }
+
+      const continueBtn = e.target.closest("[data-confirm-continue]");
       if (continueBtn) {
-        lastAiPick = null;
+        const { entry, variantChoices } = pendingConfirm;
+        TableNight.chooseNextGame(entry.id, variantChoices);
+        pendingConfirm = null;
         showView("table");
       }
     });
