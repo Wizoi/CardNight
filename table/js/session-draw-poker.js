@@ -14,6 +14,8 @@ const SessionDrawPoker = (function () {
     const settings = config.settings;
     const onUpdate = config.onUpdate || (() => {});
     const onHandComplete = config.onHandComplete || (() => {});
+    const onBettingAction = config.onBettingAction || (() => {});
+    const opponentStats = config.opponentStats || null;
 
     const dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
@@ -78,6 +80,7 @@ const SessionDrawPoker = (function () {
       topUpAIWalletsIfNeeded();
       handNumber += 1;
       state = RulesDrawPoker.createHandState(players, dealerIndex, settings, carriedPotChips, jokerCount);
+      state.opponentStats = opponentStats;
       carriedPotChips = 0;
       pending = null;
       notify();
@@ -106,6 +109,7 @@ const SessionDrawPoker = (function () {
             const profile = AIProfiles.profileFor(bettor.profileName);
             const decision = DrawPokerAIProfiles.decideBet(bettor, state, profile);
             RulesDrawPoker.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
+            onBettingAction(bettorId, decision.action);
             notify();
             continue;
           }
@@ -147,6 +151,7 @@ const SessionDrawPoker = (function () {
       const human = getHuman();
       if (!state.bettingRound || RulesDrawPoker.getCurrentBettor(state) !== human.id) return;
       RulesDrawPoker.submitBet(state, human.id, action, raiseDollars || 0);
+      onBettingAction(human.id, action);
       notify();
       processLoop();
     }

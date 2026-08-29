@@ -15,6 +15,8 @@ const SessionCommunityStud = (function () {
     const gameConfig = config.gameConfig;
     const onUpdate = config.onUpdate || (() => {});
     const onHandComplete = config.onHandComplete || (() => {});
+    const onBettingAction = config.onBettingAction || (() => {});
+    const opponentStats = config.opponentStats || null;
 
     let dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
@@ -77,6 +79,7 @@ const SessionCommunityStud = (function () {
       topUpAIWalletsIfNeeded();
       handNumber += 1;
       state = CommunityStudRules.createHandState(players, dealerIndex, settings, handNumber, gameConfig);
+      state.opponentStats = opponentStats;
       notify();
       processTurnLoop();
     }
@@ -103,6 +106,7 @@ const SessionCommunityStud = (function () {
             const profile = AIProfiles.profileFor(bettor.profileName);
             const decision = CommunityStudAIProfiles.decideBet(bettor, state, profile);
             CommunityStudRules.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
+            onBettingAction(bettorId, decision.action);
             if (decision.action === "raise") maybeQuip(bettor, "raise");
             notify();
             continue;
@@ -143,6 +147,7 @@ const SessionCommunityStud = (function () {
       const human = getHuman();
       if (!state.bettingRound || CommunityStudRules.getCurrentBettor(state) !== human.id) return;
       CommunityStudRules.submitBet(state, human.id, action, raiseDollars || 0);
+      onBettingAction(human.id, action);
       notify();
       processTurnLoop();
     }

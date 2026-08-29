@@ -53,7 +53,10 @@ const AnacondaAIProfiles = (function () {
 
     if (toCallChips > 0) {
       const gap = HandEvaluator.CATEGORY.PAIR - myHand.category;
-      const chanceBonus = AIProfiles.potOddsChanceBonus(toCallChips, state.pot) + AIProfiles.reRaiseChanceAdjustment(br, player.id, profile);
+      const chanceBonus =
+        AIProfiles.potOddsChanceBonus(toCallChips, state.pot) +
+        AIProfiles.reRaiseChanceAdjustment(br, player.id, profile) +
+        AIProfiles.opponentLoosenessAdjustment(state.opponentStats, AIProfiles.liveOpponentIds(state.players, player.id), profile);
       if (gap > 0 && revealsLeft * (profile.chancePerCard + chanceBonus) < gap) return { action: "fold" };
     }
     const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));

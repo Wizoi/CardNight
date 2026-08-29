@@ -15,6 +15,8 @@ const SessionPressYourLuck = (function () {
     const gameConfig = config.gameConfig;
     const onUpdate = config.onUpdate || (() => {});
     const onHandComplete = config.onHandComplete || (() => {});
+    const onBettingAction = config.onBettingAction || (() => {});
+    const opponentStats = config.opponentStats || null;
 
     const dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
@@ -79,6 +81,7 @@ const SessionPressYourLuck = (function () {
       topUpAIWalletsIfNeeded();
       handNumber += 1;
       state = PressYourLuckRules.createHandState(players, dealerIndex, settings, gameConfig, carriedPotChips);
+      state.opponentStats = opponentStats;
       carriedPotChips = 0;
       pending = null;
       notify();
@@ -131,6 +134,7 @@ const SessionPressYourLuck = (function () {
             if (decision.action === "fold") maybeQuip(bettor, "fold");
             else if (decision.action === "raise") maybeQuip(bettor, "raise");
             PressYourLuckRules.submitBet(state, bettorId, decision.action, decision.raiseDollars);
+            onBettingAction(bettorId, decision.action);
             notify();
             continue;
           }
@@ -228,6 +232,7 @@ const SessionPressYourLuck = (function () {
       if (!pending || pending.kind !== "bet") return;
       const { playerId } = pending;
       PressYourLuckRules.submitBet(state, playerId, action, raiseDollars || 0);
+      onBettingAction(playerId, action);
       pending = null;
       notify();
       processLoop();

@@ -53,7 +53,10 @@ const CommunityStudAIProfiles = (function () {
       if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(1, state.raiseIncrementDollars, maxRaise) };
     }
 
-    const chanceBonus = AIProfiles.potOddsChanceBonus(toCallChips, state.pot) + AIProfiles.reRaiseChanceAdjustment(br, player.id, profile);
+    const chanceBonus =
+      AIProfiles.potOddsChanceBonus(toCallChips, state.pot) +
+      AIProfiles.reRaiseChanceAdjustment(br, player.id, profile) +
+      AIProfiles.opponentLoosenessAdjustment(state.opponentStats, AIProfiles.liveOpponentIds(state.players, player.id), profile);
     if (toCallChips > 0 && !worthContinuing(myHand, revealsLeft, profile, chanceBonus)) {
       return { action: "fold" };
     }

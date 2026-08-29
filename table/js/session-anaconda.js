@@ -13,6 +13,8 @@ const SessionAnaconda = (function () {
     const settings = config.settings;
     const onUpdate = config.onUpdate || (() => {});
     const onHandComplete = config.onHandComplete || (() => {});
+    const onBettingAction = config.onBettingAction || (() => {});
+    const opponentStats = config.opponentStats || null;
 
     const dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
@@ -78,6 +80,7 @@ const SessionAnaconda = (function () {
       topUpAIWalletsIfNeeded();
       handNumber += 1;
       state = RulesAnaconda.createHandState(players, dealerIndex, settings, carriedPotChips, jokerCount, hiLo);
+      state.opponentStats = opponentStats;
       carriedPotChips = 0;
       pending = null;
       notify();
@@ -135,6 +138,7 @@ const SessionAnaconda = (function () {
           const profile = AIProfiles.profileFor(bettor.profileName);
           const decision = AnacondaAIProfiles.decideBet(bettor, state, profile);
           RulesAnaconda.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
+          onBettingAction(bettorId, decision.action);
           notify();
         }
       } finally {
@@ -161,6 +165,7 @@ const SessionAnaconda = (function () {
       const human = getHuman();
       if (!state.bettingRound || RulesAnaconda.getCurrentBettor(state) !== human.id) return;
       RulesAnaconda.submitBet(state, human.id, action, raiseDollars || 0);
+      onBettingAction(human.id, action);
       notify();
       processLoop();
     }

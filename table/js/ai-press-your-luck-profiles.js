@@ -110,7 +110,11 @@ const PressYourLuckAIProfiles = (function () {
     // units instead, a much coarser scale, so the bonus is scaled up (x3)
     // to have a comparable, meaningful effect here rather than rounding
     // away to nothing against a typical 1.5-4 point threshold.
-    const chanceBonus = (AIProfiles.potOddsChanceBonus(toCallChips, state.pot) + AIProfiles.reRaiseChanceAdjustment(br, player.id, profile)) * 3;
+    const chanceBonus =
+      (AIProfiles.potOddsChanceBonus(toCallChips, state.pot) +
+        AIProfiles.reRaiseChanceAdjustment(br, player.id, profile) +
+        AIProfiles.opponentLoosenessAdjustment(state.opponentStats, AIProfiles.liveOpponentIds(state.players, player.id), profile)) *
+      3;
     if (toCallChips > 0 && bestDistance > profile.pressYourLuckStandThreshold + 2 + roomToImprove + chanceBonus) {
       return { action: "fold" };
     }

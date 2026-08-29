@@ -16,6 +16,8 @@ const SessionMexicanSweat = (function () {
     const gameConfig = config.gameConfig;
     const onUpdate = config.onUpdate || (() => {});
     const onHandComplete = config.onHandComplete || (() => {});
+    const onBettingAction = config.onBettingAction || (() => {});
+    const opponentStats = config.opponentStats || null;
 
     let dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
@@ -78,6 +80,7 @@ const SessionMexicanSweat = (function () {
       topUpAIWalletsIfNeeded();
       handNumber += 1;
       state = MexicanSweatRules.createHandState(players, dealerIndex, settings, handNumber, gameConfig);
+      state.opponentStats = opponentStats;
       notify();
       processTurnLoop();
     }
@@ -104,6 +107,7 @@ const SessionMexicanSweat = (function () {
             const profile = AIProfiles.profileFor(bettor.profileName);
             const decision = MexicanSweatAIProfiles.decideBet(bettor, state, profile);
             MexicanSweatRules.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
+            onBettingAction(bettorId, decision.action);
             if (decision.action === "raise") maybeQuip(bettor, "raise");
             notify();
             continue;
@@ -133,6 +137,7 @@ const SessionMexicanSweat = (function () {
       const human = getHuman();
       if (!state.bettingRound || MexicanSweatRules.getCurrentBettor(state) !== human.id) return;
       MexicanSweatRules.submitBet(state, human.id, action, raiseDollars || 0);
+      onBettingAction(human.id, action);
       notify();
       processTurnLoop();
     }

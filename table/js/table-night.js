@@ -15,6 +15,17 @@ const TableNight = (function () {
   let today = null;
   let handsWonByPlayerId = {}; // across every game played this whole night
   let nightHandsPlayed = 0; // never resets; what actually lands in history
+  // Genuine cross-hand opponent modeling (2026-08-29) -- the first real
+  // exception to "every AI decision is a pure function of current game
+  // state" anywhere in this project. Tracks every fold/call/raise decision
+  // (human or AI, across every game played this whole night, not reset
+  // between hands or games) so an "adaptive" archetype's decideBet can read
+  // how loose or tight the table has actually been playing rather than
+  // judging every hand in a vacuum. Deliberately just {decisions, folds,
+  // calls, raises} counters, not anything reconstructing WHICH hands or
+  // WHAT was held -- see ai-profiles.js's opponentLoosenessAdjustment for
+  // how this gets turned into an actual behavior nudge.
+  let playerBettingStats = {};
   // Whoever holds the dealer button for the upcoming game is also the picker
   // for it -- games.md doesn't document a picker mechanic at all (it's an
   // app-only meta-layer), but "the next dealer picks" is the natural fit,
@@ -100,6 +111,7 @@ const TableNight = (function () {
     dealerIndex = 0;
     nightHandsPlayed = 0;
     handsWonByPlayerId = {};
+    playerBettingStats = {};
     cutForDealState = null;
     activeGameId = null;
     activeOrchestrator = null;
@@ -205,6 +217,21 @@ const TableNight = (function () {
     return currentPickerSeatId() === getHuman().id;
   }
 
+  // action: "fold" | "call" | "raise". Called by every session-*.js
+  // orchestrator right after a betting decision resolves (human or AI),
+  // for whichever families actually have a fold/call/raise loop -- the
+  // ante-only Guts family and Acey Ducey's single bet-up-to-the-pot
+  // decision don't report here at all, matching the same scope boundary
+  // the rest of the AI betting-flavor work already drew.
+  function recordBettingAction(playerId, action) {
+    const stats = playerBettingStats[playerId] || { decisions: 0, folds: 0, calls: 0, raises: 0 };
+    stats.decisions += 1;
+    if (action === "fold") stats.folds += 1;
+    else if (action === "raise") stats.raises += 1;
+    else stats.calls += 1;
+    playerBettingStats[playerId] = stats;
+  }
+
   function onHandComplete(result) {
     nightHandsPlayed += 1;
     if (result.winnerId) {
@@ -285,6 +312,12 @@ const TableNight = (function () {
       variantChoices,
       onUpdate: () => notify(),
       onHandComplete,
+      // A live reference, not a snapshot -- playerBettingStats is mutated
+      // in place by recordBettingAction, so every hand (this one and every
+      // later one, even in a different game) sees the same always-current
+      // object without needing to be re-handed a fresh copy each time.
+      opponentStats: playerBettingStats,
+      onBettingAction: recordBettingAction,
     });
     notify();
   }
