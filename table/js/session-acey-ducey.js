@@ -20,6 +20,22 @@ const SessionAceyDucey = (function () {
     let pending = null; // {kind: 'bet', playerId}
     let running = false;
 
+    // Full mid-hand resume (2026-08-29) -- see the identical note in
+    // session-stud.js. No opponentStats in this family (Acey Ducey's
+    // single bet-up-to-the-pot decision was scoped out of the AI opponent-
+    // modeling work), so nothing to reattach besides state/pending.
+    if (config.resumeFrom) {
+      state = config.resumeFrom.state;
+      pending = config.resumeFrom.pending;
+      handNumber = config.resumeFrom.extra.handNumber;
+      carriedPotChips = config.resumeFrom.extra.carriedPotChips;
+      if (state && state.status !== "complete" && !pending) processLoop();
+    }
+
+    function snapshot() {
+      return { state, pending, extra: { handNumber, carriedPotChips } };
+    }
+
     function sleep(ms) {
       return new Promise((resolve) => setTimeout(resolve, ms));
     }
@@ -117,6 +133,7 @@ const SessionAceyDucey = (function () {
       canDealNextHand,
       humanBet,
       getViewState,
+      snapshot,
     };
   }
 

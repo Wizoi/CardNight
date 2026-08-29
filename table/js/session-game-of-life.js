@@ -27,6 +27,25 @@ const SessionGameOfLife = (function () {
     let quipSeq = 0;
     const QUIP_CHANCE = 0.35;
 
+    // Full mid-hand resume (2026-08-29) -- see the identical note in
+    // session-stud.js.
+    if (config.resumeFrom) {
+      state = config.resumeFrom.state;
+      pending = config.resumeFrom.pending;
+      handNumber = config.resumeFrom.extra.handNumber;
+      carriedPotChips = config.resumeFrom.extra.carriedPotChips;
+      lastQuip = config.resumeFrom.extra.lastQuip;
+      quipSeq = config.resumeFrom.extra.quipSeq;
+      if (state) {
+        state.opponentStats = opponentStats;
+        if (state.status !== "complete" && !pending) processLoop();
+      }
+    }
+
+    function snapshot() {
+      return { state, pending, extra: { handNumber, carriedPotChips, lastQuip, quipSeq } };
+    }
+
     function maybeQuip(player, moment) {
       if (player.isHuman || !player.tablePersonId) return;
       if (Math.random() > QUIP_CHANCE) return;
@@ -171,6 +190,7 @@ const SessionGameOfLife = (function () {
       humanFlipChoice,
       humanBet,
       getViewState,
+      snapshot,
     };
   }
 

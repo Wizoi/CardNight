@@ -30,6 +30,43 @@ const SessionGuts = (function () {
     let quipSeq = 0;
     const QUIP_CHANCE = 0.35;
 
+    // Full mid-hand resume (2026-08-29) -- see the general note in
+    // session-stud.js. Guts is trickier than most: state.status only ever
+    // says "passing" | "declaring" | "complete" -- there's no distinct
+    // status for the exchange sub-phase, so exchangeQueue (not part of
+    // `state`) is the only signal that we're actually mid-exchange rather
+    // than freshly entering the declare phase. Restoring passSelectionSoFar
+    // too (cheap, already-serializable) means an in-progress, unconfirmed
+    // pass pick survives a reload instead of resetting to a blank form.
+    // Re-kicking the right phase, when nobody's actually waiting on a
+    // human, goes through the GATED public wrapper for that phase (a
+    // genuinely fresh top-level entry, same as humanDeclare/dealNextHand),
+    // never the ungated `*Inner` versions those wrappers use internally to
+    // chain into each other.
+    if (config.resumeFrom) {
+      state = config.resumeFrom.state;
+      pending = config.resumeFrom.pending;
+      handNumber = config.resumeFrom.extra.handNumber;
+      carriedPotChips = config.resumeFrom.extra.carriedPotChips;
+      exchangeQueue = config.resumeFrom.extra.exchangeQueue || [];
+      passSelectionSoFar = config.resumeFrom.extra.passSelectionSoFar || null;
+      lastQuip = config.resumeFrom.extra.lastQuip;
+      quipSeq = config.resumeFrom.extra.quipSeq;
+      if (state && state.status !== "complete" && !pending) {
+        if (exchangeQueue.length) processExchangeLoop();
+        else if (state.status === "passing") processPassingLoop();
+        else processDeclareLoop();
+      }
+    }
+
+    function snapshot() {
+      return {
+        state,
+        pending,
+        extra: { handNumber, carriedPotChips, exchangeQueue, passSelectionSoFar, lastQuip, quipSeq },
+      };
+    }
+
     function maybeQuip(player, moment) {
       if (player.isHuman || !player.tablePersonId) return;
       if (Math.random() > QUIP_CHANCE) return;
@@ -299,6 +336,7 @@ const SessionGuts = (function () {
       humanDeclare,
       humanExchangeDecision,
       getViewState,
+      snapshot,
     };
   }
 

@@ -35,6 +35,26 @@ const SessionMidnightBaseball = (function () {
     let quipSeq = 0;
     const QUIP_CHANCE = 0.35;
 
+    // Full mid-hand resume (2026-08-29) -- see the identical note in
+    // session-stud.js for the general pattern this and every other
+    // session-*.js file follows.
+    if (config.resumeFrom) {
+      state = config.resumeFrom.state;
+      pending = config.resumeFrom.pending;
+      dealerIndex = config.resumeFrom.extra.dealerIndex;
+      handNumber = config.resumeFrom.extra.handNumber;
+      lastQuip = config.resumeFrom.extra.lastQuip;
+      quipSeq = config.resumeFrom.extra.quipSeq;
+      if (state) {
+        state.opponentStats = opponentStats;
+        if (state.status !== "complete" && !pending) processTurnLoop();
+      }
+    }
+
+    function snapshot() {
+      return { state, pending, extra: { dealerIndex, handNumber, lastQuip, quipSeq } };
+    }
+
     function maybeQuip(player, moment) {
       if (player.isHuman || !player.tablePersonId) return;
       if (Math.random() > QUIP_CHANCE) return;
@@ -276,6 +296,7 @@ const SessionMidnightBaseball = (function () {
       humanConcede,
       humanBet,
       getViewState,
+      snapshot,
     };
   }
 

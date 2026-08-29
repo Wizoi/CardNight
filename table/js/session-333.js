@@ -21,6 +21,24 @@ const Session333 = (function () {
     let state = null;
     let running = false;
 
+    // Full mid-hand resume (2026-08-29) -- see the identical note in
+    // session-stud.js. No `pending` and no quips here; calling
+    // processLoop() unconditionally is safe even mid-reveal (its own while
+    // condition is `state.status === "betting"`, a no-op otherwise).
+    if (config.resumeFrom) {
+      state = config.resumeFrom.state;
+      handNumber = config.resumeFrom.extra.handNumber;
+      carriedPotChips = config.resumeFrom.extra.carriedPotChips;
+      if (state) {
+        state.opponentStats = opponentStats;
+        if (state.status !== "complete") processLoop();
+      }
+    }
+
+    function snapshot() {
+      return { state, pending: null, extra: { handNumber, carriedPotChips } };
+    }
+
     function sleep(ms) {
       return new Promise((resolve) => setTimeout(resolve, ms));
     }
@@ -134,6 +152,7 @@ const Session333 = (function () {
       humanBet,
       humanRevealNext,
       getViewState,
+      snapshot,
     };
   }
 

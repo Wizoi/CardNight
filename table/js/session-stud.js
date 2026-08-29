@@ -40,6 +40,34 @@ const SessionStud = (function () {
     let quipSeq = 0;
     const QUIP_CHANCE = 0.35;
 
+    // Full mid-hand resume (2026-08-29): table-night.js persists a snapshot
+    // of every live orchestrator (see snapshot() below) and, on reload,
+    // recreates it with config.resumeFrom set instead of calling
+    // startFirstHand/dealNextHand. state/pending are plain, already-
+    // serializable data (cards, chip integers, log strings, flags) with no
+    // functions or circular refs, so restoring them is just a reassignment
+    // -- the only real work is re-kicking processTurnLoop() when we're
+    // resuming into a spot where nobody's actually waiting on a human
+    // (pending is null but the hand isn't over), since that loop would
+    // otherwise never run again on its own.
+    if (config.resumeFrom) {
+      state = config.resumeFrom.state;
+      pending = config.resumeFrom.pending;
+      dealerIndex = config.resumeFrom.extra.dealerIndex;
+      handNumber = config.resumeFrom.extra.handNumber;
+      carriedPotChips = config.resumeFrom.extra.carriedPotChips;
+      lastQuip = config.resumeFrom.extra.lastQuip;
+      quipSeq = config.resumeFrom.extra.quipSeq;
+      if (state) {
+        state.opponentStats = opponentStats;
+        if (state.status !== "complete" && !pending) processTurnLoop();
+      }
+    }
+
+    function snapshot() {
+      return { state, pending, extra: { dealerIndex, handNumber, carriedPotChips, lastQuip, quipSeq } };
+    }
+
     function maybeQuip(player, moment) {
       if (player.isHuman || !player.tablePersonId) return;
       if (Math.random() > QUIP_CHANCE) return;
@@ -273,6 +301,7 @@ const SessionStud = (function () {
       humanResolveEnterprise,
       humanBet,
       getViewState,
+      snapshot,
     };
   }
 

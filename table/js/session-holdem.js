@@ -25,6 +25,25 @@ const SessionHoldem = (function () {
     let quipSeq = 0;
     const QUIP_CHANCE = 0.35;
 
+    // Full mid-hand resume (2026-08-29) -- see the identical note in
+    // session-stud.js. No `pending` here (no buy/wipe/reveal decisions in
+    // this family), so resuming just restarts the loop unconditionally.
+    if (config.resumeFrom) {
+      state = config.resumeFrom.state;
+      dealerIndex = config.resumeFrom.extra.dealerIndex;
+      handNumber = config.resumeFrom.extra.handNumber;
+      lastQuip = config.resumeFrom.extra.lastQuip;
+      quipSeq = config.resumeFrom.extra.quipSeq;
+      if (state) {
+        state.opponentStats = opponentStats;
+        if (state.status !== "complete") processTurnLoop();
+      }
+    }
+
+    function snapshot() {
+      return { state, pending: null, extra: { dealerIndex, handNumber, lastQuip, quipSeq } };
+    }
+
     function maybeQuip(player, moment) {
       if (player.isHuman || !player.tablePersonId) return;
       if (Math.random() > QUIP_CHANCE) return;
@@ -145,6 +164,7 @@ const SessionHoldem = (function () {
       canDealNextHand,
       humanBet,
       getViewState,
+      snapshot,
     };
   }
 
