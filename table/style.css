@@ -582,6 +582,24 @@ fieldset {
   margin-bottom: 0.25rem;
 }
 
+/* The dealer marker -- a small "D" puck, the standard poker-room/online
+   convention for whose turn it is to deal, rather than a die (which reads
+   as "a random cut/decider" rather than "an ongoing, rotating role"). */
+.dealer-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: var(--gold);
+  color: var(--ink);
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 1;
+  vertical-align: middle;
+}
+
 .profile-badge {
   display: inline-block;
   margin-left: 0.35rem;

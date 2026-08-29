@@ -57,7 +57,7 @@ const TableUICommunityStud = (function () {
           <div class="seat ${p.folded ? "seat-folded" : ""} ${isTurn ? "seat-active" : ""}">
             ${quipMarkup}
             ${avatarMarkup}
-            <div class="seat-name">${isDealer ? "🎲 " : ""}${p.name}${profileBadge}</div>
+            <div class="seat-name">${isDealer ? '<span class="dealer-badge" title="Dealer">D</span> ' : ""}${p.name}${profileBadge}</div>
             <div class="seat-chips">${money(ChipEconomy.chipsToDollars(p.wallet.chips))}</div>
             <div class="seat-cards">
               ${cardsMarkup}
