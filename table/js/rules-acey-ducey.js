@@ -10,17 +10,18 @@
 // (that table has Aces high, the more common convention, which this game
 // explicitly overrides).
 //
-// Judgment call on the ending condition: games.md says "the game only ends
-// once the full deck is consumed and a player wins the entire pot" -- read
-// here as two DISTINCT ways a hand can end, whichever comes first: (a) some
-// bet happens to exactly clear the current pot (a legal bet, since the max
-// bet IS the whole pot), ending immediately with that player taking
-// everything, or (b) the deck runs out first, in which case the pot
-// carries forward to the next hand (same carry-forward pattern used
-// throughout this project for other under-specified endings). Dealt cards
-// are genuinely spent, not recycled from a discard pile -- letting the deck
-// actually run dry within a single hand is what makes ending (b) reachable
-// at all, matching the "full deck is consumed" wording directly.
+// Corrected 2026-08-29 after the user played a hand long enough to run the
+// deck dry: games.md's "the game only ends once the full deck is consumed
+// and a player wins the entire pot" is ONE ending condition, not two --
+// "the full deck is consumed" describes what happens ALONG THE WAY (cards
+// get reshuffled back in and play continues), not a separate way for the
+// hand to end. A hand only ever ends when some bet clears the whole pot
+// outright; running out of cards mid-hand just reshuffles the discards
+// (every shown/third card once its round resolves) back into the deck,
+// same drawWithReshuffle pattern used everywhere else in this project.
+// (The original build read this as two distinct endings and let the deck
+// run down permanently instead of recycling it -- a real, reported bug,
+// not a defensible alternate reading in hindsight.)
 const AceyDuceyRules = (function () {
   const RANK_ORDER = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
 
@@ -33,8 +34,9 @@ const AceyDuceyRules = (function () {
   }
 
   function drawCard(state) {
-    if (!state.deck.length) return null;
-    return state.deck.shift();
+    const { card, reshuffled } = Deck.drawWithReshuffle(state);
+    if (reshuffled) state.log.push("The deck ran out — reshuffling the discards back in.");
+    return card;
   }
 
   function createHandState(players, dealerIndex, settings, carriedPotChips) {
@@ -46,6 +48,7 @@ const AceyDuceyRules = (function () {
     const state = {
       players,
       deck,
+      discardPile: [],
       pot: carriedPotChips || 0,
       anteDollars: settings.anteDollars,
       turnOrder,
@@ -70,8 +73,11 @@ const AceyDuceyRules = (function () {
     const a = drawCard(state);
     const b = drawCard(state);
     if (!a || !b) {
+      // Defensive only -- with used cards always recycled through
+      // discardPile, the deck+discard pool never actually shrinks below 52
+      // cards, so this should be unreachable in practice.
       state.status = "complete";
-      state.log.push("The deck ran out — the pot carries forward to the next hand.");
+      state.log.push("Deck and discards both empty — the pot carries forward to the next hand.");
       return null;
     }
     state.shownCards = [a, b];
@@ -100,10 +106,11 @@ const AceyDuceyRules = (function () {
       return;
     }
 
-    const third = drawCard(state);
+    const third = drawCard(state); // reshuffles discards back in if needed -- see drawCard
     if (!third) {
+      // Defensive only -- see the identical note in dealShownCards.
       state.status = "complete";
-      state.log.push("The deck ran out mid-bet — the pot carries forward to the next hand.");
+      state.log.push("Deck and discards both empty mid-bet — the pot carries forward to the next hand.");
       return;
     }
     state.thirdCard = third;
@@ -135,7 +142,14 @@ const AceyDuceyRules = (function () {
     if (state.status !== "complete") advanceTurn(state);
   }
 
+  // Recycles this round's shown/third cards into discardPile before
+  // clearing them -- called both on a pass (shownCards only) and after a
+  // resolved bet (shownCards + thirdCard) -- so drawCard's reshuffle
+  // eventually gets them back, keeping the deck+discard pool at a
+  // constant 52 cards for as long as the hand keeps going.
   function advanceTurn(state) {
+    if (state.shownCards) state.discardPile.push(...state.shownCards);
+    if (state.thirdCard) state.discardPile.push(state.thirdCard);
     state.turnCursor = (state.turnCursor + 1) % state.turnOrder.length;
     state.shownCards = null;
     state.thirdCard = null;

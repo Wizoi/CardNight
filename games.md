@@ -114,7 +114,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 - **Deal:** Two cards shown/dealt to the active player.
 - **Play:** Player may bet up to the full pot that the next card dealt will fall between the two shown cards (or pass entirely). Aces are low, Kings are high — a specific house choice; most published rules default to Aces high.
 - **Losing:** If the player loses, their bet goes into the pot. If the third card matches the rank of either shown card ("hitting the post"), the player loses double their bet instead.
-- **End condition:** Game only ends once the full deck is consumed and a player wins the entire pot.
+- **End condition:** The hand only ends once some bet clears the whole pot outright. If the deck runs dry before that happens, reshuffle the discards and keep going — running out of cards isn't itself an ending, just something that happens along the way.
 - **Sources:** ["In Between" – pagat.com](https://www.pagat.com/banking/in-between.html); ["Acey Deucey" – gambiter.com](https://gambiter.com/cards/Acey_deucey_card_game.html)
 
 ## Anaconda (Pass the Trash)
