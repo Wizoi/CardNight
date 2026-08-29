@@ -214,6 +214,15 @@ const GameRegistry = (function () {
           ],
           default: 0,
         },
+        {
+          key: "dummyHandEnabled",
+          label: "Dummy hand — an extra unowned hand everyone who stays in must also beat",
+          choices: [
+            { value: false, label: "None (base game)" },
+            { value: true, label: "Deal a dummy hand (only if it fits at tonight's table size)" },
+          ],
+          default: false,
+        },
       ],
       createOrchestrator: (config) => SessionGuts.create({ ...config, gameConfig: applyVariants(DEEP_OR_DOUBLE_SCREW_CONFIG, config.variantChoices) }),
     },

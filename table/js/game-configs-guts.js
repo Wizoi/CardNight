@@ -52,10 +52,13 @@ const DEEP_OR_DOUBLE_SCREW_CONFIG = {
     return playerCount >= 8 ? { left: 1, right: 1 } : { left: 2, right: 1 };
   },
   loserPolicy: "allNonWinners",
-  // Known gap: the "dummy hand" a lone "in" player might otherwise have to
-  // beat isn't implemented — a lone stayer always just wins outright here,
-  // same simplification used wherever this project treats an optional/
-  // underspecified rule as not applicable rather than guessing its shape.
+  // games.md's optional dealer's-choice dummy hand -- implemented
+  // 2026-08-29 (previously a documented known gap). Off by default; see
+  // rules-guts.js's createRoundState/resolveShowdown for the actual
+  // mechanic (an extra unowned hand everyone who stays in has to beat
+  // too, only dealt when it fits within one deck) and game-registry.js
+  // for the variantOptions toggle.
+  dummyHandEnabled: false,
 };
 
 // 2026-08-29: 3 Buy 5 / 5 Buy 5's two documented dealer's-choice options

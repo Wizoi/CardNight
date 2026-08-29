@@ -85,10 +85,24 @@ const TableUIGuts = (function () {
     // actually won/matched instead of the now-zeroed live pot once a cycle's
     // showdown has resolved (state.pot resets to 0 immediately, win or continue).
     const potDisplay = gvs.state.status === "complete" ? gvs.state.potAtShowdown : gvs.state.pot;
+    // The dummy hand belongs to nobody -- rendered as its own small board
+    // section rather than a seat, face down while the round's still being
+    // decided and turned up at showdown just like every real hand.
+    let dummyLine = "";
+    if (gvs.state.dummyHand) {
+      const revealed = gvs.state.status === "complete";
+      const cards = revealed
+        ? gvs.state.dummyHand.hand
+            .map((c) => cardMarkup({ ...c, isWild: GutsRules.isCardWild(gvs.state, c, gvs.state.dummyHand) }, false))
+            .join("")
+        : gvs.state.dummyHand.hand.map(() => cardMarkup(null, true)).join("");
+      dummyLine = `<div class="seat-cards"><strong>Dummy hand:</strong> ${cards}</div>`;
+    }
     el.boardHand.innerHTML = `
       <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>
       ${wildLine}
       ${lowestWildLine}
+      ${dummyLine}
     `;
   }
 
@@ -128,6 +142,8 @@ const TableUIGuts = (function () {
         ? `${winner.name} wins the ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))} pot.`
         : gvs.state.noContest
         ? "Nobody stayed in — the pot carries forward."
+        : gvs.state.dummyBeatEveryone
+        ? "The dummy hand beats everyone who stayed in — no winner this round."
         : "Round over.";
       const cycleLine = gvs.state.cycleComplete ? "" : "<div>The pot escalates — deal the next hand to keep the cycle going.</div>";
       el.actionPanel.innerHTML = `

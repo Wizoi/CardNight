@@ -86,6 +86,23 @@ const GutsRules = (function () {
       wildRanks = wildRanks.concat(flippedWildcards.map((c) => c.rank));
     }
 
+    // Deep or Double Screw's optional dealer's-choice dummy hand: another
+    // full hand's worth of cards, dealt face down, belonging to nobody --
+    // games.md: "any player who loses (including losing against a dummy
+    // hand) must match the lost pot." Only actually dealt when it fits
+    // within one 52-card deck alongside every real player's hand -- the
+    // same per-player-count check the real deal size already makes, just
+    // one hand further (deck.length is still the full undealt 52/54+ here,
+    // since deck itself is only ever read via non-mutating .slice()). A
+    // dealer choosing this at a table size where it can't fit is a silent
+    // no-op here -- the picker UI already warns "won't fit at this size"
+    // before the choice is even made (see game-registry.js).
+    let dummyHand = null;
+    if (gameConfig.dummyHandEnabled && (players.length + 1) * dealSize <= deck.length) {
+      dummyHand = { id: "__dummy__", name: "the dummy hand", hand: deck.slice(cursor, cursor + dealSize).map((c) => ({ rank: c.rank, suit: c.suit })) };
+      cursor += dealSize;
+    }
+
     const passCounts = gameConfig.passing ? gameConfig.passing(players.length) : null;
 
     const state = {
@@ -94,6 +111,7 @@ const GutsRules = (function () {
       deck: deck.slice(cursor),
       wildRanks,
       flippedWildcards,
+      dummyHand,
       passCounts,
       passSelections: {},
       stayDecisions: {},
@@ -105,12 +123,16 @@ const GutsRules = (function () {
       loserIds: [],
       potAtShowdown: 0,
       noContest: false,
+      dummyBeatEveryone: false,
       cycleComplete: false,
     };
     state.pot += BettingEngine.collectAntes(players, state.anteDollars);
     state.log.push(`Ante: $${state.anteDollars.toFixed(2)} each from ${players.length} players — pot starts at $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)}.`);
     if (flippedWildcards.length) {
       state.log.push(`Flipped wildcard${flippedWildcards.length > 1 ? "s" : ""}: ${flippedWildcards.map((c) => Deck.cardLabel(c)).join(", ")}.`);
+    }
+    if (dummyHand) {
+      state.log.push("A dummy hand is in play — anyone who stays in has to beat it too.");
     }
     return state;
   }
@@ -231,8 +253,24 @@ const GutsRules = (function () {
       return;
     }
 
+    const dummyHand = state.dummyHand ? evaluateHand(state, state.dummyHand) : null;
+
     if (stayers.length === 1) {
       const winner = stayers[0];
+      const winnerHand = evaluateHand(state, winner);
+      if (dummyHand && HandEvaluator.isBetter(dummyHand, winnerHand)) {
+        // Being the only one in isn't an automatic win with a dummy hand
+        // on the table -- still has to beat it, same as games.md's
+        // "losing against a dummy hand" framing. A loss like any other:
+        // matches the pot, cycle continues.
+        state.status = "complete";
+        state.winnerId = null;
+        state.loserIds = [winner.id];
+        state.cycleComplete = false;
+        state.dummyBeatEveryone = true;
+        state.log.push(`${winner.name} was the only one in, but the dummy hand (${HandEvaluator.describe(dummyHand)}) beats them — must match the pot to keep the game going.`);
+        return;
+      }
       ChipEconomy.award(winner.wallet, state.pot);
       state.pot = 0;
       state.status = "complete";
@@ -258,6 +296,20 @@ const GutsRules = (function () {
         worstId = p.id;
       }
     }
+
+    if (dummyHand && HandEvaluator.isBetter(dummyHand, bestHand)) {
+      // Even the best real hand loses to the dummy -- nobody wins the
+      // pot, and EVERY stayer (not just the usual all-but-winner) has
+      // lost and must match it to keep the cycle going.
+      state.loserIds = stayers.map((p) => p.id);
+      state.status = "complete";
+      state.winnerId = null;
+      state.cycleComplete = false;
+      state.dummyBeatEveryone = true;
+      state.log.push(`The dummy hand (${HandEvaluator.describe(dummyHand)}) beats everyone who stayed in — no winner; every stayer must match the pot.`);
+      return;
+    }
+
     const winner = getPlayer(state, winnerId);
     ChipEconomy.award(winner.wallet, state.pot);
     state.pot = 0;
