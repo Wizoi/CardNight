@@ -14,6 +14,29 @@ const TableUI333 = (function () {
     return `$${dollars.toFixed(2)}`;
   }
 
+  // Groups same-rank cards so they render as a visually overlapping stack
+  // (a small count badge on the top card) instead of one flat row --
+  // matched ranks are redrawn rather than kept in play here, so in
+  // practice every group is size 1, but this keeps the community row
+  // compact and would just work if that redraw rule ever changed.
+  function stackedCardsMarkup(cards) {
+    const groups = [];
+    for (const c of cards) {
+      const existing = groups.find((g) => g[0].rank === c.rank);
+      if (existing) existing.push(c);
+      else groups.push([c]);
+    }
+    return groups
+      .map((group) => {
+        const stackInner = group
+          .map((c, i) => `<div class="card-stack-item" style="--stack-i:${i}">${cardMarkup(c, false)}</div>`)
+          .join("");
+        const badge = group.length > 1 ? `<div class="card-stack-count">&times;${group.length}</div>` : "";
+        return `<div class="card-stack">${stackInner}${badge}</div>`;
+      })
+      .join("");
+  }
+
   function renderSeats(el, gvs, debugMode, activeQuip) {
     const revealed = gvs.state && gvs.state.status === "complete";
     const currentBettorId = gvs.state && gvs.state.bettingRound ? Rules333.getCurrentBettor(gvs.state) : null;
@@ -58,31 +81,48 @@ const TableUI333 = (function () {
       el.boardHand.innerHTML = "";
       return;
     }
-    const communityLine = gvs.state.communityCards.length
-      ? `<div><strong>Community (${gvs.state.communityCards.length}/${Rules333.TOTAL_ROUNDS}):</strong> ${gvs.state.communityCards.map((c) => cardMarkup(c, false)).join("")}</div>`
-      : "";
+    const communitySection = `
+      <div class="board-333-community">
+        <div class="board-333-community-label">Community (${gvs.state.communityCards.length}/${Rules333.TOTAL_ROUNDS})</div>
+        <div class="board-333-community-row">${gvs.state.communityCards.length ? stackedCardsMarkup(gvs.state.communityCards) : "<em>Not dealt yet</em>"}</div>
+      </div>
+    `;
     // Once complete, state.pot is always 0 (already paid out) --
     // potAtShowdown is captured pre-payout so the board keeps showing what
     // was actually won instead of reading as "the pot vanished."
     const potDisplay = gvs.state.status === "complete" ? gvs.state.potAtShowdown : gvs.state.pot;
-    let resultLine = "";
+    let resultSection = "";
     if (gvs.state.outrightWinnerIds) {
-      resultLine = `<div><strong>Outright winner(s):</strong> ${gvs.state.outrightWinnerIds.map((id) => Rules333.getPlayer(gvs.state, id).name).join(", ")} — ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>`;
+      resultSection = `<div class="board-333-outright"><strong>Outright winner(s):</strong> ${gvs.state.outrightWinnerIds.map((id) => Rules333.getPlayer(gvs.state, id).name).join(", ")} — ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>`;
     } else if (gvs.state.results) {
       const lowShareChips = Math.floor(potDisplay / 2);
       const highShareChips = potDisplay - lowShareChips;
       const lowNames = gvs.state.results.lowWinners.map((id) => Rules333.getPlayer(gvs.state, id).name);
       const highNames = gvs.state.results.highWinners.map((id) => Rules333.getPlayer(gvs.state, id).name);
-      resultLine = `
-        <div><strong>Low (${Rules333.LOW_TARGET}, ${money(ChipEconomy.chipsToDollars(lowShareChips))}):</strong> ${lowNames.length ? lowNames.join(", ") : "no qualifiers — carries forward"}</div>
-        <div><strong>High (${Rules333.HIGH_TARGET}, ${money(ChipEconomy.chipsToDollars(highShareChips))}):</strong> ${highNames.length ? highNames.join(", ") : "no qualifiers — carries forward"}</div>
+      resultSection = `
+        <div class="board-333-results">
+          <div class="result-col result-col-low">
+            <div class="result-col-target">Low &middot; target ${Rules333.LOW_TARGET}</div>
+            <div class="result-col-amount">${money(ChipEconomy.chipsToDollars(lowShareChips))}</div>
+            <div class="result-col-names">${lowNames.length ? lowNames.join(", ") : "no qualifiers — carries forward"}</div>
+          </div>
+          <div class="result-col result-col-high">
+            <div class="result-col-target">High &middot; target ${Rules333.HIGH_TARGET}</div>
+            <div class="result-col-amount">${money(ChipEconomy.chipsToDollars(highShareChips))}</div>
+            <div class="result-col-names">${highNames.length ? highNames.join(", ") : "no qualifiers — carries forward"}</div>
+          </div>
+        </div>
       `;
     }
     el.boardHand.innerHTML = `
-      <div><strong>Targets:</strong> ${Rules333.LOW_TARGET} (low) / ${Rules333.HIGH_TARGET} (high)</div>
-      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>
-      ${communityLine}
-      ${resultLine}
+      <div class="board-333">
+        <div class="board-333-top">
+          <div><strong>Targets:</strong> ${Rules333.LOW_TARGET} (low) / ${Rules333.HIGH_TARGET} (high)</div>
+          <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>
+        </div>
+        ${communitySection}
+        ${resultSection}
+      </div>
     `;
   }
 
