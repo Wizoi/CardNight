@@ -20,6 +20,17 @@
       <label>Additional rebuy cap ($)
         <input id="setup-cap" type="number" value="60" step="20" min="0" />
       </label>
+      <fieldset id="deal-mode-fieldset">
+        <legend>Game selection</legend>
+        <label>
+          <input type="radio" name="deal-mode" value="dealersChoice" checked />
+          Dealer's choice — each hand, whoever's dealing picks the game
+        </label>
+        <label>
+          <input type="radio" name="deal-mode" value="continuous" />
+          Stay on a game — pick once, keep dealing it until you change games
+        </label>
+      </fieldset>
     </details>
     <button id="setup-start">Sit down</button>
     <button type="button" id="setup-history-btn">History</button>

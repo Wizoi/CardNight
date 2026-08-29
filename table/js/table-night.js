@@ -24,6 +24,15 @@ const TableNight = (function () {
   // separate picker-seat variable anymore -- currentPickerSeatId() below
   // just reads dealerIndex directly.
   let dealerIndex = 0; // continuous across game changes -- advanced in rotatePickerAfterGameEnds, BEFORE the picker screen shows (not in chooseNextGame, which only consumes the already-current value)
+  // "dealersChoice" (default): after every hand, the picker screen shows
+  // again automatically so the next dealer picks fresh -- real dealer's-
+  // choice play, where a hand's dealer and its game-choice privilege are
+  // the same thing. "continuous": the old behavior -- pick once, then
+  // "Deal next hand" keeps dealing the same game (same orchestrator,
+  // same gameMemory) until "Change game" is clicked. table-ui.js is
+  // responsible for actually swapping the "Deal next hand" button for a
+  // "Next dealer picks" one in dealersChoice mode; this flag is just data.
+  let dealMode = "dealersChoice";
   let cutForDealState = null; // stepwise reveal state for the cut-for-deal screen, once per night -- see beginCutForDeal
   let activeGameId = null;
   let activeOrchestrator = null;
@@ -47,6 +56,7 @@ const TableNight = (function () {
 
   function init(config, updateCallback) {
     onUpdate = updateCallback || (() => {});
+    dealMode = config.dealMode === "continuous" ? "continuous" : "dealersChoice";
     settings = {
       anteDollars: 0.5,
       raiseIncrementDollars: 0.25,
@@ -376,6 +386,7 @@ const TableNight = (function () {
       history,
       today,
       currentPickerSeatIndex: dealerIndex, // the picker IS the upcoming dealer -- see currentPickerSeatId()
+      dealMode,
       cutForDealState,
       activeGameId,
       gameList: GameRegistry.list(),

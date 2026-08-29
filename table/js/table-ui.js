@@ -679,6 +679,22 @@
     }, 900);
   }
 
+  // In "dealersChoice" mode (the default), a completed hand doesn't just
+  // offer to deal another hand of the same game -- the next dealer (the
+  // rotated picker) picks fresh, same as clicking "Change game" today.
+  // Every table-ui-<family>.js's renderActionPanel uses the same
+  // #deal-next-hand-btn id when a next hand CAN be dealt (hand complete,
+  // player has chips) -- swap just that button for one that hands off to
+  // the picker instead, rather than touching all 14 family files. Left
+  // alone in "continuous" mode (the old always-on behavior): pick once,
+  // keep dealing the same game via "Deal next hand" until "Change game".
+  function maybeSwapForNextDealerPick(el, vs) {
+    if (vs.dealMode !== "dealersChoice") return;
+    const dealBtn = el.actionPanel.querySelector("#deal-next-hand-btn");
+    if (!dealBtn) return;
+    dealBtn.outerHTML = `<button data-pick-next-game>Next dealer picks the game →</button>`;
+  }
+
   // Always refreshes content, regardless of which view is currently
   // showing — a background AI action shouldn't yank the player out of the
   // History view. Actual view *navigation* only happens at explicit action
@@ -703,6 +719,7 @@
       familyModule.renderHumanHand(el, gvs, vs.humanId);
       familyModule.renderActionPanel(el, gvs, vs.humanId, TableNight.orchestrator, vs.settings);
       renderLog(gvs);
+      maybeSwapForNextDealerPick(el, vs);
     }
 
     // Jump mode can be entered at ANY point, including mid-hand while a
@@ -744,6 +761,10 @@
       if (savedPrefs.seatCount) activeAiSeatCount = Math.min(MAX_AI_SEATS, Math.max(MIN_AI_SEATS, savedPrefs.seatCount - 1));
       if (savedPrefs.buyInDollars) el.setupBuyIn.value = String(savedPrefs.buyInDollars);
       if (savedPrefs.rebuyCapDollars != null) el.setupCap.value = String(savedPrefs.rebuyCapDollars);
+      if (savedPrefs.dealMode) {
+        const radio = document.querySelector(`input[name="deal-mode"][value="${savedPrefs.dealMode}"]`);
+        if (radio) radio.checked = true;
+      }
     }
     loadSeatAssignments();
     populateRosterFilterOptions();
@@ -801,9 +822,11 @@
       const humanName = el.setupName.value.trim() || "You";
       const buyInDollars = Number(el.setupBuyIn.value) || 20;
       const rebuyCapDollars = Number(el.setupCap.value) || 60;
-      saveSetupPrefs({ humanName, seatCount, buyInDollars, rebuyCapDollars });
+      const dealModeInput = document.querySelector('input[name="deal-mode"]:checked');
+      const dealMode = dealModeInput ? dealModeInput.value : "dealersChoice";
+      saveSetupPrefs({ humanName, seatCount, buyInDollars, rebuyCapDollars, dealMode });
       TableNight.init(
-        { humanName, seatCount, aiSeatAssignments: seatAssignments, buyInDollars, rebuyCapDollars },
+        { humanName, seatCount, aiSeatAssignments: seatAssignments, buyInDollars, rebuyCapDollars, dealMode },
         render
       );
       TableNight.beginCutForDeal();
@@ -864,6 +887,19 @@
     });
 
     el.changeGameBtn.addEventListener("click", () => {
+      TableNight.rotatePickerAfterGameEnds();
+      showView("picker");
+      render(TableNight.getViewState());
+    });
+
+    // Delegated on the container (not the button itself, which gets
+    // replaced every render by maybeSwapForNextDealerPick) so this keeps
+    // working across re-renders without being rewired each time. Each
+    // family's own wireActions assigns el.actionPanel.onclick directly
+    // (an assignment, not addEventListener), so this listener coexists
+    // with it rather than being overwritten.
+    el.actionPanel.addEventListener("click", (e) => {
+      if (!e.target.closest("[data-pick-next-game]")) return;
       TableNight.rotatePickerAfterGameEnds();
       showView("picker");
       render(TableNight.getViewState());
