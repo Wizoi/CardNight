@@ -761,6 +761,8 @@ fieldset {
 }
 
 .picker-waiting {
+  grid-column: 1 / -1;
+  text-align: center;
   color: var(--cream);
   opacity: 0.8;
   font-style: italic;
