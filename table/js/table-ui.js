@@ -718,19 +718,24 @@
 
     if (vs.cutForDealState) {
       renderCutForDeal(vs);
-      if (vs.cutForDealState.status === "revealing") {
-        maybeAutoRevealCutForDeal(vs);
-      } else if (!vs.activeGameId || pendingConfirm) {
-        // The `|| pendingConfirm` half keeps the game-selected/instructions
-        // screen rendering even after chooseNextGame has already set
-        // activeGameId -- it's waiting on the human to click "Continue,"
-        // not blocked by the normal "nothing picked yet" gate. (In
-        // practice chooseNextGame doesn't run until that click anyway --
-        // see the picker-menu click handler -- so activeGameId is still
-        // unset here too; this condition is belt-and-suspenders.)
-        renderPicker(vs);
-        maybeAutoPickForAI();
-      }
+    }
+    // Picker rendering is deliberately NOT nested under `vs.cutForDealState`
+    // -- "My choice" mode skips the whole cut-for-deal ceremony outright
+    // (it doesn't apply when the human always picks anyway), so
+    // cutForDealState stays null the entire night in that mode, and the
+    // picker still needs to render.
+    if (vs.cutForDealState && vs.cutForDealState.status === "revealing") {
+      maybeAutoRevealCutForDeal(vs);
+    } else if (!vs.activeGameId || pendingConfirm) {
+      // The `|| pendingConfirm` half keeps the game-selected/instructions
+      // screen rendering even after chooseNextGame has already set
+      // activeGameId -- it's waiting on the human to click "Continue,"
+      // not blocked by the normal "nothing picked yet" gate. (In
+      // practice chooseNextGame doesn't run until that click anyway --
+      // see the picker-menu click handler -- so activeGameId is still
+      // unset here too; this condition is belt-and-suspenders.)
+      renderPicker(vs);
+      maybeAutoPickForAI();
     }
 
     renderHistory(vs);
@@ -817,8 +822,17 @@
         { humanName, seatCount, aiSeatAssignments: seatAssignments, buyInDollars, rebuyCapDollars, dealMode },
         render
       );
-      TableNight.beginCutForDeal();
-      showView("cutfordeal");
+      // "My choice" mode means the human always picks anyway, so cut-for-
+      // deal's whole purpose (deciding who deals/picks first) doesn't apply
+      // -- skip straight to the picker instead of a ceremony whose result
+      // wouldn't change anything.
+      if (dealMode === "humanChoice") {
+        showView("picker");
+        render(TableNight.getViewState());
+      } else {
+        TableNight.beginCutForDeal();
+        showView("cutfordeal");
+      }
     });
 
     el.cutForDealDraws.addEventListener("click", (e) => {
