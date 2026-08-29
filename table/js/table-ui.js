@@ -35,8 +35,6 @@
   let lastShownQuipId = 0;
   let autoPickTimer = null;
   let cutForDealAutoTimer = null;
-  let jumpMode = false;
-  let jumpCategoryFilter = ""; // "" = all categories; only meaningful while jumpMode is true
   // Human-picker variant-choice step: set while showing the "choose variants
   // for X" form instead of the game grid; null the rest of the time.
   let pendingVariantGameId = null;
@@ -98,10 +96,10 @@
     el.rosterGrid = document.getElementById("roster-grid");
     el.rosterCloseBtn = document.getElementById("roster-close-btn");
 
+    el.gameIconDisplay = document.getElementById("game-icon-display");
     el.gameNameDisplay = document.getElementById("game-name-display");
     el.rulesLink = document.getElementById("rules-link");
     el.gameScriptDetails = document.getElementById("game-script-details");
-    el.gameScriptSummary = document.getElementById("game-script-summary");
     el.gameScriptBody = document.getElementById("game-script-body");
     el.potDisplay = document.getElementById("pot-display");
     el.walletDisplay = document.getElementById("wallet-display");
@@ -109,7 +107,8 @@
     el.cashoutBtn = document.getElementById("cashout-btn");
     el.historyBtn = document.getElementById("history-btn");
     el.changeGameBtn = document.getElementById("change-game-btn");
-    el.jumpToGameBtn = document.getElementById("jump-to-game-btn");
+    el.moreMenuBtn = document.getElementById("more-menu-btn");
+    el.moreMenu = document.getElementById("more-menu");
 
     el.seats = document.getElementById("seats");
     el.boardHand = document.getElementById("board-hand");
@@ -128,9 +127,7 @@
     el.cutForDealContinueBtn = document.getElementById("cutfordeal-continue-btn");
 
     el.pickerHeading = document.getElementById("picker-heading");
-    el.jumpCategoryFilter = document.getElementById("jump-category-filter");
     el.pickerMenu = document.getElementById("picker-menu");
-    el.pickerCancelBtn = document.getElementById("picker-cancel-btn");
   }
 
   let currentView = "setup";
@@ -330,8 +327,8 @@
     }
 
     const data = entry ? gameDataFor(vs.activeGameId) : null;
+    el.gameIconDisplay.textContent = data ? data.icon : "";
     if (data) {
-      el.gameScriptSummary.innerHTML = `<span class="game-script-icon">${data.icon}</span> How to describe ${data.name}`;
       // Every entry's `script` is a plain string EXCEPT the combined
       // Omaha/Seattle/Boise/Jersey Hold'em entry, whose one games-data.js
       // record covers 4 variants at once -- there it's an array of
@@ -352,7 +349,11 @@
   function renderHeader(vs) {
     renderGameBanner(vs);
     const human = vs.players.find((p) => p.id === vs.humanId);
-    el.walletDisplay.textContent = `Chips: ${money(ChipEconomy.chipsToDollars(human.wallet.chips))} | Bought in: ${money(ChipEconomy.totalBoughtInDollars(human.wallet))}`;
+    // "Bought in" dropped from the always-visible header as part of the
+    // 2026-08-29 redesign (still fully tracked in History) -- the compact
+    // chips-block only has room for the one figure that matters turn to
+    // turn.
+    el.walletDisplay.textContent = `Chips: ${money(ChipEconomy.chipsToDollars(human.wallet.chips))}`;
     const gvs = vs.orchestratorViewState;
     // Once a hand's complete, several games zero out state.pot right after
     // payout (it's been awarded, not vanished) -- potAtShowdown, where a game
@@ -361,7 +362,9 @@
     // Baseball, Acey Ducey) don't set this field, so this falls back to the
     // always-accurate live state.pot for them.
     const potChips = gvs && gvs.state && gvs.state.status === "complete" && typeof gvs.state.potAtShowdown === "number" ? gvs.state.potAtShowdown : gvs && gvs.state ? gvs.state.pot : null;
-    el.potDisplay.textContent = potChips != null ? `Pot: ${money(ChipEconomy.chipsToDollars(potChips))}` : "";
+    // The "Pot" label now lives in its own #pot-hero-label element, so this
+    // is just the dollar figure -- avoids "Pot: Pot $4.50" once stacked.
+    el.potDisplay.textContent = potChips != null ? money(ChipEconomy.chipsToDollars(potChips)) : "—";
     const rebuyRoom = human.wallet.isTracked ? vs.settings.rebuyCapDollars - ChipEconomy.totalRebuysDollars(human.wallet) : 0;
     el.rebuyBtn.disabled = rebuyRoom < ChipEconomy.BUY_IN_INCREMENT_DOLLARS;
     el.rebuyBtn.hidden = ChipEconomy.chipsToDollars(human.wallet.chips) > LOW_CHIPS_DOLLARS;
@@ -371,12 +374,6 @@
     // stale hand-completion race with the new game.
     const canSwitchGames = !gvs || !gvs.state || gvs.state.status === "complete";
     el.changeGameBtn.disabled = !canSwitchGames;
-    // "Jump to game" is exempt from that guard on purpose -- it's a debug
-    // shortcut, not the in-fiction "Change game" flow, so jumping mid-hand
-    // is allowed and just abandons/resets whatever hand was in progress
-    // (the outgoing orchestrator's async loop naturally stops itself at
-    // its next human-decision checkpoint once nothing is left to call
-    // back into it). Always enabled -- nothing to reset here.
   }
 
   function renderLog(gvs) {
@@ -585,44 +582,7 @@
     return (entry.variantOptions || []).map((opt) => `${opt.label}: ${describeVariantChoice(opt, variantChoices[opt.key])}`);
   }
 
-  // Jump mode reuses the exact same card-grid picker as the real in-fiction
-  // flow below, just without caring whose turn it actually is to pick --
-  // a debug/testing shortcut, usable anytime (including mid-hand, which
-  // abandons/resets whatever was in progress), not part of the normal
-  // cut-for-deal/rotation ceremony. It also skips the variant-choice/summary
-  // ceremony entirely and always just plays each game's defaults, same as
-  // an AI dealer would -- jump is for quickly trying a game out, not for
-  // exercising the dealer's-choice flow.
-  // Only rebuilds the <option> list when the category set actually changes
-  // (the game list is fixed for the whole app lifetime in practice, but this
-  // keeps a stray re-render from resetting the user's current selection).
-  let jumpCategoryOptionsBuilt = false;
-  function renderJumpCategoryFilter(gameList) {
-    el.jumpCategoryFilter.hidden = false;
-    if (jumpCategoryOptionsBuilt) return;
-    const categories = [...new Set(gameList.map((g) => (gameDataFor(g.id) || {}).category).filter(Boolean))].sort();
-    el.jumpCategoryFilter.innerHTML =
-      `<option value="">All categories</option>` + categories.map((c) => `<option value="${c}">${c}</option>`).join("");
-    jumpCategoryOptionsBuilt = true;
-  }
-
   function renderPicker(vs) {
-    if (jumpMode) {
-      el.pickerHeading.textContent = "Jump to a game";
-      renderJumpCategoryFilter(vs.gameList);
-      const filtered = jumpCategoryFilter
-        ? vs.gameList.filter((g) => {
-            const data = gameDataFor(g.id);
-            return data && data.category === jumpCategoryFilter;
-          })
-        : vs.gameList;
-      el.pickerMenu.innerHTML = filtered.length ? gameCardsMarkup(filtered) : `<div class="picker-waiting">No games in that category.</div>`;
-      el.pickerCancelBtn.hidden = false;
-      return;
-    }
-    el.jumpCategoryFilter.hidden = true;
-    el.pickerCancelBtn.hidden = true;
-
     if (lastAiPick) {
       const { choice, variantChoices } = lastAiPick;
       const data = gameDataFor(choice.id);
@@ -667,7 +627,7 @@
   // behavior) could silently auto-pick and yank the view to the table
   // before the player ever saw the picker screen at all.
   function maybeAutoPickForAI() {
-    if (currentView !== "picker" || jumpMode || lastAiPick || TableNight.currentPickerIsHuman() || autoPickTimer) return;
+    if (currentView !== "picker" || lastAiPick || TableNight.currentPickerIsHuman() || autoPickTimer) return;
     autoPickTimer = setTimeout(() => {
       autoPickTimer = null;
       // Stays on the picker screen showing a summary of what got chosen
@@ -722,16 +682,7 @@
       maybeSwapForNextDealerPick(el, vs);
     }
 
-    // Jump mode can be entered at ANY point, including mid-hand while a
-    // game is already active -- renderPicker must run regardless of the
-    // cutForDealState/activeGameId gating the real in-fiction picker flow
-    // below relies on (which assumes the picker only ever shows up between
-    // games). Missing this meant the picker screen's own DOM went stale
-    // the instant jump mode set it visible mid-hand -- a real bug, caught
-    // live, not by guessing.
-    if (jumpMode) {
-      renderPicker(vs);
-    } else if (vs.cutForDealState) {
+    if (vs.cutForDealState) {
       renderCutForDeal(vs);
       if (vs.cutForDealState.status === "revealing") {
         maybeAutoRevealCutForDeal(vs);
@@ -848,16 +799,12 @@
       const pickBtn = e.target.closest("[data-pick-game]");
       if (pickBtn) {
         const entry = GameRegistry.get(pickBtn.dataset.pickGame);
-        // Jump mode always just plays the game's defaults -- see
-        // renderPicker's jumpMode branch -- so it skips the variant-choice
-        // step entirely, same as an AI dealer would.
-        if (!jumpMode && entry.variantOptions && entry.variantOptions.length) {
+        if (entry.variantOptions && entry.variantOptions.length) {
           pendingVariantGameId = entry.id;
           render(TableNight.getViewState());
           return;
         }
         TableNight.chooseNextGame(entry.id, GameRegistry.defaultVariantChoices(entry));
-        jumpMode = false;
         showView("table");
         return;
       }
@@ -892,6 +839,27 @@
       render(TableNight.getViewState());
     });
 
+    // The "⋯" menu tucks the less-common actions (Change game/Cash out/
+    // History) out of the always-visible bar. Toggled on its own button;
+    // any click inside the menu (i.e. one of those three buttons actually
+    // firing) closes it too, same as a real dropdown.
+    el.moreMenuBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = !el.moreMenu.hidden;
+      el.moreMenu.hidden = isOpen;
+      el.moreMenuBtn.setAttribute("aria-expanded", String(!isOpen));
+    });
+    el.moreMenu.addEventListener("click", () => {
+      el.moreMenu.hidden = true;
+      el.moreMenuBtn.setAttribute("aria-expanded", "false");
+    });
+    document.addEventListener("click", (e) => {
+      if (el.moreMenu.hidden) return;
+      if (el.moreMenu.contains(e.target) || el.moreMenuBtn.contains(e.target)) return;
+      el.moreMenu.hidden = true;
+      el.moreMenuBtn.setAttribute("aria-expanded", "false");
+    });
+
     // Delegated on the container (not the button itself, which gets
     // replaced every render by maybeSwapForNextDealerPick) so this keeps
     // working across re-renders without being rewired each time. Each
@@ -902,29 +870,6 @@
       if (!e.target.closest("[data-pick-next-game]")) return;
       TableNight.rotatePickerAfterGameEnds();
       showView("picker");
-      render(TableNight.getViewState());
-    });
-
-    // Testing shortcut: jump straight into any registered game via the
-    // same card-grid picker used for the real in-fiction flow, bypassing
-    // the picker/rotation ceremony (and whose turn it actually is)
-    // entirely. Unlike "Change game," this is deliberately usable anytime,
-    // including mid-hand -- jumping just abandons/resets whatever hand was
-    // in progress (see chooseNextGame's own comments for why that's safe).
-    el.jumpToGameBtn.addEventListener("click", () => {
-      jumpMode = true;
-      showView("picker");
-      render(TableNight.getViewState());
-    });
-
-    el.jumpCategoryFilter.addEventListener("change", () => {
-      jumpCategoryFilter = el.jumpCategoryFilter.value;
-      render(TableNight.getViewState());
-    });
-
-    el.pickerCancelBtn.addEventListener("click", () => {
-      jumpMode = false;
-      showView("table");
       render(TableNight.getViewState());
     });
 
