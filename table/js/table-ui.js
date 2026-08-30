@@ -267,7 +267,6 @@
     if (entry.uiFamily === "mexicanSweat") return TableUIMexicanSweat;
     if (entry.uiFamily === "communityStud") return TableUICommunityStud;
     if (entry.uiFamily === "guts") return TableUIGuts;
-    if (entry.uiFamily === "guts357") return TableUIGuts357;
     if (entry.uiFamily === "holdem") return TableUIHoldem;
     if (entry.uiFamily === "pressYourLuck") return TableUIPressYourLuck;
     if (entry.uiFamily === "threeThirtyThree") return TableUI333;

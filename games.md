@@ -8,7 +8,7 @@ A web research pass (2026-08) cross-referenced each game against published home-
 
 ## Game Categories
 
-- **Guts:** Deep or Double Screw, 3 Buy 5 / 5 Buy 5, 3-5-7 Guts (New), Four-Two-Two (New)
+- **Guts:** Deep or Double Screw, 3 Buy 5 / 5 Buy 5, 3-5-7 Guts, Four-Two-Two (New)
 - **Stud-based:** Follow the Queen, Free Enterprise, Mexican Sweat, Anaconda (New), Seven and What Makes It (New), The Good, the Bad and the Ugly (New)
 - **Texas Hold'em variant:** Omaha / Seattle / Boise / Jersey Hold'em (New)
 - **Baseball:** Daytime Baseball, Midnight Baseball, Rainy Day Baseball
@@ -26,7 +26,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 
 - [3 Buy 5 / 5 Buy 5](#3-buy-5--5-buy-5)
 - [3-33 (333)](#3-33-333)
-- [3-5-7 Guts](#3-5-7-guts) *(New)*
+- [3-5-7 Guts](#3-5-7-guts)
 - [5.5-21](#55-21)
 - [7-27](#7-27)
 - [Acey Ducey](#acey-ducey)
@@ -72,12 +72,14 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 
 ## 3-5-7 Guts
 
-- **Category:** Guts (New)
-- **Deal:** 3 hole cards to start. After round 1, deal 2 more (5 total). After round 2, deal 2 more again (7 total) — three rounds of escalating hand size. At a full 8-player table, round 3's 7-card hands would need 56 cards, more than a deck holds; a fuller table needs round 3 trimmed down (and its wild rank adjusted to match) rather than dealt at a fixed 7.
-- **Wildcards:** Escalates by round — 3s are wild in round 1, 5s are wild in round 2, 7s are wild in round 3.
-- **Betting:** Guts game — ante only, no raise/max-bet structure. Before each round, remaining players decide again to fold or match the ante and stay in; the pot carries forward and accumulates across all three rounds.
-- **Ending:** After each round's decision, hands are revealed among the players who stayed in, and the lowest hand must match the pot and pay the highest hand. The game ends when the pot is awarded to the last remaining player after round 3 — a straightforward 3-round hand, no early-win rule.
-- **Sources:** ["3-5-7 Guts" – coololdgames.com](https://www.coololdgames.com/card-games/gambling/guts/3-5-7/)
+- **Category:** Guts
+- **Corrected 2026-08-30:** this entry originally described a researched "(New)" candidate (three escalating deal-and-decide rounds, with the wild rank changing out from under anyone still holding earlier cards) — not what the group actually plays. Flagged directly: escalating wildness across a fold is confusing, since a player who folded when 3s were wild has no bearing on a later round where 7s are wild instead. The real house rule is structurally a sibling of Deep or Double Screw (same shared engine: one deal, real passing, an escalating-pot stay/fold cycle with no fixed round count) rather than its own bespoke fixed-3-round shape.
+- **Deal:** 7 cards to each player at once (6 at a full 8-player table, same deck-size scaling every other game in this family uses) — not dealt in escalating rounds.
+- **Wildcards:** 3s, 5s, AND 7s are all wild together, for the whole hand, known from the very first look at your cards — not escalating round to round. Optional dealer's-choice: add 1-2 additional flip-up wildcard(s) on top, same as Deep or Double Screw.
+- **Passing:** Before the stay/fold decision, everyone passes cards left and right, same as Deep or Double Screw (2 left / 1 right at the 7-card size, 1 left / 1 right at 6).
+- **Betting:** Guts game — ante only, no raise/max-bet structure. Every stay/fold decision that isn't a solo winner escalates the pot; every non-winning stayer must match it to keep the cycle going. Optional dealer's-choice: a dummy hand (games.md's shared Guts variant) that everyone staying in has to beat too.
+- **Ending:** Same as every other Guts game in this family — the cycle only ends once exactly one player stays in and wins outright.
+- **Sources:** ["3-5-7 Guts" – coololdgames.com](https://www.coololdgames.com/card-games/gambling/guts/3-5-7/) (the documented, NOT the house, structure)
 
 ## 5.5-21
 

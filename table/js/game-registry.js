@@ -286,8 +286,29 @@ const GameRegistry = (function () {
     threeFiveSeven: {
       id: "threeFiveSeven",
       name: "3-5-7 Guts",
-      uiFamily: "guts357",
-      createOrchestrator: (config) => SessionGuts357.create(config),
+      uiFamily: "guts",
+      variantOptions: [
+        {
+          key: "flipWildcardCount",
+          label: "Extra flip-up wildcards (on top of 3s/5s/7s, which are always wild)",
+          choices: [
+            { value: 0, label: "None" },
+            { value: 1, label: "1 flip-up wildcard" },
+            { value: 2, label: "2 flip-up wildcards" },
+          ],
+          default: 0,
+        },
+        {
+          key: "dummyHandEnabled",
+          label: "Dummy hand — an extra unowned hand everyone who stays in must also beat",
+          choices: [
+            { value: false, label: "None (base game)" },
+            { value: true, label: "Deal a dummy hand (only if it fits at tonight's table size)" },
+          ],
+          default: false,
+        },
+      ],
+      createOrchestrator: (config) => SessionGuts.create({ ...config, gameConfig: applyVariants(THREE_FIVE_SEVEN_GUTS_CONFIG, config.variantChoices) }),
     },
     omaha: {
       id: "omaha",

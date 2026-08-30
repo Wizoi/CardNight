@@ -1,10 +1,8 @@
 "use strict";
 
 // Config objects turning the shared GutsRules engine into specific games
-// (games.md's Deep or Double Screw, 3 Buy 5 / 5 Buy 5, and Four-Two-Two
-// entries). 3-5-7 Guts is structurally different enough (fixed 3-round
-// hand, no early end) that it isn't built on this engine at all — see
-// rules-guts-357.js / game-configs-guts-357.js instead.
+// (games.md's Deep or Double Screw, 3 Buy 5 / 5 Buy 5, Four-Two-Two, and
+// 3-5-7 Guts entries).
 const DEEP_OR_DOUBLE_SCREW_CONFIG = {
   id: "deepOrDoubleScrew",
   name: "Deep or Double Screw",
@@ -121,4 +119,51 @@ const FOUR_TWO_TWO_CONFIG = {
   // game-registry.js). Undefined/off means "match the full pot every
   // time," the base rule.
   maxLossPerDealDollars: undefined,
+};
+
+// Rebuilt 2026-08-30, after the user flagged the previously-documented
+// "3s wild round 1, 5s wild round 2, 7s wild round 3" structure as
+// genuinely confusing in play -- a player who folds while 3s are wild has
+// no bearing on a later round where the wild rank has already moved on to
+// 7s. The house rule is structurally a sibling of Deep or Double Screw
+// (same shared engine below, same one-deal-then-pass-then-escalating-cycle
+// shape) rather than its own bespoke fixed-3-round hand: 3s, 5s, AND 7s are
+// all wild together, for the whole hand, known from the very first look at
+// your cards -- not escalating at all. This REPLACES the old bespoke
+// rules-guts-357.js/session-guts-357.js/table-ui-guts-357.js engine
+// entirely (see game-registry.js) rather than adding a second game next to
+// it, since the old entry was a researched "(New)" candidate the group
+// never actually confirmed playing, not an established house rule worth
+// preserving under its own name once corrected.
+const THREE_FIVE_SEVEN_GUTS_CONFIG = {
+  id: "threeFiveSeven",
+  name: "3-5-7 Guts",
+  // Same deck-size scaling as Deep or Double Screw -- 7 cards a hand,
+  // trimmed to 6 at a full 8-player table.
+  dealSize(playerCount) {
+    return playerCount >= 8 ? 6 : 7;
+  },
+  wildRanks: ["3", "5", "7"],
+  flipWildcardCount: 0, // optional dealer's-choice extra flip-up(s) on top -- see game-registry.js's variantOptions
+  // Same passing shape as Deep or Double Screw, tied to the same deal size.
+  passing(playerCount) {
+    return playerCount >= 8 ? { left: 1, right: 1 } : { left: 2, right: 1 };
+  },
+  loserPolicy: "allNonWinners",
+  // THREE simultaneously-wild ranks (12 of 52 cards) makes this hand shape
+  // dramatically stronger than Deep or Double Screw's guaranteed-single-
+  // wild-card: a random 7-card sample evaluates to Four of a Kind or
+  // better roughly half the time. Deep or Double Screw's own shift=4 was
+  // empirically re-swept for this config specifically (same "does the
+  // cycle actually reach a solo winner in a believable number of rounds"
+  // methodology) and turned out too low here -- it failed to resolve
+  // within 40 rounds at 6-7 players. shift=6 resolved every sweep trial at
+  // every table size (5-8 players) within 2-22 rounds, a believable
+  // escalation pace; shift=8 also always resolved but usually in 1-4
+  // rounds, felt too quick to be a real "the pot escalates" experience
+  // (the same "too quick" call already made once for Deep or Double
+  // Screw's own shift=5 sweep result). See ai-guts-profiles.js's
+  // decideStayIn.
+  categoryShift: 6,
+  dummyHandEnabled: false, // optional dealer's-choice dummy hand -- see game-registry.js's variantOptions
 };

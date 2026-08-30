@@ -10,10 +10,13 @@
 // going. The cycle only truly ends when exactly one player is "in" and
 // wins uncontested (games.md: "Ends only when one player bets and wins
 // outright") — a 2+-way showdown always just continues the cycle, however
-// it comes out. Deep or Double Screw, 3 Buy 5 / 5 Buy 5, and Four-Two-Two
-// are all just a `gameConfig` on top of this one engine; 3-5-7 Guts is
-// structurally different enough (a fixed 3-round single hand with no early
-// end at all) to get its own small engine instead — see rules-guts-357.js.
+// it comes out. Deep or Double Screw, 3 Buy 5 / 5 Buy 5, Four-Two-Two, and
+// 3-5-7 Guts are all just a `gameConfig` on top of this one engine. (3-5-7
+// Guts used to be a bespoke fixed-3-round engine of its own -- rebuilt onto
+// this shared one 2026-08-30 after the user flagged the original
+// escalating-wild-rank-across-rounds structure as genuinely confusing; see
+// game-configs-guts.js's THREE_FIVE_SEVEN_GUTS_CONFIG for the corrected
+// house rule.)
 //
 // gameConfig shape:
 //   {
