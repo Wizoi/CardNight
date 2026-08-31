@@ -190,7 +190,7 @@ const SessionAnaconda = (function () {
     }
 
     function getViewState() {
-      return { gameId: "anaconda", players, dealerIndex, handNumber, state, pending, lastQuip };
+      return { gameId: "anaconda", players, dealerIndex, handNumber, state, pending, lastQuip, variantChoices: config.variantChoices || {} };
     }
 
     return {

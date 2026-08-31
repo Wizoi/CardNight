@@ -180,7 +180,7 @@ const SessionGameOfLife = (function () {
     }
 
     function getViewState() {
-      return { gameId: "gameOfLife", players, dealerIndex, handNumber, state, pending, lastQuip };
+      return { gameId: "gameOfLife", players, dealerIndex, handNumber, state, pending, lastQuip, variantChoices: config.variantChoices || {} };
     }
 
     return {

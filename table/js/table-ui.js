@@ -345,6 +345,34 @@
   let gameScriptExpanded = false;
   let lastBannerGameId = undefined;
 
+  // Reads the CURRENTLY ACTIVE value for one variantOptions key, for
+  // whatever hand is live right now -- most families merge dealer's-choice
+  // variantChoices straight into state.gameConfig (applyVariants), so
+  // state.gameConfig[key] is authoritative there; the 3 families with no
+  // gameConfig object of their own (Anaconda, Game of Life, Pair of Jacks
+  // draw poker) expose the raw variantChoices object directly instead (see
+  // each session-*.js's getViewState).
+  function activeVariantValue(gvs, key) {
+    if (gvs.state && gvs.state.gameConfig && key in gvs.state.gameConfig) return gvs.state.gameConfig[key];
+    if (gvs.variantChoices) return gvs.variantChoices[key];
+    return undefined;
+  }
+
+  // Populates the in-game info box's "what's actually in play this hand"
+  // section (2026-08-31, per the user's request that variant choices not
+  // just be silently "known" -- the game-selected transition screen
+  // already surfaces them via variantSummaryLines; this reuses the same
+  // describeVariantChoice lookup against the LIVE hand's resolved values
+  // instead of a picker-time choice).
+  function renderGameScriptVariants(entry, gvs) {
+    if (!entry || !entry.variantOptions || !entry.variantOptions.length || !gvs || !gvs.state) {
+      el.gameScriptVariants.innerHTML = "";
+      return;
+    }
+    const lines = entry.variantOptions.map((opt) => `<div><strong>${opt.label}:</strong> ${describeVariantChoice(opt, activeVariantValue(gvs, opt.key))}</div>`);
+    el.gameScriptVariants.innerHTML = lines.join("");
+  }
+
   function renderGameBanner(vs) {
     const entry = GameRegistry.get(vs.activeGameId);
     el.gameNameDisplay.textContent = entry ? entry.name : "";
@@ -366,6 +394,7 @@
     if (data) {
       el.gameScriptBody.innerHTML = scriptHtml(data);
     }
+    renderGameScriptVariants(entry, vs.orchestratorViewState);
     el.gameScriptToggleBtn.setAttribute("aria-expanded", String(gameScriptExpanded));
     el.gameScriptDetails.hidden = !data || !gameScriptExpanded;
   }

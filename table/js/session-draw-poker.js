@@ -187,7 +187,7 @@ const SessionDrawPoker = (function () {
     }
 
     function getViewState() {
-      return { gameId: "pairOfJacksTripsToWin", players, dealerIndex, handNumber, state, pending, lastQuip };
+      return { gameId: "pairOfJacksTripsToWin", players, dealerIndex, handNumber, state, pending, lastQuip, variantChoices: config.variantChoices || {} };
     }
 
     return {
