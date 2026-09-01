@@ -104,6 +104,21 @@ const PressYourLuckAIProfiles = (function () {
       const maxRaise = PressYourLuckRules.maxRaiseDollars(state, player.id);
       if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(1, state.raiseIncrementDollars, maxRaise) };
     }
+    // The 2026-08-26 loosened bar above still wasn't enough for 5.5-21's
+    // stricter 'bust' rule: a single mid/high card (6 through 10) already
+    // busts the low side outright, leaving bestDistance measured against
+    // the FAR-AWAY high target (11-15 points off) even though the player
+    // has had zero real decisions yet -- no hit/stand round has even
+    // happened. That blew straight through the flat +3 roomToImprove
+    // allowance and folded on the very first bet of the hand. Reported
+    // directly: "we didn't even get a card or do anything, there is no
+    // reason to fold on the first card in this game." Since games.md's own
+    // opening betting round fires right after the FIRST card -- before any
+    // hit/stand decision exists to judge from at all -- there's no
+    // meaningful signal yet to fold on regardless of profile; skip the
+    // fold check entirely for as long as a player is still sitting on just
+    // their initial deal.
+    const isOpeningRound = player.hand.length <= cfg.initialDeal.faceUp.length;
     const roomToImprove = Math.max(0, 4 - player.hand.length);
     // potOddsChanceBonus's units are "categories per unknown card" in
     // every other family -- this game measures distance in raw target
@@ -115,7 +130,7 @@ const PressYourLuckAIProfiles = (function () {
         AIProfiles.reRaiseChanceAdjustment(br, player.id, profile) +
         AIProfiles.opponentLoosenessAdjustment(state.opponentStats, AIProfiles.liveOpponentIds(state.players, player.id), profile)) *
       3;
-    if (toCallChips > 0 && bestDistance > profile.pressYourLuckStandThreshold + 2 + roomToImprove + chanceBonus) {
+    if (!isOpeningRound && toCallChips > 0 && bestDistance > profile.pressYourLuckStandThreshold + 2 + roomToImprove + chanceBonus) {
       return { action: "fold" };
     }
     // Raising means "I'm confident I'm ahead," but a hand that's still
