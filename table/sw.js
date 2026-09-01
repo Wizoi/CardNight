@@ -37,19 +37,36 @@ async function discoverAssetUrls() {
   return [...urls];
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 // Never lets one missing/renamed asset fail the whole install -- offline
 // support degrading to "most files, not all" is far better than "none at
-// all" because a single cache.addAll() call rejected on one 404.
+// all" because a single cache.addAll() call rejected on one 404. A couple
+// of quick retries with backoff cover the OTHER real failure mode this
+// hits in practice: precaching all ~80 files in one burst can trip a
+// transient CDN blip on one or two of them (observed live against GitHub
+// Pages -- a single file 503'd under the concurrent load, purely
+// transiently) even though every file is genuinely reachable a moment
+// later.
 async function precacheAll(cache, urls) {
   await Promise.all(
     urls.map(async (url) => {
-      try {
-        const request = new Request(url, { cache: "reload" });
-        const response = await fetch(request);
-        if (response && response.ok) await cache.put(request, response);
-      } catch (err) {
-        // This one asset just won't be available offline.
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const request = new Request(url, { cache: "reload" });
+          const response = await fetch(request);
+          if (response && response.ok) {
+            await cache.put(request, response);
+            return;
+          }
+        } catch (err) {
+          // fall through to retry/give-up below
+        }
+        if (attempt < 2) await sleep(300 * (attempt + 1));
       }
+      // All attempts failed -- this one asset just won't be available offline.
     })
   );
 }
