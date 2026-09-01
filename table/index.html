@@ -215,5 +215,16 @@
   <script src="js/table-ui-draw-poker.js"></script>
   <script src="js/table-ui-anaconda.js"></script>
   <script src="js/table-ui.js"></script>
+  <script>
+    // Registered after everything else has loaded so a failed/slow
+    // registration never blocks the app itself -- offline support is a
+    // bonus, not a dependency. Silently does nothing in browsers without
+    // serviceWorker support (older Safari, etc.) rather than erroring.
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js").catch((err) => console.error("Service worker registration failed", err));
+      });
+    }
+  </script>
 </body>
 </html>
