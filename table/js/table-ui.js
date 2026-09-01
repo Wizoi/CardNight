@@ -323,16 +323,34 @@
     return GAMES.find((g) => g.id === appId) || null;
   }
 
+  // The four hold'em variants' one combined games-data.js entry needs a
+  // reverse lookup (table game id -> which of its script array entries is
+  // actually THIS game) -- RULES_PAGE_ID_BY_GAME above only maps forward
+  // (every one of the 4 ids -> the same shared app id).
+  const HOLDEM_VARIANT_SCRIPT_LABEL_BY_GAME = {
+    omaha: "Omaha",
+    seattle: "Seattle",
+    boise: "Boise",
+    jerseyHoldem: "Jersey Hold'em",
+  };
+
   // Every entry's `script` is a plain string EXCEPT the combined
   // Omaha/Seattle/Boise/Jersey Hold'em entry, whose one games-data.js
   // record covers 4 variants at once -- there it's an array of
-  // {label, text} instead, one per variant (plus a hi-lo add-on). Shared by
-  // the in-game "how to describe it" box and the game-selected transition
+  // {label, text} instead, one per variant (plus a hi-lo add-on). Shown in
+  // full, this dumped every OTHER hold'em variant's instructions into the
+  // box too regardless of which one was actually being played (reported
+  // directly: "didn't want all the Texas Hold'em games... definitely saw
+  // it there") -- now filtered down to just the matching variant's own
+  // part, plus the always-relevant hi-lo add-on note. Shared by the
+  // in-game "how to describe it" box and the game-selected transition
   // screen so both render dealer-script text identically.
-  function scriptHtml(data) {
+  function scriptHtml(data, tableGameId) {
     if (!data) return "";
     if (Array.isArray(data.script)) {
-      return data.script.map((part) => `<p><strong>${part.label}:</strong> ${part.text}</p>`).join("");
+      const wantedLabel = HOLDEM_VARIANT_SCRIPT_LABEL_BY_GAME[tableGameId];
+      const parts = wantedLabel ? data.script.filter((part) => part.label === wantedLabel || part.label === "If hi-lo is on, add") : data.script;
+      return parts.map((part) => `<p><strong>${part.label}:</strong> ${part.text}</p>`).join("");
     }
     return `<p>${data.script || "No dealer script written for this game yet."}</p>`;
   }
@@ -392,7 +410,7 @@
     el.gameIconDisplay.textContent = data ? data.icon : "";
     el.gameScriptToggleBtn.hidden = !data;
     if (data) {
-      el.gameScriptBody.innerHTML = scriptHtml(data);
+      el.gameScriptBody.innerHTML = scriptHtml(data, vs.activeGameId);
     }
     renderGameScriptVariants(entry, vs.orchestratorViewState);
     el.gameScriptToggleBtn.setAttribute("aria-expanded", String(gameScriptExpanded));
@@ -651,7 +669,7 @@
         <div class="game-pick-icon">${icon}</div>
         <div>${isAi ? `The dealer is playing <strong>${entry.name}</strong>.` : `You're playing <strong>${entry.name}</strong>.`}</div>
         ${lines.length ? `<ul class="confirm-variant-lines">${lines.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}
-        <div class="confirm-instructions">${scriptHtml(data)}</div>
+        <div class="confirm-instructions">${scriptHtml(data, entry.id)}</div>
         <div class="confirm-actions">
           ${isAi ? "" : `<button type="button" data-confirm-back>&larr; Back</button>`}
           <button type="button" data-confirm-continue>Continue</button>
