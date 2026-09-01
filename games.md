@@ -347,7 +347,7 @@ Default rule across all split-pot games: if multiple players tie for a side of t
 
 ## House rule: the baseball family
 
-Daytime Baseball, Midnight Baseball, and Rainy Day Baseball all share the same wildcard/extra-card rule: 3s and 9s are wild but must be bought ($3 for a 3, $2 for a 9) to count as wild, and dealing a 4 lets a player buy an extra card for $1. Each variant then layers on its own twist — Daytime is the standard deal, Midnight uses a "beat the card" turn structure, and Rainy Day adds the rain-out rule.
+Daytime Baseball, Midnight Baseball, and Rainy Day Baseball all share the same wildcard/extra-card rule: 3s and 9s are wild but must be bought ($3 for a 3, $2 for a 9) to count as wild, and dealing a 4 lets a player buy an extra card for $1. Each variant then layers on its own twist — Daytime is the standard deal, Midnight uses a "beat the card" turn structure, and Rainy Day adds the rain-out rule. **A face-down 3 or 9 is a free wild — no buying it, no charge.** The buy price is for changing what the table can *see*: a face-up 3/9 is already visible to every other player, so paying to make it count as wild is a real, public decision. A hole card is private information nobody else at the table can act on either way, so there's nothing to charge for — it's simply wild the moment it's dealt. (Same principle Follow the Queen's rolling wildcard already follows: a hidden queen or follow-card is wild regardless of whether it's ever shown.)
 
 ## House rule: the stud family
 
