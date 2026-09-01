@@ -715,6 +715,19 @@
   // keep dealing the same game via "Deal next hand" until "Change game".
   function maybeSwapForNextDealerPick(el, vs) {
     if (vs.dealMode !== "dealersChoice" && vs.dealMode !== "humanChoice") return;
+    // The Guts family's escalating-pot cycle can finish a ROUND (a winner
+    // paid, losers charged to match) without the CYCLE itself being over --
+    // cycleComplete stays false until exactly one player wins solo. That
+    // still renders #deal-next-hand-btn (the correct "keep escalating the
+    // SAME game" action), but this function used to swap it for "pick the
+    // next game" unconditionally on every button of that id, incorrectly
+    // treating an in-progress cycle's own next round as if the whole game
+    // were finished. Reported directly: a $3 pot with 3 losers should have
+    // continued for a $12 pot in the SAME game, not jumped to picking a
+    // different one entirely. cycleComplete is undefined for every other
+    // family, so this check is a no-op everywhere else.
+    const gvs = vs.orchestratorViewState;
+    if (gvs && gvs.state && gvs.state.cycleComplete === false) return;
     const dealBtn = el.actionPanel.querySelector("#deal-next-hand-btn");
     if (!dealBtn) return;
     const label = vs.dealMode === "humanChoice" ? "Pick the next game →" : "Next dealer picks the game →";
