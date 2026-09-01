@@ -55,7 +55,14 @@ const SEVEN_TWENTYSEVEN_CONFIG = {
   // buy-back per newly-dealt card). A bought-back card is replaced and
   // dealt face up again, same as any other dealt card here.
   buyBack: { priceScheduleDollars: [1, 2, 3], maxBuys: 3 },
-  kitchenSink: true, // exactly 7 for low AND exactly 27 for high at once wins the whole pot outright
+  // games.md: "Optional rule -- Kitchen Sink: Dealer's choice whether this
+  // is in play" -- the base game doesn't have it; a real variantOptions
+  // toggle in game-registry.js overrides this via applyVariants. Was
+  // previously hardcoded true with no dealer's-choice prompt at all (a real
+  // gap, reported directly alongside a broader "which games ask about
+  // which variant" review), so this default now matches the documented
+  // base game rather than the add-on.
+  kitchenSink: false, // exactly 7 for low AND exactly 27 for high at once wins the whole pot outright, when turned on
   tieBreak: "split", // standard house default -- no exception documented for this game
   // Confirmed by the user 2026-08-26 (games.md itself doesn't restate a
   // betting field or ending condition for this game): real betting same

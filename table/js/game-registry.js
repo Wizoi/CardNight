@@ -344,7 +344,18 @@ const GameRegistry = (function () {
       id: "sevenTwentySeven",
       name: "7-27",
       uiFamily: "pressYourLuck",
-      createOrchestrator: (config) => SessionPressYourLuck.create({ ...config, gameConfig: SEVEN_TWENTYSEVEN_CONFIG }),
+      variantOptions: [
+        {
+          key: "kitchenSink",
+          label: "Kitchen Sink (exactly 7 low AND 27 high at once)",
+          choices: [
+            { value: false, label: "Off (base game)" },
+            { value: true, label: "On — a Kitchen Sink wins the whole pot outright" },
+          ],
+          default: false,
+        },
+      ],
+      createOrchestrator: (config) => SessionPressYourLuck.create({ ...config, gameConfig: applyVariants(SEVEN_TWENTYSEVEN_CONFIG, config.variantChoices) }),
     },
     threeThirtyThree: {
       id: "threeThirtyThree",
