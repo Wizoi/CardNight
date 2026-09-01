@@ -1,8 +1,9 @@
 "use strict";
 
-// Orchestrates Anaconda: discard-3-and-pass -> bet -> discard-2 -> bet ->
-// 5 simultaneous reveal-and-bet rounds -> showdown. The human's decisions
-// are which cards to discard (twice) and the usual fold/call/raise.
+// Orchestrates Anaconda: discard-3-and-pass -> bet -> discard-2 -> arrange
+// reveal order -> bet -> 5 simultaneous reveal-and-bet rounds -> showdown.
+// The human's decisions are which cards to discard (twice), what order to
+// reveal the final 5 in, and the usual fold/call/raise.
 const SessionAnaconda = (function () {
   function create(config) {
     const DECIDE_DELAY_MS = 450;
@@ -22,7 +23,7 @@ const SessionAnaconda = (function () {
     const jokerCount = (config.variantChoices && config.variantChoices.jokerCount) || 0;
     const hiLo = !!(config.variantChoices && config.variantChoices.hiLo);
     let state = null;
-    let pending = null; // {kind: 'discard1'|'discard2', playerId}
+    let pending = null; // {kind: 'discard1'|'discard2'|'arrange', playerId}
     let running = false;
     let lastQuip = null;
     let quipSeq = 0;
@@ -134,6 +135,25 @@ const SessionAnaconda = (function () {
             continue;
           }
 
+          if (state.status === "arranging") {
+            const nextPlayer = RulesAnaconda.activePlayers(state).find((p) => state.arrangeSelections[p.id] == null);
+            if (!nextPlayer) {
+              RulesAnaconda.resolveArranging(state);
+              notify();
+              continue;
+            }
+            if (nextPlayer.isHuman) {
+              pending = { kind: "arrange", playerId: nextPlayer.id };
+              notify();
+              return;
+            }
+            await sleep(DECIDE_DELAY_MS);
+            const order = AnacondaAIProfiles.decideArrangeOrder(nextPlayer);
+            RulesAnaconda.submitArrangeOrder(state, nextPlayer.id, order);
+            notify();
+            continue;
+          }
+
           if (state.status === "revealing") {
             await sleep(REVEAL_DELAY_MS);
             RulesAnaconda.resolveRevealRound(state);
@@ -180,6 +200,15 @@ const SessionAnaconda = (function () {
       processLoop();
     }
 
+    function humanArrangeOrder(orderedIndices) {
+      if (!pending || pending.kind !== "arrange") return;
+      const { playerId } = pending;
+      pending = null;
+      RulesAnaconda.submitArrangeOrder(state, playerId, orderedIndices);
+      notify();
+      processLoop();
+    }
+
     function humanBet(action, raiseDollars) {
       const human = getHuman();
       if (!state.bettingRound || RulesAnaconda.getCurrentBettor(state) !== human.id) return;
@@ -198,6 +227,7 @@ const SessionAnaconda = (function () {
       dealNextHand,
       canDealNextHand,
       humanDiscard,
+      humanArrangeOrder,
       humanBet,
       getViewState,
       snapshot,

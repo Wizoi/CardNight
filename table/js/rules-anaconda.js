@@ -16,13 +16,14 @@
 //   second deck -- the simplest concrete stand-in for games.md's own
 //   "needs a second deck or one player sitting out" note.
 // - games.md's "arrange your remaining 5 cards in a chosen order" (so the
-//   later reveal order is the player's own choice) is simplified to "reveal
-//   in whatever order the 5 kept cards ended up in the hand array after the
-//   round-2 discard" -- a separate, explicit re-ordering UI was judged
-//   disproportionate scope on top of everything else this mechanic already
-//   needs (discard-and-pass, a second discard, then a 5-round reveal).
-//   The FINAL hand value is unaffected either way; only the drama/betting-
-//   information order of the reveal would differ.
+//   later reveal order is the player's own choice) is now a real step
+//   (2026-08-31, reported directly: "I'm supposed to be able to rearrange
+//   my cards, I was unable to do that") -- a new "arranging" status between
+//   the round-2 discard and its betting round, where every active player
+//   privately reorders their own 5 kept cards before any of them are
+//   revealed. The FINAL hand value is unaffected either way (this only
+//   controls the reveal/betting-information order); AI seats order their
+//   own hand via decideArrangeOrder in ai-anaconda-profiles.js.
 // - The reveal itself is modeled as SIMULTANEOUS across every active
 //   player each round (like Mexican Sweat), not a sequential per-player
 //   turn -- games.md's "a betting round after each" (of 5 total reveals,
@@ -85,6 +86,7 @@ const RulesAnaconda = (function () {
       bettingRound: null,
       passSelections: {},
       discardSelections: {},
+      arrangeSelections: {},
       revealsDone: 0,
       status: "discard1",
       log: [],
@@ -155,6 +157,28 @@ const RulesAnaconda = (function () {
     }
     state.log.push("Everyone discards 2 more, down to 5 cards each.");
     state.discardSelections = {};
+    state.status = "arranging";
+  }
+
+  // --- Arrange: privately reorder your own 5 kept cards before any reveal,
+  // since the reveal order (round 1 = hand[0], round 2 = hand[1], ...) is
+  // just index order into this array. ---
+
+  function submitArrangeOrder(state, playerId, orderedIdx) {
+    const player = getPlayer(state, playerId);
+    state.arrangeSelections[playerId] = orderedIdx.map((i) => player.hand[i]);
+  }
+
+  function allArrangeSubmitted(state) {
+    return activePlayers(state).every((p) => state.arrangeSelections[p.id] != null);
+  }
+
+  function resolveArranging(state) {
+    for (const p of activePlayers(state)) {
+      p.hand = state.arrangeSelections[p.id];
+    }
+    state.log.push("Everyone sets the order they'll reveal their 5 cards in.");
+    state.arrangeSelections = {};
     state.status = "betting2";
     startBettingRound(state);
   }
@@ -371,6 +395,9 @@ const RulesAnaconda = (function () {
     submitDiscard2,
     allDiscard2Submitted,
     resolveDiscard2,
+    submitArrangeOrder,
+    allArrangeSubmitted,
+    resolveArranging,
     getCurrentBettor,
     isBettingRoundOver,
     maxRaiseDollars,

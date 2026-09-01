@@ -82,13 +82,35 @@ const TableUIAnaconda = (function () {
     }
     const pendingKind = gvs.pending && gvs.pending.playerId === humanId ? gvs.pending.kind : null;
     if (pendingKind !== "discard1" && pendingKind !== "discard2") el.__discardSelection = [];
+    if (pendingKind !== "arrange") el.__arrangeOrder = [];
     const selected = el.__discardSelection || [];
+    const order = el.__arrangeOrder || [];
     el.humanHand.innerHTML = human.hand
       .map((c, i) => {
         const markup = cardMarkup(c, false);
+        if (pendingKind === "arrange") {
+          const position = order.indexOf(i);
+          // Same data-attribute/class-insertion approach as the discard
+          // selection below -- see its comment for why this can't just
+          // replace the `<div class="card` prefix.
+          let out = markup.replace("<div", `<div data-arrange-card="${i}"`);
+          if (position >= 0) {
+            out = out.replace('class="', 'class="card-beaten ');
+            out = out.replace("</div>", `<span class="order-tag">${position + 1}</span></div>`);
+          }
+          return out;
+        }
         if (!pendingKind) return markup;
         const isSelected = selected.includes(i);
-        return markup.replace('<div class="card', `<div data-discard-card="${i}" class="card${isSelected ? " card-beaten" : ""}"`);
+        // Inserting the data attribute after `<div` and the selection
+        // class at the FRONT of the existing class list (rather than
+        // replacing the whole `<div class="card` prefix, which used to
+        // prematurely close the class attribute right after "card" and
+        // silently drop card-red/card-black -- a real bug: every red card
+        // rendered black the moment a discard selection was in progress).
+        let out = markup.replace("<div", `<div data-discard-card="${i}"`);
+        if (isSelected) out = out.replace('class="', 'class="card-beaten ');
+        return out;
       })
       .join("");
   }
@@ -112,6 +134,15 @@ const TableUIAnaconda = (function () {
       el.actionPanel.innerHTML = `
         <div>${resultLine}</div>
         ${canDeal ? `<button id="deal-next-hand-btn">Deal next hand</button>` : `<div>You're out of chips for this hand. Buy more chips or cash out to continue.</div>`}
+      `;
+      return;
+    }
+    if (gvs.pending && gvs.pending.playerId === humanId && gvs.pending.kind === "arrange") {
+      const orderedCount = (el.__arrangeOrder || []).length;
+      const total = human.hand.length;
+      el.actionPanel.innerHTML = `
+        <div>Click your cards in the order you want to reveal them (1st reveal first) — ${orderedCount}/${total} placed.</div>
+        <button data-arrange-confirm ${orderedCount === total ? "" : "disabled"}>Confirm order</button>
       `;
       return;
     }
@@ -140,9 +171,50 @@ const TableUIAnaconda = (function () {
     el.actionPanel.innerHTML = `<div>Waiting for other players...</div>`;
   }
 
+  // Re-numbers every card's reveal-order badge in place after a click,
+  // rather than a full re-render -- same "patch the DOM directly" approach
+  // the discard-selection handler below already uses for snappy feedback.
+  function refreshArrangeBadges(el) {
+    const order = el.__arrangeOrder || [];
+    el.humanHand.querySelectorAll("[data-arrange-card]").forEach((cardEl) => {
+      const idx = Number(cardEl.getAttribute("data-arrange-card"));
+      const position = order.indexOf(idx);
+      const existingBadge = cardEl.querySelector(".order-tag");
+      if (position >= 0) {
+        cardEl.classList.add("card-beaten");
+        if (existingBadge) existingBadge.textContent = String(position + 1);
+        else {
+          const span = document.createElement("span");
+          span.className = "order-tag";
+          span.textContent = String(position + 1);
+          cardEl.appendChild(span);
+        }
+      } else {
+        cardEl.classList.remove("card-beaten");
+        if (existingBadge) existingBadge.remove();
+      }
+    });
+  }
+
   function wireActions(el, orchestrator) {
     el.__discardSelection = el.__discardSelection || [];
+    el.__arrangeOrder = el.__arrangeOrder || [];
     el.humanHand.onclick = (e) => {
+      const arrangeCardEl = e.target.closest("[data-arrange-card]");
+      if (arrangeCardEl) {
+        const idx = Number(arrangeCardEl.getAttribute("data-arrange-card"));
+        const order = el.__arrangeOrder;
+        const pos = order.indexOf(idx);
+        if (pos >= 0) order.splice(pos, 1);
+        else order.push(idx);
+        refreshArrangeBadges(el);
+        const total = el.humanHand.querySelectorAll("[data-arrange-card]").length;
+        const label = el.actionPanel.querySelector("div");
+        if (label) label.textContent = `Click your cards in the order you want to reveal them (1st reveal first) — ${order.length}/${total} placed.`;
+        const confirmBtn = el.actionPanel.querySelector("[data-arrange-confirm]");
+        if (confirmBtn) confirmBtn.disabled = order.length !== total;
+        return;
+      }
       const cardEl = e.target.closest("[data-discard-card]");
       if (!cardEl) return;
       const idx = Number(cardEl.getAttribute("data-discard-card"));
@@ -164,6 +236,11 @@ const TableUIAnaconda = (function () {
     el.actionPanel.onclick = (e) => {
       if (e.target.id === "deal-first-hand-btn") return orchestrator.startFirstHand();
       if (e.target.id === "deal-next-hand-btn") return orchestrator.dealNextHand();
+      if (e.target.hasAttribute("data-arrange-confirm")) {
+        const order = el.__arrangeOrder.slice();
+        el.__arrangeOrder = [];
+        return orchestrator.humanArrangeOrder(order);
+      }
       if (e.target.hasAttribute("data-discard-confirm")) {
         const indices = el.__discardSelection.slice();
         el.__discardSelection = [];
