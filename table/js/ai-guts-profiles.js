@@ -21,9 +21,39 @@ const GutsAIProfiles = (function () {
   // "stay in" stays a genuine, discriminating decision regardless of deal
   // size — without it, an escalating cycle with several bigger-handed
   // seats could statistically almost never reach a solo winner.
+  // Staying in and losing doesn't cost the ante that was already paid --
+  // it costs matching whatever the pot has ALREADY escalated to (games.md:
+  // every non-winning stayer matches the just-contested pot). A flat
+  // category bar was blind to that: a hand just barely worth an ante's
+  // worth of risk in round 1 is a much worse bet once the pot is already
+  // 8+ antes deep, since a loss now costs many times more than it did a
+  // couple of rounds ago. Reported directly: AI seats kept staying in
+  // against a big pot with nothing more than they'd have needed to stay in
+  // round 1.
+  //
+  // Deliberately CAPPED at +2: this is additive on top of
+  // gameConfig.categoryShift (Deep or Double Screw's own escalating-cycle
+  // convergence already depends on that shift being right, and 3-5-7
+  // Guts's shift=6 was only just empirically re-tuned for its own
+  // wildness) -- an uncapped pot-risk term would create a genuine new
+  // failure mode: a stalled cycle (nobody stays, so the pot just grows
+  // every round from fresh antes with no resolution) would make THIS
+  // term climb without bound too, permanently locking every profile out
+  // of ever clearing the bar again and guaranteeing the cycle can never
+  // resolve -- the same class of "cycle mathematically can't reach a
+  // solo winner" bug this project has hit before, just from a different
+  // cause. Scaled in "ante units" (pot / ante) rather than raw dollars so
+  // it behaves the same regardless of a game's own ante size.
+  function potRiskShift(state) {
+    const anteChips = ChipEconomy.dollarsToChips(state.anteDollars || 0.5);
+    if (anteChips <= 0) return 0;
+    const potInAntes = state.pot / anteChips;
+    return Math.min(2, Math.floor(potInAntes / 4));
+  }
+
   function decideStayIn(player, state, profile) {
     const hand = GutsRules.evaluateHand(state, player);
-    const shift = state.gameConfig.categoryShift || 0;
+    const shift = (state.gameConfig.categoryShift || 0) + potRiskShift(state);
     if (hand.category > HandEvaluator.CATEGORY.HIGH_CARD || shift > 0) {
       return hand.category >= profile.gutsMinCategoryToStay + shift;
     }
