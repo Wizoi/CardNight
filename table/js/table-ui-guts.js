@@ -125,7 +125,11 @@ const TableUIGuts = (function () {
         }
         const markup = cardMarkup(c, false);
         if (!pendingExchange) return markup;
-        return markup.replace('<div class="card', `<div data-exchange-card="${i}" class="card`);
+        // See table-ui-anaconda.js's identical fix -- replacing the whole
+        // `<div class="card` prefix used to prematurely close the class
+        // attribute right after "card", silently dropping card-red/
+        // card-black (every red card rendered black during an exchange).
+        return markup.replace("<div", `<div data-exchange-card="${i}"`);
       })
       .join("");
   }

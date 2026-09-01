@@ -88,7 +88,13 @@ const TableUIDrawPoker = (function () {
         const markup = cardMarkup(c, false);
         if (!pendingDraw) return markup;
         const isSelected = selected.includes(i);
-        return markup.replace('<div class="card', `<div data-draw-card="${i}" class="card${isSelected ? " card-beaten" : ""}"`);
+        // See table-ui-anaconda.js's identical fix -- replacing the whole
+        // `<div class="card` prefix used to prematurely close the class
+        // attribute right after "card", silently dropping card-red/
+        // card-black (every red card rendered black during a draw).
+        let out = markup.replace("<div", `<div data-draw-card="${i}"`);
+        if (isSelected) out = out.replace('class="', 'class="card-beaten ');
+        return out;
       })
       .join("");
   }
