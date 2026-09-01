@@ -10,7 +10,7 @@ const TableUIGuts = (function () {
     if (faceDown) return `<div class="card card-back"></div>`;
     const red = card.suit === "H" || card.suit === "D";
     const wildTag = card.isWild ? `<span class="wild-tag">W</span>` : "";
-    return `<div class="card ${red ? "card-red" : "card-black"}">${Deck.cardLabel(card)}${wildTag}</div>`;
+    return `<div class="card ${red ? "card-red" : "card-black"}">${Deck.cardFaceHtml(card)}${wildTag}</div>`;
   }
 
   function money(dollars) {
@@ -121,7 +121,7 @@ const TableUIGuts = (function () {
           const assigned = assignments[i];
           const red = c.suit === "H" || c.suit === "D";
           const tag = assigned === "left" ? `<span class="wild-tag">L</span>` : assigned === "right" ? `<span class="wild-tag">R</span>` : "";
-          return `<div data-pass-card="${i}" class="card ${red ? "card-red" : "card-black"}${assigned ? " card-beaten" : ""}">${Deck.cardLabel(c)}${tag}</div>`;
+          return `<div data-pass-card="${i}" class="card ${red ? "card-red" : "card-black"}${assigned ? " card-beaten" : ""}">${Deck.cardFaceHtml(c)}${tag}</div>`;
         }
         const markup = cardMarkup(c, false);
         if (!pendingExchange) return markup;

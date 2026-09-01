@@ -526,7 +526,7 @@
       .map((entry) => {
         if (entry.revealed) {
           const red = entry.card.suit === "H" || entry.card.suit === "D";
-          return `<div class="card ${red ? "card-red" : "card-black"}">${Deck.cardLabel(entry.card)}</div>`;
+          return `<div class="card ${red ? "card-red" : "card-black"}">${Deck.cardFaceHtml(entry.card)}</div>`;
         }
         if (state.status !== "complete" && !humanAlreadyClaimed) {
           return `<div class="card card-back cutfordeal-clickable" data-cutfordeal-slot="${entry.slotIndex}"></div>`;
@@ -537,7 +537,7 @@
     const resultsMarkup = eligiblePlayers
       .map((player) => {
         const entry = round.find((e) => e.seatId === player.id);
-        const drawn = entry ? `<div class="card ${entry.card.suit === "H" || entry.card.suit === "D" ? "card-red" : "card-black"}">${Deck.cardLabel(entry.card)}</div>` : `<div class="cutfordeal-waiting">…</div>`;
+        const drawn = entry ? `<div class="card ${entry.card.suit === "H" || entry.card.suit === "D" ? "card-red" : "card-black"}">${Deck.cardFaceHtml(entry.card)}</div>` : `<div class="cutfordeal-waiting">…</div>`;
         return `
           <div class="cutfordeal-result-row">
             <div class="cutfordeal-seat-name">${player.name}${player.isHuman ? " (you)" : ""}</div>

@@ -12,7 +12,7 @@ const TableUIStud = (function () {
     const red = card.suit === "H" || card.suit === "D";
     const wildTag = card.isWild || card.bought ? `<span class="wild-tag">W</span>` : "";
     const extraClass = beaten ? " card-beaten" : "";
-    return `<div class="card ${red ? "card-red" : "card-black"}${extraClass}">${Deck.cardLabel(card)}${wildTag}</div>`;
+    return `<div class="card ${red ? "card-red" : "card-black"}${extraClass}">${Deck.cardFaceHtml(card)}${wildTag}</div>`;
   }
 
   function money(dollars) {
@@ -22,6 +22,14 @@ const TableUIStud = (function () {
   function renderSeats(el, gvs, debugMode, activeQuip) {
     const currentBettorId = gvs.state && gvs.state.bettingRound ? StudRules.getCurrentBettor(gvs.state) : null;
     const peekAi = debugMode && gvs.state;
+    // Down cards stay hidden all hand, but once the hand is complete every
+    // non-folded player's hand is turned face up -- same showdown-reveal
+    // convention rules-community-stud.js/rules-holdem.js's own table-ui
+    // files already use. Reported 2026-08-31 (a live Follow the Queen hand
+    // ended "won with 5s over 3s" with no way to see or verify anyone's
+    // hole cards, human included) -- this family previously never revealed
+    // hole cards at showdown at all.
+    const revealed = gvs.state && gvs.state.status === "complete";
     el.seats.innerHTML = gvs.players
       .map((p, i) => {
         const isDealer = i === gvs.dealerIndex;
@@ -38,11 +46,15 @@ const TableUIStud = (function () {
             : "";
         const showPeek = peekAi && !p.isHuman;
         let debugLine = "";
-        if (showPeek && gvs.state && !p.folded) {
+        if (showPeek && gvs.state && !revealed && !p.folded) {
           const showing = StudRules.evaluateShowingHand(gvs.state, p.id);
           const streetsLeft = StudRules.streetsRemaining(gvs.state);
           debugLine = `<div class="seat-debug">AI reasons from: ${HandEvaluator.describe(showing)}, ${streetsLeft} street(s) left</div>`;
         }
+        const cardsMarkup =
+          revealed && !p.folded
+            ? faceUp.map((c) => cardMarkup(c, false)).join("") + faceDown.map((c) => cardMarkup(c, false)).join("")
+            : faceUp.map((c) => cardMarkup(c, false)).join("") + faceDown.map(() => cardMarkup(null, true)).join("");
         return `
           <div class="seat ${p.folded ? "seat-folded" : ""} ${isTurn ? "seat-active" : ""}">
             ${quipMarkup}
@@ -50,8 +62,7 @@ const TableUIStud = (function () {
             <div class="seat-name">${isDealer ? '<span class="dealer-badge" title="Dealer">D</span> ' : ""}${p.name}${profileBadge}</div>
             <div class="seat-chips">${money(ChipEconomy.chipsToDollars(p.wallet.chips))}</div>
             <div class="seat-cards">
-              ${faceUp.map((c) => cardMarkup(c, false)).join("")}
-              ${faceDown.map(() => cardMarkup(null, true)).join("")}
+              ${cardsMarkup}
             </div>
             ${debugLine}
             ${p.folded ? '<div class="seat-status">Folded</div>' : ""}
@@ -83,9 +94,10 @@ const TableUIStud = (function () {
             .map((c, i) => `${cardMarkup(c, false)} ${money(StudRules.currentEnterprisePriceDollars(gvs.state, i))}`)
             .join(" &nbsp; ")}</div>`
         : "";
+    const potChips = typeof gvs.state.potAtShowdown === "number" ? gvs.state.potAtShowdown : gvs.state.pot;
     el.boardHand.innerHTML = `
       <div><strong>Best showing hand:</strong> ${holder ? `${HandEvaluator.describe(best.hand)} (held by ${holder.name})` : "None yet"}</div>
-      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(gvs.state.pot))}</div>
+      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potChips))}</div>
       ${tableCardsLine}
       ${enterprisePileLine}
     `;
@@ -107,13 +119,21 @@ const TableUIStud = (function () {
       return;
     }
     if (gvs.state.status === "complete") {
-      const winner = gvs.state.winnerId ? StudRules.getPlayer(gvs.state, gvs.state.winnerId) : null;
       const canDeal = orchestrator.canDealNextHand();
-      const resultLine = gvs.state.rainedOut
-        ? "Rained out! The pot carries forward to the next hand."
-        : winner
-        ? `${winner.name} won the hand.`
-        : "Hand over.";
+      const potLine = money(ChipEconomy.chipsToDollars(typeof gvs.state.potAtShowdown === "number" ? gvs.state.potAtShowdown : gvs.state.pot));
+      let resultLine;
+      if (gvs.state.rainedOut) {
+        resultLine = "Rained out! The pot carries forward to the next hand.";
+      } else if (gvs.state.lowWinnerIds && gvs.state.lowWinnerIds.length > 0) {
+        const highNames = gvs.state.highWinnerIds.map((id) => StudRules.getPlayer(gvs.state, id).name).join(", ");
+        const lowNames = gvs.state.lowWinnerIds.map((id) => StudRules.getPlayer(gvs.state, id).name).join(", ");
+        resultLine = `${potLine} pot — High: ${highNames} (${gvs.state.bestHighDescribed}). Low Chicago: ${lowNames} (${gvs.state.bestLowCardLabel}).`;
+      } else {
+        const winner = gvs.state.winnerId ? StudRules.getPlayer(gvs.state, gvs.state.winnerId) : null;
+        resultLine = winner
+          ? `${winner.name} wins the ${potLine} pot${gvs.state.bestHighDescribed ? ` with ${gvs.state.bestHighDescribed}` : ""}.`
+          : "Hand over.";
+      }
       el.actionPanel.innerHTML = `
         <div>${resultLine}</div>
         ${canDeal ? `<button id="deal-next-hand-btn">Deal next hand</button>` : `<div>You're out of chips for this hand. Buy more chips or cash out to continue.</div>`}

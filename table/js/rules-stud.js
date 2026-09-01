@@ -569,6 +569,7 @@ const StudRules = (function () {
         winnerId = p.id;
       }
     }
+    if (bestHand) state.bestHighDescribed = HandEvaluator.describe(bestHand);
     completeHand(state, winnerId);
   }
 
@@ -627,6 +628,8 @@ const StudRules = (function () {
     state.winnerId = highWinnerIds[0] || null; // back-compat single-winner field, same convention rules-holdem.js uses
     state.highWinnerIds = highWinnerIds;
     state.lowWinnerIds = lowWinnerIds;
+    state.bestHighDescribed = HandEvaluator.describe(bestHigh);
+    state.bestLowCardLabel = bestLowCard ? Deck.cardLabel(bestLowCard.card) : null;
 
     if (lowWinnerIds.length > 0) {
       const lowHalf = Math.floor(potChips / 2);

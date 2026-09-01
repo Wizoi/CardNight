@@ -13,7 +13,7 @@ const TableUIMidnightBaseball = (function () {
     const red = card.suit === "H" || card.suit === "D";
     const wildTag = card.isWild || card.bought ? `<span class="wild-tag">W</span>` : "";
     const extraClass = `${peek ? " card-peek" : ""}${beaten ? " card-beaten" : ""}`;
-    return `<div class="card ${red ? "card-red" : "card-black"}${extraClass}">${Deck.cardLabel(card)}${wildTag}</div>`;
+    return `<div class="card ${red ? "card-red" : "card-black"}${extraClass}">${Deck.cardFaceHtml(card)}${wildTag}</div>`;
   }
 
   function money(dollars) {

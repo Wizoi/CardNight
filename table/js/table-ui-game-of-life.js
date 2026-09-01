@@ -7,9 +7,9 @@
 const TableUIGameOfLife = (function () {
   function cardMarkup(card, faceDown) {
     if (faceDown) return `<div class="card card-back"></div>`;
-    if (card.rank === "JOKER") return `<div class="card card-black">${Deck.cardLabel(card)}<span class="wild-tag">W</span></div>`;
+    if (card.rank === "JOKER") return `<div class="card card-black">${Deck.cardFaceHtml(card)}<span class="wild-tag">W</span></div>`;
     const red = card.suit === "H" || card.suit === "D";
-    return `<div class="card ${red ? "card-red" : "card-black"}">${Deck.cardLabel(card)}</div>`;
+    return `<div class="card ${red ? "card-red" : "card-black"}">${Deck.cardFaceHtml(card)}</div>`;
   }
 
   function money(dollars) {

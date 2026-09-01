@@ -10,7 +10,7 @@ const TableUICommunityStud = (function () {
     if (faceDown) return `<div class="card card-back"></div>`;
     const red = card.suit === "H" || card.suit === "D";
     const wildTag = card.isWild ? `<span class="wild-tag">W</span>` : "";
-    return `<div class="card ${red ? "card-red" : "card-black"}">${Deck.cardLabel(card)}${wildTag}</div>`;
+    return `<div class="card ${red ? "card-red" : "card-black"}">${Deck.cardFaceHtml(card)}${wildTag}</div>`;
   }
 
   function money(dollars) {

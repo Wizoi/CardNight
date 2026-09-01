@@ -50,6 +50,21 @@ const Deck = (function () {
     return `${card.rank}${SUIT_SYMBOLS[card.suit] || card.suit}`;
   }
 
+  // The visible face of a card rendered on the table (used by every
+  // table-ui-*.js's own cardMarkup) -- deliberately separate from
+  // cardLabel(), which stays a single inline string for log/sentence text
+  // ("Flipped wildcard: 10♥."). Stacks rank above suit symbol so both can
+  // render at a larger, equally-legible font-size without widening the
+  // card; a 2-character rank ("10") gets `card-rank-wide` so the shared
+  // stylesheet can squeeze it horizontally (scaleX) rather than shrinking
+  // its font-size, which would otherwise make "10" look shorter than every
+  // other rank instead of just narrower.
+  function cardFaceHtml(card) {
+    if (card.rank === "JOKER") return "Joker";
+    const rankClass = card.rank.length > 1 ? "card-rank card-rank-wide" : "card-rank";
+    return `<span class="${rankClass}">${card.rank}</span><span class="card-suit">${SUIT_SYMBOLS[card.suit] || card.suit}</span>`;
+  }
+
   // Draws one card from pile.deck, reshuffling pile.discardPile back in as a
   // fresh draw source once the deck runs dry (mutates both arrays on the
   // passed-in pile object). Any object with `deck`/`discardPile` array
@@ -67,5 +82,5 @@ const Deck = (function () {
     return { card: pile.deck.shift(), reshuffled };
   }
 
-  return { SUITS, SUIT_SYMBOLS, RANKS, RANK_VALUES, buildDeck, shuffle, cardLabel, drawWithReshuffle };
+  return { SUITS, SUIT_SYMBOLS, RANKS, RANK_VALUES, buildDeck, shuffle, cardLabel, cardFaceHtml, drawWithReshuffle };
 })();

@@ -671,14 +671,43 @@ fieldset {
   height: 46px;
   border-radius: 6px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  line-height: 1;
+  font-size: 1.15rem;
   font-weight: 700;
   position: relative;
   background: var(--card-bg);
   color: var(--ink);
   border: 1px solid var(--card-border);
+}
+
+/* Rank stacked above suit symbol, each big enough to read at a glance --
+   replaced a single inline "K♥"/"10♠" string that had to shrink to fit
+   both characters on one line. Sized in em against .card's own font-size
+   so every existing `.card { font-size: X }` override (the cut-for-deal
+   fan/result cards) scales both spans together automatically, same as it
+   scaled the old single string. The suit needs a much bigger em size than
+   the rank -- Segoe UI's ♠♥♦♣ glyphs occupy only a small fraction of
+   their own em box (lots of built-in whitespace), so a 1em suit reads as
+   tiny and oddly padded next to a full-size rank letter; 1.7em is what it
+   takes for the glyph's actual visible ink to match the rank's size. */
+.card-rank {
+  font-size: 0.85em;
+  display: inline-block;
+}
+
+/* A 2-character rank ("10") is squeezed horizontally instead of shrunk,
+   so every rank reads at the same height regardless of digit count. */
+.card-rank-wide {
+  transform: scaleX(0.78);
+}
+
+.card-suit {
+  font-size: 1.7em;
+  font-weight: 400;
+  margin-top: -0.05em;
 }
 
 .card-back {

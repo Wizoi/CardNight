@@ -7,7 +7,7 @@ const TableUIAceyDucey = (function () {
   function cardMarkup(card) {
     if (!card) return `<div class="card card-back"></div>`;
     const red = card.suit === "H" || card.suit === "D";
-    return `<div class="card ${red ? "card-red" : "card-black"}">${Deck.cardLabel(card)}</div>`;
+    return `<div class="card ${red ? "card-red" : "card-black"}">${Deck.cardFaceHtml(card)}</div>`;
   }
 
   function money(dollars) {
