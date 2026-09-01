@@ -81,12 +81,27 @@ const GutsRules = (function () {
       p.folded = false;
     }
 
+    // A game WITH a passing step reveals its optional flip-up wildcard(s)
+    // only AFTER everyone's already passed (2026-08-31, clarified house
+    // rule) -- passing decisions have to be made without knowing what the
+    // extra wild rank will be, same as nobody knows their post-pass hand
+    // yet either. Games with no passing step at all (3 Buy 5, Four-Two-
+    // Two) have no such timing to preserve, so they still reveal
+    // immediately at deal time. The cards themselves are still drawn now
+    // (so the deck cursor for the dummy hand/remaining deck stays
+    // deterministic) -- only WHEN their rank actually becomes wild and
+    // gets logged is deferred; see resolvePassingFromSelections below.
     let wildRanks = (gameConfig.wildRanks || []).slice();
     let flippedWildcards = [];
+    let flipWildcardsPending = false;
     if (gameConfig.flipWildcardCount) {
       flippedWildcards = deck.slice(cursor, cursor + gameConfig.flipWildcardCount).map((c) => ({ rank: c.rank, suit: c.suit }));
       cursor += gameConfig.flipWildcardCount;
-      wildRanks = wildRanks.concat(flippedWildcards.map((c) => c.rank));
+      if (gameConfig.passing) {
+        flipWildcardsPending = true;
+      } else {
+        wildRanks = wildRanks.concat(flippedWildcards.map((c) => c.rank));
+      }
     }
 
     // Deep or Double Screw's optional dealer's-choice dummy hand: another
@@ -115,6 +130,7 @@ const GutsRules = (function () {
       discardPile: [], // exchanged-away cards from buyExchange -- see there
       wildRanks,
       flippedWildcards,
+      flipWildcardsPending,
       dummyHand,
       passCounts,
       passSelections: {},
@@ -132,8 +148,10 @@ const GutsRules = (function () {
     };
     state.pot += BettingEngine.collectAntes(players, state.anteDollars);
     state.log.push(`Ante: $${state.anteDollars.toFixed(2)} each from ${players.length} players — pot starts at $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)}.`);
-    if (flippedWildcards.length) {
+    if (flippedWildcards.length && !flipWildcardsPending) {
       state.log.push(`Flipped wildcard${flippedWildcards.length > 1 ? "s" : ""}: ${flippedWildcards.map((c) => Deck.cardLabel(c)).join(", ")}.`);
+    } else if (flipWildcardsPending) {
+      state.log.push(`${flippedWildcards.length > 1 ? "Extra flip-up wildcards are" : "An extra flip-up wildcard is"} face down until everyone's passed.`);
     }
     if (dummyHand) {
       state.log.push("A dummy hand is in play — anyone who stays in has to beat it too.");
@@ -196,6 +214,13 @@ const GutsRules = (function () {
     });
     state.status = "declaring";
     state.log.push(`Cards passed: ${state.passCounts.left} left, ${state.passCounts.right} right, all around the table.`);
+    if (state.flipWildcardsPending) {
+      state.flipWildcardsPending = false;
+      state.wildRanks = state.wildRanks.concat(state.flippedWildcards.map((c) => c.rank));
+      state.log.push(
+        `Flipped wildcard${state.flippedWildcards.length > 1 ? "s" : ""}: ${state.flippedWildcards.map((c) => Deck.cardLabel(c)).join(", ")}.`
+      );
+    }
   }
 
   function submitStayDecision(state, playerId, stayingIn) {
