@@ -254,10 +254,35 @@ const StudRules = (function () {
     }
 
     let needsDecision = null;
-    if (!rainedOut && !eliminatedPlayerId && card.faceUp && state.gameConfig.wildcards) {
-      if (card.rank === "3") needsDecision = "buy3";
-      else if (card.rank === "9") needsDecision = "buy9";
-      else if (card.rank === "4") needsDecision = "buy4";
+    if (!rainedOut && !eliminatedPlayerId && state.gameConfig.wildcards) {
+      if (card.rank === "3" || card.rank === "9") {
+        if (card.faceUp) {
+          needsDecision = card.rank === "3" ? "buy3" : "buy9";
+        } else {
+          // A face-down 3/9 is a hole card nobody else at the table can
+          // see -- there's no informational reason to charge for making
+          // it wild the way a face-up buy does (that price is for
+          // changing what OPPONENTS see about your hand). Reported
+          // directly: "a face down 3 or 9 is a free wild. Any wild card
+          // where you'd have to pay for it elsewhere is free if it is
+          // face down (queens as well, as in follow the queen)" --
+          // Follow the Queen's rolling wildcard already works this way
+          // (isCardWild's rollingWildcard check has no faceUp condition
+          // at all), so this makes the baseball family's bought-wildcard
+          // mechanic consistent with it instead of silently leaving a
+          // hidden 3/9 as a plain, never-wild card for the rest of the
+          // hand. Doesn't apply to Midnight Baseball's own buy3/buy9 (a
+          // face-down card there never enters hand evaluation at all
+          // until the player's own self-reveal turn flips it face up,
+          // which is exactly when its buy decision already fires) or to
+          // the 4-bonus-buy (a different mechanic -- purchasing an EXTRA
+          // card, not designating the current one wild -- that games.md
+          // doesn't extend this free-when-hidden rule to).
+          card.isWild = true;
+        }
+      } else if (card.faceUp && card.rank === "4") {
+        needsDecision = "buy4";
+      }
     }
     return { playerId, card, needsDecision, rainedOut, eliminatedPlayerId };
   }
