@@ -325,11 +325,10 @@ Dealer's choice to add 1 or 2 Jokers into the deck as extra wildcards for the ni
 
 - **Pair of Jacks, Trips to Win** — our one 5-card draw game; a Joker in your dealt hand (or drawn later) is wild like any other card.
 - **Cincinnati** and **Criss Cross** — both build a 5-card hand from hole cards plus a community spread, and neither has a fixed wildcard by default.
-- **Free Enterprise** — its only house twist is the "wipe" mechanic (paying to discard and replace a card); it has no wildcard rule at all, so a Joker fits cleanly.
 - **Anaconda** — no wildcard mechanic at all, just the pass-and-discard structure; a Joker slots in the same way it would in any other no-wild game.
 - **Game of Life** — no wildcard rule (its "bad-card" effect discards/poisons ranks, it doesn't make anything wild); a Joker dealt into your hand or drafted from the good row is wild like any other card.
 
-It doesn't fit games that already have a dedicated wildcard scheme baked in — the Guts games, the Baseball family, Follow the Queen, Mexican Sweat — since stacking a Joker on top would double up rather than cleanly slot in. **Omaha / Seattle / Boise / Jersey Hold'em** also has no wildcard rule by default, but it's deliberately left off this list — the strict hand-construction ratios (exactly 2-from-hand-3-from-board, etc.) make a Joker in a hole card awkward to resolve cleanly, unlike the open "best 5 of what you're holding" evaluation the games above use. Worth revisiting if the group actually wants to try it.
+It doesn't fit games that already have a dedicated wildcard scheme baked in — the Guts games, the Baseball family, Follow the Queen, Mexican Sweat — since stacking a Joker on top would double up rather than cleanly slot in. **Free Enterprise** was reconsidered and dropped from this list too (2026-09-02) — its "wipe" mechanic has no fixed wildcard rule, technically leaving room for one, but the user's call was that a Joker doesn't belong there regardless. **Omaha / Seattle / Boise / Jersey Hold'em** also has no wildcard rule by default, but it's deliberately left off this list — the strict hand-construction ratios (exactly 2-from-hand-3-from-board, etc.) make a Joker in a hole card awkward to resolve cleanly, unlike the open "best 5 of what you're holding" evaluation the games above use. Worth revisiting if the group actually wants to try it.
 
 ## House rule: chips & betting
 

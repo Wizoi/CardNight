@@ -118,7 +118,6 @@ const GameRegistry = (function () {
           ],
           default: FREE_ENTERPRISE_STANDARD_PRICES,
         },
-        JOKER_COUNT_VARIANT_OPTION,
       ],
       createOrchestrator: (config) => SessionStud.create({ ...config, gameConfig: applyVariants(FREE_ENTERPRISE_CONFIG, config.variantChoices) }),
     },
