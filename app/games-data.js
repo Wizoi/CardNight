@@ -459,7 +459,7 @@ const GAMES = [
     before: [],
     betting: `Ante 50¢, 25¢ raise increment, $2 max bet per person (house default).`,
     setup: `Deal all cards face down to each player — no up cards during the deal itself. Flip an initial reference card that the first player must try to beat.`,
-    gameplay: `3s and 9s are wild if bought ($3 mandatory for a 3, $2 for a 9). Dealing a 4 lets you buy an extra card for $1. On your turn, turn your own cards face up one at a time, building your best baseball hand, until you beat the current highest showing hand or run out of cards. Once you stop, everyone bets — even if you ran out without beating the board and are thereby eliminated.`,
+    gameplay: `3s and 9s are wild if bought ($3 mandatory for a 3, $2 for a 9). Dealing a 4 lets you buy an extra card for $1. On your turn, turn your own cards face up one at a time, building your best baseball hand, until you beat the current highest showing hand or run out of cards. A betting round follows every turn.`,
     win: `Whoever holds the top hand after everyone's gone through their cards.`,
     keyDecisions: [
       "How far to keep turning cards before you've beaten the board (you must at least try)",
@@ -471,7 +471,7 @@ const GAMES = [
       "3s and 9s are only wild if bought",
       "Turning up a 4 lets that player buy a bonus card for $1",
     ],
-    script: `Everything's dealt face down. I'll flip a reference card to start — on your turn, flip your own cards one at a time until you either beat the best hand showing or run out. Either way, once you stop, we bet — even if you ran out and you're eliminated. 3s and 9s are wild if you buy them: $3 mandatory for a three, $2 for a nine. Turn up a 4 and you can buy a bonus card for a buck. Last one standing with the best hand wins.`,
+    script: `Everything's dealt face down. I'll flip a reference card to start — on your turn, flip your own cards one at a time until you either beat the best hand showing or run out. We bet after every turn. 3s and 9s are wild if you buy them: $3 mandatory for a three, $2 for a nine. Turn up a 4 and you can buy a bonus card for a buck. Last one standing with the best hand wins.`,
   },
   {
     id: "omaha-seattle-boise-jersey-holdem",
