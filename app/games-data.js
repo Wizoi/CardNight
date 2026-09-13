@@ -388,16 +388,17 @@ const GAMES = [
     },
     betting: `Ante 50¢, 25¢ raise increment, $2 max bet per person (house default).`,
     setup: `Deal 2 cards down to start. From then on nobody's dealt a card directly — every remaining card (count adjusts to tonight's player count, see above) comes from a turn at the shared Enterprise pile instead.`,
-    gameplay: `A shared spread of 3 face-up cards sits on the table, drawn from the deck. On your turn, do exactly one of: buy one of the 3 showing cards (priced by position — $1/$2/$3, or the cheaper scale) and it stays face up since the table already saw it; wipe the whole pile (discard all 3, deal 3 fresh ones), then immediately buy one of the new 3 or take a free card instead; or skip the pile and take a free card off the top of the deck, dealt face down since nobody's seen it. The pile refills back to 3 the instant a card leaves it. Wiped-out and folded players' cards go into a shared discard pool, reshuffled in only once the deck itself runs dry. Betting is based on the highest showing card(s).`,
+    gameplay: `A shared spread of 3 face-up cards sits on the table, drawn from the deck. On your turn, do exactly one of: buy one of the 3 showing cards (priced by position — $1/$2/$3, or the cheaper scale) and it stays face up since the table already saw it; wipe the whole pile for a flat $1 (always $1, whichever price scale is in play, unaffected by the final round's doubled buy prices) — discards all 3, deals 3 fresh ones, then immediately buy one of the new 3 or take a free card instead; or skip the pile and take a free card off the top of the deck, dealt face down since nobody's seen it. The pile refills back to 3 the instant a card leaves it. Wiped-out and folded players' cards go into a shared discard pool, reshuffled in only once the deck itself runs dry. Betting is based on the highest showing card(s).`,
     win: `Best hand at showdown wins.`,
     keyDecisions: [
-      "Buy from the pile, wipe it for a fresh 3, or take a free (face-down) card instead — every round",
+      "Buy from the pile, wipe it for a fresh 3 ($1 flat fee), or take a free (face-down) card instead — every round",
     ],
     repeats: [
       "The pile always shows exactly 3 cards, priced $1/$2/$3 (or the cheaper scale) by position",
-      "The last round the pile is used, all three prices double",
+      "The last round the pile is used, all three BUY prices double — the $1 wipe fee stays flat",
+      "Wiping always costs $1, regardless of which price scale is in play",
     ],
-    script: `Two down to start. After that, nobody gets dealt a card directly — you take your turn at the pile in the middle: three cards face up, priced $1, $2, and $3 left to right. Buy one and it stays face up, since we all just saw it. Or wipe the whole pile for three fresh ones and then buy or draw free from there. Or skip the pile entirely and take a free card off the deck — that one's face down, since nobody's seen it. Last round we use the pile, all three prices double. Best hand showing bets first; best hand at the end wins.`,
+    script: `Two down to start. After that, nobody gets dealt a card directly — you take your turn at the pile in the middle: three cards face up, priced $1, $2, and $3 left to right. Buy one and it stays face up, since we all just saw it. Or pay a flat dollar to wipe the whole pile for three fresh ones and then buy or draw free from there. Or skip the pile entirely and take a free card off the deck — that one's face down, since nobody's seen it. Last round we use the pile, the three buy prices double, but wiping's still just a dollar. Best hand showing bets first; best hand at the end wins.`,
   },
   {
     id: "game-of-life",

@@ -213,7 +213,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 - **Deal:** 2 down cards dealt normally to start. From then on, players don't get a card dealt directly — each round is a turn at the Enterprise pile (below), one per player, for as many rounds as the table's player count allows (5 more rounds/7 cards total at 5–7 players, 4 more rounds/6 cards total at a full 8-player table, same scaling as the rest of the stud family).
 - **The Enterprise pile:** A shared spread of 3 face-up cards sits on the table, dealt from the top of the deck. On their turn, a player does exactly one of:
   - **Buy** one of the 3 showing cards — priced by its position in the spread: $1 / $2 / $3 (dealer's choice of a cheaper $0.50 / $1 / $1.50 scale instead). Stays face up — it was already visible in the pile.
-  - **Wipe** the pile — discard all 3 showing cards and deal 3 fresh ones from the deck — then immediately buy one of the *new* 3, or take a free card instead (see next).
+  - **Wipe** the pile for a flat $1 — always $1, regardless of which position-price scale is in play (dealer's-choice cheap scale or not) and unaffected by the final round's doubled buy prices — discard all 3 showing cards and deal 3 fresh ones from the deck, then immediately buy one of the *new* 3, or take a free card instead (see next).
   - **Take a free card** off the top of the deck, skipping the pile (and its price) entirely. Dealt face down — nobody's seen it.
 
   The pile is topped back up to 3 (from the deck) the moment any card leaves it, so it's always showing exactly 3 between turns. Wiped-out cards and any folded players' cards go into a shared discard pool, reshuffled into a fresh deck only once the top-of-deck supply actually runs out.

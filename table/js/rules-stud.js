@@ -327,16 +327,28 @@ const StudRules = (function () {
     state.log.push(`${player.name} buys the ${Deck.cardLabel(chosen)} from the pile for $${priceDollars.toFixed(2)}.`);
   }
 
-  // Wiping is free -- it just discards the current 3 and deals a fresh 3.
-  // It doesn't resolve the player's own card for this round by itself; the
-  // caller must follow up with resolveEnterpriseBuy or resolveEnterpriseFree
-  // against the new pile (a player can only wipe once per turn, so the
-  // follow-up never offers "wipe" again).
-  function resolveEnterpriseWipe(state) {
+  // Wiping costs a flat $1 -- always, regardless of which position-price
+  // scale is in play (the standard $1/$2/$3 or the cheaper $0.50/$1/$1.50
+  // dealer's-choice variant) and regardless of the final round's doubled
+  // buy prices; it's a separate, unscaled fee from the position-based buy
+  // prices entirely. Reported directly (2026-09-14) after the user noticed
+  // wiping was actually free in play -- a real gap, not a judgment call:
+  // games.md's own text never said "free," it just never stated a wipe
+  // price at all, and the original build filled that silence with "no
+  // charge" instead of asking. It doesn't resolve the player's own card for
+  // this round by itself; the caller must follow up with
+  // resolveEnterpriseBuy or resolveEnterpriseFree against the new pile (a
+  // player can only wipe once per turn, so the follow-up never offers
+  // "wipe" again).
+  const ENTERPRISE_WIPE_PRICE_DOLLARS = 1;
+  function resolveEnterpriseWipe(state, playerId) {
+    const player = getPlayer(state, playerId);
+    const { paid } = ChipEconomy.pay(player.wallet, ChipEconomy.dollarsToChips(ENTERPRISE_WIPE_PRICE_DOLLARS));
+    state.pot += paid;
     state.discardPile.push(...state.enterprisePile.map((c) => ({ rank: c.rank, suit: c.suit })));
     state.enterprisePile = [];
     refillEnterprisePile(state);
-    state.log.push("The Enterprise pile is wiped — 3 fresh cards dealt.");
+    state.log.push(`${player.name} wipes the Enterprise pile for $${ENTERPRISE_WIPE_PRICE_DOLLARS.toFixed(2)} — 3 fresh cards dealt.`);
   }
 
   // Skipping the pile for a free card off the top of the deck -- dealt

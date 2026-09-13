@@ -158,7 +158,7 @@ const SessionStud = (function () {
       if (action === "buy") {
         StudRules.resolveEnterpriseBuy(state, playerId, position);
       } else if (action === "wipe") {
-        StudRules.resolveEnterpriseWipe(state);
+        StudRules.resolveEnterpriseWipe(state, playerId);
       } else if (action === "free") {
         StudRules.resolveEnterpriseFree(state, playerId);
       }

@@ -25,9 +25,7 @@ const StudAIProfiles = (function () {
   // cards, unlike Midnight Baseball's self-reveal convention, so this isn't
   // peeking). Picks the CHEAPEST pile position that actually improves the
   // hand's category, ties broken toward cheaper -- a rational buyer
-  // wouldn't pay more for an equally-good option. If nothing in the
-  // current pile helps, wiping is free (nothing to lose), so that's always
-  // the fallback rather than paying for a card that doesn't help.
+  // wouldn't pay more for an equally-good option.
   function bestEnterprisePileChoice(player, pile) {
     const asCards = (cards) => cards.map((c) => ({ rank: c.rank, suit: c.suit, isWild: false }));
     const withoutCard = HandEvaluator.evaluatePartial(asCards(player.hand));
@@ -44,6 +42,13 @@ const StudAIProfiles = (function () {
 
   // Whether the player can even afford this position's price factors in
   // too -- no point "wanting" a card priced above what's left in the wallet.
+  // Wiping now costs a flat $1 (2026-09-14 fix -- it used to be free, which
+  // is why "nothing in the pile helps, so wipe" used to be an unconditional
+  // fallback with nothing to lose). A disciplined profile
+  // (buyWildOnlyOnCategoryGain, the same "skip a marginal gamble" flag 3 Buy
+  // 5's exchange decision already uses) takes the guaranteed-free card
+  // instead of paying $1 to reshuffle the pile on a hand that isn't there
+  // yet; a looser profile still pays for another shot, same as before.
   function decideEnterpriseChoice(player, state, profile) {
     const bestPosition = bestEnterprisePileChoice(player, state.enterprisePile);
     if (bestPosition != null) {
@@ -52,7 +57,9 @@ const StudAIProfiles = (function () {
         return { action: "buy", position: bestPosition };
       }
     }
-    return { action: "wipe" };
+    const canAffordWipe = player.wallet.chips >= ChipEconomy.dollarsToChips(1);
+    if (canAffordWipe && !profile.buyWildOnlyOnCategoryGain) return { action: "wipe" };
+    return { action: "free" };
   }
 
   // Re-run against the fresh pile after a wipe -- can't wipe a second time

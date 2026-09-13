@@ -172,7 +172,7 @@ const TableUIStud = (function () {
           return `<button data-enterprise-buy="${i}">Buy ${Deck.cardLabel(c)} (${money(priceDollars)})</button>`;
         })
         .join("");
-      const wipeButton = gvs.pending.kind === "enterprisePile" ? `<button data-enterprise-wipe>Wipe the pile (free)</button>` : "";
+      const wipeButton = gvs.pending.kind === "enterprisePile" ? `<button data-enterprise-wipe>Wipe the pile ($1.00)</button>` : "";
       el.actionPanel.innerHTML = `
         <div>Buy a card from the Enterprise pile, ${gvs.pending.kind === "enterprisePile" ? "wipe it for a fresh 3, " : ""}or take a free card face down.</div>
         ${buyButtons}
