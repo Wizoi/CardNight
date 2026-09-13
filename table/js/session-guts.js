@@ -52,6 +52,13 @@ const SessionGuts = (function () {
       passSelectionSoFar = config.resumeFrom.extra.passSelectionSoFar || null;
       lastQuip = config.resumeFrom.extra.lastQuip;
       quipSeq = config.resumeFrom.extra.quipSeq;
+      // Real bug, found live (2026-09-14): several of this family's configs
+      // (dealSize/passing) have FUNCTION-valued fields that JSON.stringify
+      // silently drops across the localStorage round-trip -- re-attach the
+      // real, never-serialized gameConfig object rather than the
+      // deserialized one, which would crash the next AI/human decision that
+      // calls one of those functions.
+      if (state) state.gameConfig = gameConfig;
       if (state && state.status !== "complete" && !pending) {
         if (exchangeQueue.length) processExchangeLoop();
         else if (state.status === "passing") processPassingLoop();

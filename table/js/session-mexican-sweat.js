@@ -40,6 +40,13 @@ const SessionMexicanSweat = (function () {
       quipSeq = config.resumeFrom.extra.quipSeq;
       if (state) {
         state.opponentStats = opponentStats;
+        // Real bug, found live (2026-09-14) in a sibling family: JSON.
+        // stringify silently drops any FUNCTION-valued gameConfig field
+        // across the localStorage round-trip this resume snapshot goes
+        // through -- re-attach the real, never-serialized gameConfig object
+        // instead of the deserialized one, cheap insurance even though this
+        // particular config is plain data today.
+        state.gameConfig = gameConfig;
         if (state.status !== "complete") processTurnLoop();
       }
     }

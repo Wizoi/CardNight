@@ -44,12 +44,17 @@ const SessionStud = (function () {
     // of every live orchestrator (see snapshot() below) and, on reload,
     // recreates it with config.resumeFrom set instead of calling
     // startFirstHand/dealNextHand. state/pending are plain, already-
-    // serializable data (cards, chip integers, log strings, flags) with no
-    // functions or circular refs, so restoring them is just a reassignment
-    // -- the only real work is re-kicking processTurnLoop() when we're
-    // resuming into a spot where nobody's actually waiting on a human
-    // (pending is null but the hand isn't over), since that loop would
-    // otherwise never run again on its own.
+    // serializable data (cards, chip integers, log strings, flags) --
+    // restoring them is just a reassignment -- the only real work is
+    // re-kicking processTurnLoop() when we're resuming into a spot where
+    // nobody's actually waiting on a human (pending is null but the hand
+    // isn't over), since that loop would otherwise never run again on its
+    // own. One real exception to "no functions" found live (2026-09-14, in
+    // a sibling family first): this family's gameConfig.streets is a
+    // FUNCTION -- JSON.stringify silently drops it across the localStorage
+    // round-trip, so state.gameConfig has to be re-attached from the real,
+    // never-serialized object below rather than trusting the deserialized
+    // copy, or the next call into it throws and permanently stalls the hand.
     if (config.resumeFrom) {
       state = config.resumeFrom.state;
       pending = config.resumeFrom.pending;
@@ -60,6 +65,7 @@ const SessionStud = (function () {
       quipSeq = config.resumeFrom.extra.quipSeq;
       if (state) {
         state.opponentStats = opponentStats;
+        state.gameConfig = gameConfig;
         if (state.status !== "complete" && !pending) processTurnLoop();
       }
     }

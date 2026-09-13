@@ -36,6 +36,13 @@ const SessionWildInYourHand = (function () {
       passSelectionSoFar = config.resumeFrom.extra.passSelectionSoFar || null;
       lastQuip = config.resumeFrom.extra.lastQuip;
       quipSeq = config.resumeFrom.extra.quipSeq;
+      // Real bug, found live (2026-09-14): state.gameConfig survives the
+      // JSON round-trip through localStorage as plain data, but any
+      // FUNCTION-valued fields on it (this family has none today, but see
+      // the sibling families that do) are silently dropped by
+      // JSON.stringify -- re-attaching the real, never-serialized config
+      // object here is cheap insurance against that regardless.
+      if (state) state.gameConfig = gameConfig;
       if (state && state.status !== "complete" && !pending) {
         if (state.status === "passing") processPassingLoop();
         else if (state.status === "rowBetting") processRowBettingLoop();

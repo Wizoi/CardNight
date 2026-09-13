@@ -40,6 +40,16 @@ const SessionPressYourLuck = (function () {
       quipSeq = config.resumeFrom.extra.quipSeq;
       if (state) {
         state.opponentStats = opponentStats;
+        // Real bug, found live (2026-09-14): state.gameConfig's cardValue()
+        // is a FUNCTION -- JSON.stringify silently drops it across the
+        // localStorage round-trip this resume snapshot goes through, so the
+        // deserialized gameConfig looked plausible (same id/name/etc.) but
+        // crashed ("cardValueFn is not a function") the instant any AI bet
+        // decision tried to score a hand, with nothing left to ever call
+        // processLoop() again -- the exact "stuck on Waiting for other
+        // players" symptom reported directly. Re-attach the real,
+        // never-serialized gameConfig object instead of the deserialized one.
+        state.gameConfig = gameConfig;
         if (state.status !== "complete" && !pending) processLoop();
       }
     }

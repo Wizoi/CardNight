@@ -37,6 +37,12 @@ const SessionCommunityStud = (function () {
       quipSeq = config.resumeFrom.extra.quipSeq;
       if (state) {
         state.opponentStats = opponentStats;
+        // Real bug, found live (2026-09-14) in a sibling family: this
+        // family's handConstruction is a FUNCTION field on gameConfig, which
+        // JSON.stringify silently drops across the localStorage round-trip
+        // this resume snapshot goes through -- re-attach the real,
+        // never-serialized gameConfig object instead of the deserialized one.
+        state.gameConfig = gameConfig;
         if (state.status !== "complete") processTurnLoop();
       }
     }
