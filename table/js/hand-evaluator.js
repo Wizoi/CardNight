@@ -54,7 +54,7 @@ const HandEvaluator = (function () {
   // trying every ORDERED sequence of identities (as a naive recursive
   // per-slot loop would) re-evaluates the exact same 5-card multiset up to
   // k! times over for no benefit. Real bug, not just a style nit: with 3+
-  // simultaneously wild cards (reachable in Honest Guts' pyramid-plus-Joker
+  // simultaneously wild cards (reachable in Wild in Your Hand's pyramid-plus-Joker
   // stack, and 3-5-7 Guts' three-always-wild-ranks), this made evaluation
   // cost climb from sub-millisecond to tens of milliseconds per hand,
   // multiplying out to real, user-visible delays across a full simulated

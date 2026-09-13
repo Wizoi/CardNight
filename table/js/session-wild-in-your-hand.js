@@ -1,13 +1,13 @@
 "use strict";
 
-// Orchestrates Honest Guts: passing -> 3 pyramid-row reveal+bet rounds ->
+// Orchestrates Wild in Your Hand: passing -> 3 pyramid-row reveal+bet rounds ->
 // simultaneous declare -> showdown/escalate. Same gated-wrapper/`*Inner`
 // phase-chaining pattern session-guts.js established (and the same real bug
 // that pattern exists to avoid -- see its own comments): each phase has a
 // thin gated entry point (checks/sets the shared `running` flag) plus an
 // ungated `*Inner` body, and a phase transitioning straight into the next
 // one calls that next phase's `*Inner` directly, never its gated wrapper.
-const SessionHonestGuts = (function () {
+const SessionWildInYourHand = (function () {
   function create(config) {
     const DECIDE_DELAY_MS = 450;
 
@@ -99,7 +99,7 @@ const SessionHonestGuts = (function () {
     function beginHand() {
       topUpAIWalletsIfNeeded();
       handNumber += 1;
-      state = HonestGutsRules.createRoundState(players, settings, gameConfig, carriedPotChips);
+      state = WildInYourHandRules.createRoundState(players, settings, gameConfig, carriedPotChips);
       carriedPotChips = 0;
       pending = null;
       passSelectionSoFar = null;
@@ -129,13 +129,13 @@ const SessionHonestGuts = (function () {
           return;
         }
         await sleep(DECIDE_DELAY_MS);
-        const { toLeftIdx, toRightIdx } = HonestGutsRules.defaultPassSelection(state, p, state.passCounts.left, state.passCounts.right);
-        HonestGutsRules.submitPassSelection(state, p.id, toLeftIdx, toRightIdx);
+        const { toLeftIdx, toRightIdx } = WildInYourHandRules.defaultPassSelection(state, p, state.passCounts.left, state.passCounts.right);
+        WildInYourHandRules.submitPassSelection(state, p.id, toLeftIdx, toRightIdx);
         notify();
       }
       pending = null;
       passSelectionSoFar = null;
-      HonestGutsRules.resolvePassingFromSelections(state);
+      WildInYourHandRules.resolvePassingFromSelections(state);
       notify();
       await processRowBettingLoopInner();
     }
@@ -167,7 +167,7 @@ const SessionHonestGuts = (function () {
       const toLeftIdx = entries.filter(([, v]) => v === "left").map(([i]) => Number(i));
       const toRightIdx = entries.filter(([, v]) => v === "right").map(([i]) => Number(i));
       if (toLeftIdx.length !== counts.left || toRightIdx.length !== counts.right) return;
-      HonestGutsRules.submitPassSelection(state, getHuman().id, toLeftIdx, toRightIdx);
+      WildInYourHandRules.submitPassSelection(state, getHuman().id, toLeftIdx, toRightIdx);
       pending = null;
       passSelectionSoFar = null;
       notify();
@@ -188,16 +188,16 @@ const SessionHonestGuts = (function () {
 
     async function processRowBettingLoopInner() {
       while (state.status === "rowBetting") {
-        const playerId = HonestGutsRules.currentRowDecisionPlayerId(state);
+        const playerId = WildInYourHandRules.currentRowDecisionPlayerId(state);
         if (playerId == null) {
           // Nobody active is left undecided for this row (allRowDecided is
           // true by construction whenever currentRowDecisionPlayerId can't
           // find anyone, given status is still "rowBetting" here).
-          HonestGutsRules.advanceAfterRow(state);
+          WildInYourHandRules.advanceAfterRow(state);
           notify();
           continue;
         }
-        const player = HonestGutsRules.getPlayer(state, playerId);
+        const player = WildInYourHandRules.getPlayer(state, playerId);
         if (player.isHuman) {
           pending = { kind: "rowDecision" };
           notify();
@@ -205,9 +205,9 @@ const SessionHonestGuts = (function () {
         }
         await sleep(DECIDE_DELAY_MS);
         const profile = AIProfiles.profileFor(player.profileName);
-        const payingIn = HonestGutsAIProfiles.decideRowBet(player, state, profile);
+        const payingIn = WildInYourHandAIProfiles.decideRowBet(player, state, profile);
         if (!payingIn) maybeQuip(player, "fold");
-        HonestGutsRules.submitRowDecision(state, playerId, payingIn);
+        WildInYourHandRules.submitRowDecision(state, playerId, payingIn);
         notify();
       }
       if (state.status === "complete") {
@@ -220,7 +220,7 @@ const SessionHonestGuts = (function () {
 
     function humanRowDecision(payingIn) {
       if (!pending || pending.kind !== "rowDecision") return;
-      HonestGutsRules.submitRowDecision(state, getHuman().id, payingIn);
+      WildInYourHandRules.submitRowDecision(state, getHuman().id, payingIn);
       pending = null;
       notify();
       processRowBettingLoop();
@@ -249,26 +249,26 @@ const SessionHonestGuts = (function () {
         }
         await sleep(DECIDE_DELAY_MS);
         const profile = AIProfiles.profileFor(p.profileName);
-        const stayingIn = HonestGutsAIProfiles.decideDeclare(p, state, profile);
-        HonestGutsRules.submitStayDecision(state, p.id, stayingIn);
+        const stayingIn = WildInYourHandAIProfiles.decideDeclare(p, state, profile);
+        WildInYourHandRules.submitStayDecision(state, p.id, stayingIn);
         notify();
       }
       pending = null;
-      if (state.status !== "complete") HonestGutsRules.resolveShowdown(state);
+      if (state.status !== "complete") WildInYourHandRules.resolveShowdown(state);
       finishHand();
     }
 
     function humanDeclare(stayingIn) {
       if (!pending || pending.kind !== "stayDecision") return;
-      HonestGutsRules.submitStayDecision(state, getHuman().id, stayingIn);
+      WildInYourHandRules.submitStayDecision(state, getHuman().id, stayingIn);
       pending = null;
       notify();
       processDeclareLoop();
     }
 
     function finishHand() {
-      carriedPotChips = HonestGutsRules.collectLoserAntes(state);
-      if (state.winnerId) maybeQuip(HonestGutsRules.getPlayer(state, state.winnerId), "win");
+      carriedPotChips = WildInYourHandRules.collectLoserAntes(state);
+      if (state.winnerId) maybeQuip(WildInYourHandRules.getPlayer(state, state.winnerId), "win");
       onHandComplete({ winnerId: state.winnerId, rainedOut: false, potChips: state.cycleComplete ? 0 : carriedPotChips });
       notify();
     }

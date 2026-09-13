@@ -1,14 +1,14 @@
 "use strict";
 
-// Config for Honest Guts (see rules-honest-guts.js for the engine itself).
+// Config for Wild in Your Hand (see rules-wild-in-your-hand.js for the engine itself).
 // Not a shared-engine family like game-configs-guts.js's four games -- this
-// is the one config object for HonestGutsRules's own bespoke engine.
-const HONEST_GUTS_CONFIG = {
-  id: "honestGuts",
-  name: "Honest Guts",
+// is the one config object for WildInYourHandRules's own bespoke engine.
+const WILD_IN_YOUR_HAND_CONFIG = {
+  id: "wildInYourHand",
+  name: "Wild in Your Hand",
   jokerCount: 2, // always 2 Jokers for this game specifically -- not the opt-in dealer's-choice toggle the other Joker-eligible games use
   // categoryShift, empirically swept the same way as every other Guts
-  // config's own shift (see ai-honest-guts-profiles.js/game-configs-guts.js
+  // config's own shift (see ai-wild-in-your-hand-profiles.js/game-configs-guts.js
   // for the methodology): a 7-card hand with up to 3 accumulated wild ranks
   // (plus a possible communal Joker) by the time of the final declare
   // clears a low category bar often enough that a flat bar would make the

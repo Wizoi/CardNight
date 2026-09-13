@@ -1,10 +1,10 @@
 "use strict";
 
-// Table-view rendering for Honest Guts. Same overall shape as
+// Table-view rendering for Wild in Your Hand. Same overall shape as
 // table-ui-guts.js (hidden hands until showdown, a passing UI, a
 // stay/fold declare) plus a new shared pyramid board section and a
 // fold-or-pay-50c row-betting prompt in between.
-const TableUIHonestGuts = (function () {
+const TableUIWildInYourHand = (function () {
   function cardMarkup(card, faceDown) {
     if (faceDown) return `<div class="card card-back"></div>`;
     const red = card.suit === "H" || card.suit === "D";
@@ -42,7 +42,7 @@ const TableUIHonestGuts = (function () {
         const faceDown = !(revealed && !p.folded);
         let debugLine = "";
         if (peekAi && !p.isHuman && gvs.state && !revealed && !p.folded) {
-          const hand = HonestGutsRules.evaluateHand(gvs.state, p);
+          const hand = WildInYourHandRules.evaluateHand(gvs.state, p);
           debugLine = `<div class="seat-debug">AI's actual hand: ${HandEvaluator.describe(hand)}</div>`;
         }
         return `
@@ -75,7 +75,7 @@ const TableUIHonestGuts = (function () {
       .map((row, i) => {
         const revealed = state.pyramidRevealed[i];
         const cards = row
-          .map((c) => (revealed ? cardMarkup({ ...c, isWild: HonestGutsRules.isCardWild(state, c) }, false) : cardMarkup(null, true)))
+          .map((c) => (revealed ? cardMarkup({ ...c, isWild: WildInYourHandRules.isCardWild(state, c) }, false) : cardMarkup(null, true)))
           .join("");
         return `<div class="pyramid-row"><span class="pyramid-row-label">Row ${i + 1}:</span> ${cards}</div>`;
       })
@@ -112,7 +112,7 @@ const TableUIHonestGuts = (function () {
           const tag = assigned === "left" ? `<span class="wild-tag">L</span>` : assigned === "right" ? `<span class="wild-tag">R</span>` : "";
           return `<div data-pass-card="${i}" class="card ${red ? "card-red" : "card-black"}${assigned ? " card-beaten" : ""}">${Deck.cardFaceHtml(c)}${tag}</div>`;
         }
-        return cardMarkup({ ...c, isWild: HonestGutsRules.isCardWild(gvs.state, c) }, false);
+        return cardMarkup({ ...c, isWild: WildInYourHandRules.isCardWild(gvs.state, c) }, false);
       })
       .join("");
   }
@@ -123,7 +123,7 @@ const TableUIHonestGuts = (function () {
       return;
     }
     if (gvs.state.status === "complete") {
-      const winners = gvs.state.winnerIds.map((id) => HonestGutsRules.getPlayer(gvs.state, id).name);
+      const winners = gvs.state.winnerIds.map((id) => WildInYourHandRules.getPlayer(gvs.state, id).name);
       const canDeal = orchestrator.canDealNextHand();
       const resultLine = winners.length
         ? `${winners.join(", ")} ${winners.length > 1 ? "win" : "wins"} the ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))} pot.`
@@ -153,7 +153,7 @@ const TableUIHonestGuts = (function () {
     }
     if (gvs.pending && gvs.pending.kind === "rowDecision") {
       const human = gvs.players.find((p) => p.id === humanId);
-      const hand = HonestGutsRules.evaluateHand(gvs.state, human);
+      const hand = WildInYourHandRules.evaluateHand(gvs.state, human);
       el.actionPanel.innerHTML = `
         <div>Row ${gvs.state.rowIndex + 1} of 3 revealed. Your hand: ${HandEvaluator.describe(hand)}.</div>
         <button data-row-pay>Put in ${money(gvs.state.rowBetDollars)}</button>
@@ -163,7 +163,7 @@ const TableUIHonestGuts = (function () {
     }
     if (gvs.pending && gvs.pending.kind === "stayDecision") {
       const human = gvs.players.find((p) => p.id === humanId);
-      const hand = HonestGutsRules.evaluateHand(gvs.state, human);
+      const hand = WildInYourHandRules.evaluateHand(gvs.state, human);
       el.actionPanel.innerHTML = `
         <div>Pyramid's fully revealed. Your hand: ${HandEvaluator.describe(hand)}. Stay in (ante already paid) or fold?</div>
         <button data-stay-yes>Stay in</button>

@@ -1,6 +1,6 @@
 "use strict";
 
-// Honest Guts -- games.md's newest Guts entry, and a genuinely different
+// Wild in Your Hand -- games.md's newest Guts entry, and a genuinely different
 // shape from the rest of the family (see rules-guts.js's own "ante only, no
 // raise/max-bet structure at all" framing -- this game breaks that). After
 // the deal and a Deep-or-Double-Screw-style passing step, a shared 6-card
@@ -15,7 +15,7 @@
 // pot) to keep the cycle going -- see collectLoserAntes below.
 //
 // gameConfig shape: { id, name, jokerCount?: number (default 2) }
-const HonestGutsRules = (function () {
+const WildInYourHandRules = (function () {
   const PYRAMID_ROW_SIZES = [1, 2, 3];
 
   function getPlayer(state, playerId) {

@@ -267,7 +267,7 @@
     if (entry.uiFamily === "mexicanSweat") return TableUIMexicanSweat;
     if (entry.uiFamily === "communityStud") return TableUICommunityStud;
     if (entry.uiFamily === "guts") return TableUIGuts;
-    if (entry.uiFamily === "honestGuts") return TableUIHonestGuts;
+    if (entry.uiFamily === "wildInYourHand") return TableUIWildInYourHand;
     if (entry.uiFamily === "holdem") return TableUIHoldem;
     if (entry.uiFamily === "pressYourLuck") return TableUIPressYourLuck;
     if (entry.uiFamily === "threeThirtyThree") return TableUI333;
@@ -299,7 +299,7 @@
     threeBuyFive: "3-buy-5-5-buy-5",
     fourTwoTwo: "four-two-two",
     threeFiveSeven: "3-5-7-guts",
-    honestGuts: "honest-guts",
+    wildInYourHand: "wild-in-your-hand",
     omaha: "omaha-seattle-boise-jersey-holdem",
     seattle: "omaha-seattle-boise-jersey-holdem",
     boise: "omaha-seattle-boise-jersey-holdem",

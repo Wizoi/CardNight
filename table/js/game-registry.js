@@ -309,11 +309,11 @@ const GameRegistry = (function () {
       ],
       createOrchestrator: (config) => SessionGuts.create({ ...config, gameConfig: applyVariants(THREE_FIVE_SEVEN_GUTS_CONFIG, config.variantChoices) }),
     },
-    honestGuts: {
-      id: "honestGuts",
-      name: "Honest Guts",
-      uiFamily: "honestGuts",
-      createOrchestrator: (config) => SessionHonestGuts.create({ ...config, gameConfig: HONEST_GUTS_CONFIG }),
+    wildInYourHand: {
+      id: "wildInYourHand",
+      name: "Wild in Your Hand",
+      uiFamily: "wildInYourHand",
+      createOrchestrator: (config) => SessionWildInYourHand.create({ ...config, gameConfig: WILD_IN_YOUR_HAND_CONFIG }),
     },
     omaha: {
       id: "omaha",

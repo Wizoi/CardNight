@@ -1,6 +1,6 @@
 "use strict";
 
-// AI decisions for Honest Guts. A player's hand is fully known the moment
+// AI decisions for Wild in Your Hand. A player's hand is fully known the moment
 // it's dealt (nothing hidden), so this is the same flat per-profile
 // category bar every other Guts game's AI uses (AIProfiles.PROFILES[*].
 // gutsMinCategoryToStay), shifted up for hand size via
@@ -10,9 +10,9 @@
 // and the final simultaneous in/out declare -- both are really the same
 // underlying judgment ("is my hand worth continuing to risk money on"),
 // just asked at different points as more of the pyramid gets revealed.
-const HonestGutsAIProfiles = (function () {
+const WildInYourHandAIProfiles = (function () {
   function worthContinuing(player, state, profile) {
-    const hand = HonestGutsRules.evaluateHand(state, player);
+    const hand = WildInYourHandRules.evaluateHand(state, player);
     const shift = state.gameConfig.categoryShift || 0;
     if (hand.category > HandEvaluator.CATEGORY.HIGH_CARD || shift > 0) {
       return hand.category >= profile.gutsMinCategoryToStay + shift;

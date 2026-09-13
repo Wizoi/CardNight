@@ -423,8 +423,8 @@ const GAMES = [
     script: `You get 5 cards to start. There's a good row and a bad row on the table, 5 cards each, face down. On your turn, flip a card from either row — good row joins your hand, bad row gets tossed. But watch out: when a bad card comes up, its rank is poisoned for the rest of the hand — if you're holding a card of that rank, it's gone, if one's sitting in the good row it moves to the bad side, and any of that rank flipped later is bad too. Turn order rotates each round. Best hand at the end wins.`,
   },
   {
-    id: "honest-guts",
-    name: "Honest Guts",
+    id: "wild-in-your-hand",
+    name: "Wild in Your Hand",
     category: "Guts",
     isNew: true,
     icon: "🃏",
