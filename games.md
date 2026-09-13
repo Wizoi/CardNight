@@ -8,7 +8,7 @@ A web research pass (2026-08) cross-referenced each game against published home-
 
 ## Game Categories
 
-- **Guts:** Deep or Double Screw, 3 Buy 5 / 5 Buy 5, 3-5-7 Guts, Four-Two-Two (New)
+- **Guts:** Deep or Double Screw, 3 Buy 5 / 5 Buy 5, 3-5-7 Guts, Four-Two-Two, Honest Guts (New)
 - **Stud-based:** Follow the Queen, Free Enterprise, Mexican Sweat, Anaconda (New), Seven and What Makes It (New), The Good, the Bad and the Ugly (New)
 - **Texas Hold'em variant:** Omaha / Seattle / Boise / Jersey Hold'em (New)
 - **Baseball:** Daytime Baseball, Midnight Baseball, Rainy Day Baseball
@@ -40,6 +40,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 - [Four-Two-Two](#four-two-two) *(New)*
 - [Free Enterprise](#free-enterprise)
 - [Game of Life](#game-of-life)
+- [Honest Guts](#honest-guts) *(New)*
 - [Mexican Sweat](#mexican-sweat)
 - [Midnight Baseball](#midnight-baseball)
 - [Omaha / Seattle / Boise / Jersey Hold'em](#omaha--seattle--boise--jersey-holdem)
@@ -155,7 +156,7 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 - **Deal:** 5 hole cards face down to each player, plus 5 community cards dealt face down to the table in a cross/plus shape — a center card shared by a horizontal arm of 3 and a vertical arm of 3. (At 8 players, that's 45 hole cards + 5 community = 50 of 52 — fits comfortably.)
 - **Play:** Betting round, then the community cards are turned face up one at a time in order, with a betting round after each.
 - **Hand construction:** At showdown, each player combines 2 or more of their hole cards with cards from ONE arm of the cross only — horizontal or vertical, not mixed.
-- **Wildcards:** Optional — the center card and all cards of that rank may be wild; dealer's choice.
+- **Wildcards:** Optional, dealer's choice — the center card's rank is wild, everywhere it shows up (in anyone's hand, or the center card itself, which is already part of the cross — not a separate flip-up addition).
 - **Optional:** Playable hi-lo. A player declaring "both" must use the same single arm for both their high and low hands, not a different arm for each.
 - **Winning:** Best hand (by the arm-restricted construction above) wins; splits hi-lo if that's in play.
 - **Sources:** [Iron Cross / Criss Cross – pagat.com](https://www.pagat.com/poker/variants/ironcross.html)
@@ -229,6 +230,16 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 - **Bad-card effect:** Flipping a bad-row card poisons its rank for the rest of the hand. Any card of that rank already in a player's hand is discarded — placed on top of the bad card to show it's out of play. Any card of that rank still face-down in the good row also moves over to the bad side instead. From then on, any future flip — from either row — that matches a poisoned rank is immediately treated as bad and discarded rather than added to a hand.
 - **Wildcards:** None by default; dealer's choice to add 1-2 Jokers per "House rule: playing with Jokers."
 - **Sources:** None found for this mechanic — appears to be original to our group. (A same-named-theme game turned up — ["The Good, the Bad and the Ugly" – poker.com](https://poker.com/game/stud-poker-games/good-bad-ugly/), a seven-card stud variant with three community "reveal" cards that trigger wildcards/discards/eliminations — but it's mechanically unrelated to our face-down good/bad row draft.)
+
+## Honest Guts
+
+- **Category:** Guts (New)
+- **Deal:** 7 cards face down to each player at 5–6 players, dropping to 6 at 7 players and 5 at a full 8-player table — a deck-size judgment call, since the 2 always-in-play Jokers (below) plus the shared 6-card pyramid have to fit alongside everyone's hand in one deck.
+- **Passing:** Same real per-player choice as Deep or Double Screw — 2 left / 1 right at the 7-card size, 1 left / 1 right at 6 or 5 cards.
+- **Wildcards:** 2 Jokers are always in the deck for this game (54 cards, not the usual 52) — a Joker dealt into a player's own hand is simply wild, like any other Joker. On top of that, a shared pyramid of 3 rows of face-down cards sits on the table (1 card, then 2, then 3 — 6 total), revealed one row at a time, each row right before its own betting round (see Betting). A revealed pyramid card's RANK becomes wild for anyone holding that rank in their own hand — the pyramid card itself is never added to anyone's hand, it's purely a wild-rank announcement. Exception: if a revealed pyramid card is itself a Joker, it becomes a real extra wild card every player at the table may use in their own hand — a Joker has no rank for others to match, so it works directly instead.
+- **Betting:** Standard 50¢ ante (see "House rule: chips & betting"). After the deal and passing, there are 3 rounds of betting, one right after each pyramid row is revealed — each round is a flat call-or-fold: put in 50¢ (matching the ante) to stay in, or fold. No raising. Once all 3 rounds are done, everyone still in declares in or out simultaneously, same as every other Guts game.
+- **Winning:** Among players who declared "in," best 5-card poker hand (using the wild ranks/Joker revealed so far) wins the whole pot outright. Anyone who declared "in" and lost must ante again — not match the whole pot — to play the next hand; the pot still escalates hand over hand the same way every other Guts game's cycle does, ending only once a single player is "in" alone and wins uncontested.
+- **Tie-breaker:** Standard house default — ties split evenly (see "House rule: split-pot ties").
 
 ## Mexican Sweat
 
@@ -317,7 +328,7 @@ None currently open — the last one (Follow the Queen's deal size) was resolved
 
 ## House rule: table size
 
-Every game in this doc is designed around a standard single poker table: **5–8 players**. Nobody's capped out of a game for having a full table — instead, a few entries adjust their deal shape to keep total cards dealt within a single 52-card deck (Deep or Double Screw, Free Enterprise, Follow the Queen, Mexican Sweat, 3-5-7 Guts, Seven and What Makes It, The Good the Bad and the Ugly — see each entry's Deal field). Player count is worth settling before dealing since it decides which version of these games is actually in play. **Anaconda is the one exception that can't adapt** — its full 7-card deal happens all at once before any discarding, so it genuinely doesn't fit at 8 players without a second deck; treat it as a 5–7 player game in practice.
+Every game in this doc is designed around a standard single poker table: **5–8 players**. Nobody's capped out of a game for having a full table — instead, a few entries adjust their deal shape to keep total cards dealt within a single 52-card deck (Deep or Double Screw, Free Enterprise, Follow the Queen, Mexican Sweat, 3-5-7 Guts, Seven and What Makes It, The Good the Bad and the Ugly, Honest Guts — see each entry's Deal field). Player count is worth settling before dealing since it decides which version of these games is actually in play. **Anaconda is the one exception that can't adapt** — its full 7-card deal happens all at once before any discarding, so it genuinely doesn't fit at 8 players without a second deck; treat it as a 5–7 player game in practice.
 
 ## House rule: playing with Jokers
 
@@ -328,7 +339,7 @@ Dealer's choice to add 1 or 2 Jokers into the deck as extra wildcards for the ni
 - **Anaconda** — no wildcard mechanic at all, just the pass-and-discard structure; a Joker slots in the same way it would in any other no-wild game.
 - **Game of Life** — no wildcard rule (its "bad-card" effect discards/poisons ranks, it doesn't make anything wild); a Joker dealt into your hand or drafted from the good row is wild like any other card.
 
-It doesn't fit games that already have a dedicated wildcard scheme baked in — the Guts games, the Baseball family, Follow the Queen, Mexican Sweat — since stacking a Joker on top would double up rather than cleanly slot in. **Free Enterprise** was reconsidered and dropped from this list too (2026-09-02) — its "wipe" mechanic has no fixed wildcard rule, technically leaving room for one, but the user's call was that a Joker doesn't belong there regardless. **Omaha / Seattle / Boise / Jersey Hold'em** also has no wildcard rule by default, but it's deliberately left off this list — the strict hand-construction ratios (exactly 2-from-hand-3-from-board, etc.) make a Joker in a hole card awkward to resolve cleanly, unlike the open "best 5 of what you're holding" evaluation the games above use. Worth revisiting if the group actually wants to try it.
+It doesn't fit games that already have a dedicated wildcard scheme baked in — the Guts games, the Baseball family, Follow the Queen, Mexican Sweat — since stacking a Joker on top would double up rather than cleanly slot in. **Honest Guts is a separate case, not part of this optional list at all** — its 2 Jokers are a fixed part of the game's own base rule (see that entry), not a dealer's-choice add-on the way this whole section describes. **Free Enterprise** was reconsidered and dropped from this list too (2026-09-02) — its "wipe" mechanic has no fixed wildcard rule, technically leaving room for one, but the user's call was that a Joker doesn't belong there regardless. **Omaha / Seattle / Boise / Jersey Hold'em** also has no wildcard rule by default, but it's deliberately left off this list — the strict hand-construction ratios (exactly 2-from-hand-3-from-board, etc.) make a Joker in a hole card awkward to resolve cleanly, unlike the open "best 5 of what you're holding" evaluation the games above use. Worth revisiting if the group actually wants to try it.
 
 ## House rule: chips & betting
 
@@ -337,6 +348,7 @@ Chip denominations and betting limits are set by the dealer for each hand — no
 - **Chips:** 25-cent chips. No limit on total chips a player can hold — players can buy more if they're running low.
 - **Standard betting (most games):** 50-cent ante, 25-cent raise increment, $2 max bet per person.
 - **Guts games** (Deep or Double Screw; 3 Buy 5 / 5 Buy 5): Ante only — no raise/max-bet structure applies. The pot escalates hand over hand: any player who loses a hand (including losing against a dummy hand) must match the lost pot to play the next hand. This only ends once a single player bets and wins outright.
+- **Honest Guts:** The one Guts game with real betting rounds before the declare — 3 flat 50¢-or-fold rounds (matching the ante, no raising), then the usual simultaneous in/out declare. Its escalation is also gentler than the rest of the family: a declare-stage loser only antes again for the next hand, not matches the whole pot (see that entry).
 - **Omaha / Seattle / Boise / Jersey Hold'em** (Hold'em variants): $0.50 small blind, $1 big blind, no cap on bet size — standard Texas Hold'em raise rules apply (e.g., minimum raise = size of the previous bet/raise).
 - **7-27:** 25-cent ante — half the standard default (see that entry).
 

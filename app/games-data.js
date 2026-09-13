@@ -229,7 +229,7 @@ const GAMES = [
     icon: "➕",
     players: { min: 5, max: 8 },
     before: [
-      "Decide whether the center card (and its rank) is wild — dealer's choice",
+      "Decide whether the center card's rank is wild — dealer's choice (the center card is already part of the cross, not a separate flip-up card)",
       "Decide whether hi-lo is on",
       "Decide whether 1-2 Jokers are in the deck as extra wildcards — dealer's choice, since this builds a 5-card hand from a larger pool",
     ],
@@ -421,6 +421,35 @@ const GAMES = [
       "A bad flip poisons its rank for the whole hand — matching cards get pulled from hands, the good row, and any future flip, not just the one card that got flipped",
     ],
     script: `You get 5 cards to start. There's a good row and a bad row on the table, 5 cards each, face down. On your turn, flip a card from either row — good row joins your hand, bad row gets tossed. But watch out: when a bad card comes up, its rank is poisoned for the rest of the hand — if you're holding a card of that rank, it's gone, if one's sitting in the good row it moves to the bad side, and any of that rank flipped later is bad too. Turn order rotates each round. Best hand at the end wins.`,
+  },
+  {
+    id: "honest-guts",
+    name: "Honest Guts",
+    category: "Guts",
+    isNew: true,
+    icon: "🃏",
+    players: { min: 5, max: 8 },
+    before: [],
+    resolvePlayers(n) {
+      const cards = n <= 6 ? 7 : n === 7 ? 6 : 5;
+      const passing = cards === 7 ? "2 left / 1 right" : "1 left / 1 right";
+      return `With ${n} players: deal ${cards} cards each, passing ${passing}.`;
+    },
+    betting: `Ante 50¢ (house default). After the deal and passing, 3 rounds of a flat call-or-fold: put in 50¢ (matching the ante) to stay, or fold — no raising.`,
+    setup: `Deal cards face down to each player — count adjusts to tonight's player count (see above). Each player then chooses which of their own cards to pass left and which right. A 6-card pyramid also sits face down on the table: a row of 1, then 2, then 3.`,
+    gameplay: `2 Jokers are always in this deck — one dealt into your own hand is simply wild. After passing, the pyramid's rows are revealed one at a time, each followed by a betting round: a revealed card's RANK is wild for anyone holding it (the card itself never joins anyone's hand) — unless the revealed card is a Joker, which becomes a real extra wild card everyone can use. Once all 3 rows and rounds are done, everyone still in declares in or out at once, same as any other Guts game.`,
+    win: `Best hand among players who declared in wins the whole pot. Anyone who declared in and lost antes again (not the whole pot) to play the next hand — the pot still escalates hand over hand, ending only once a single player is in alone and wins outright.`,
+    keyDecisions: [
+      "Which of your own cards to pass left vs. right",
+      "Fold or pay 50¢ to stay, after each of the 3 pyramid reveals",
+      "Declare in (bet the guts) or fold, once the pyramid's fully revealed",
+    ],
+    repeats: [
+      "A pyramid card's rank is wild only for whoever's actually holding that rank — the card itself stays out of every hand",
+      "A revealed Joker is the one exception — that card is a real wild anyone can use",
+      "Losing the final declare only costs another ante next hand, not the whole pot",
+    ],
+    script: `Everybody gets their cards face down, then passes some left and some right. On the table, a little pyramid builds up face down — one card, then two, then three. I'll flip each row as we go, and after each one, you either put in 50 cents to stay or fold — no raising. If a flipped card's rank shows up in your hand, that rank's wild for you; if I flip a Joker, that one's a real wild anyone can use. Once all three rows are up, whoever's left decides in or out, same as any Guts game. Best hand among those in takes the whole pot. Lose that last decision and you just ante again next hand — no need to match the pot.`,
   },
   {
     id: "mexican-sweat",
