@@ -47,6 +47,37 @@ const HandEvaluator = (function () {
     return results;
   }
 
+  // Same idea as combinations() but allows repeats (each of the k slots is
+  // interchangeable with the others, same item can fill more than one) --
+  // this is what wild-card identity assignment in bestHand actually needs:
+  // evaluateFixedFive treats its 5 cards as an unordered multiset, so
+  // trying every ORDERED sequence of identities (as a naive recursive
+  // per-slot loop would) re-evaluates the exact same 5-card multiset up to
+  // k! times over for no benefit. Real bug, not just a style nit: with 3+
+  // simultaneously wild cards (reachable in Honest Guts' pyramid-plus-Joker
+  // stack, and 3-5-7 Guts' three-always-wild-ranks), this made evaluation
+  // cost climb from sub-millisecond to tens of milliseconds per hand,
+  // multiplying out to real, user-visible delays across a full simulated
+  // cycle. Switching to combinations-with-repetition here changes nothing
+  // about which hands get considered or which one wins -- it only removes
+  // the redundant reorderings of the same candidate set.
+  function combinationsWithRepetition(items, k) {
+    const results = [];
+    const combo = [];
+    (function pick(start) {
+      if (combo.length === k) {
+        results.push(combo.slice());
+        return;
+      }
+      for (let i = start; i < items.length; i++) {
+        combo.push(items[i]);
+        pick(i); // same index can be reused -- that's the "with repetition" part
+        combo.pop();
+      }
+    })(0);
+    return results;
+  }
+
   // Evaluates exactly 5 concrete {rank, suit} cards. Wild cards must already have a
   // chosen identity by this point — duplicate (rank, suit) pairs across different
   // wild sources are allowed, since that's how Five of a Kind becomes possible.
@@ -161,24 +192,15 @@ const HandEvaluator = (function () {
     let best = null;
     for (const base of baseCombos) {
       const slotsNeeded = 5 - base.length;
-      best = bestOverWildAssignments(base, slotsNeeded, identityPool, best);
+      const wildAssignments = slotsNeeded > 0 ? combinationsWithRepetition(identityPool, slotsNeeded) : [[]];
+      for (const assignment of wildAssignments) {
+        const evaluated = evaluateFixedFive(base.concat(assignment));
+        if (!best || isBetter(evaluated, best)) {
+          best = { ...evaluated, categoryName: CATEGORY_NAMES[evaluated.category] };
+        }
+      }
     }
     return best || { category: -1, categoryName: "No cards", tiebreakers: [] };
-  }
-
-  function bestOverWildAssignments(base, slotsNeeded, identityPool, best) {
-    if (slotsNeeded === 0) {
-      const evaluated = evaluateFixedFive(base);
-      if (!best || isBetter(evaluated, best)) {
-        return { ...evaluated, categoryName: CATEGORY_NAMES[evaluated.category] };
-      }
-      return best;
-    }
-    for (const identity of identityPool) {
-      const withIdentity = base.concat([identity]);
-      best = bestOverWildAssignments(withIdentity, slotsNeeded - 1, identityPool, best);
-    }
-    return best;
   }
 
   function bestFromCombos(cards, k) {
