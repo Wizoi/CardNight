@@ -267,7 +267,7 @@ const SessionWildInYourHand = (function () {
     }
 
     function finishHand() {
-      carriedPotChips = WildInYourHandRules.collectLoserAntes(state);
+      carriedPotChips = WildInYourHandRules.collectLoserAntePoolMatches(state);
       if (state.winnerId) maybeQuip(WildInYourHandRules.getPlayer(state, state.winnerId), "win");
       onHandComplete({ winnerId: state.winnerId, rainedOut: false, potChips: state.cycleComplete ? 0 : carriedPotChips });
       notify();

@@ -10,9 +10,13 @@
 // just plain per-player pay-or-fold bookkeeping). Once all 3 rows/rounds are
 // done, everyone still in simultaneously declares in or out, exactly like
 // every other Guts game; among those "in," the best hand wins the whole pot
-// outright. The escalation is gentler than the rest of the family too: a
-// declare-stage loser only antes again for the next hand (not the whole
-// pot) to keep the cycle going -- see collectLoserAntes below.
+// outright. The escalating-cycle mechanic itself is the same one every
+// Guts game in this project shares: a loser matches the contested amount
+// to keep going, and that amount escalates hand over hand. The one real
+// difference here is WHAT gets matched -- this game's pot also includes
+// row-betting on top of the antes, so a loser matches just the running
+// ante-pool total (state.antePoolChips), not the whole pot -- see
+// collectLoserAntePoolMatches below.
 //
 // gameConfig shape: { id, name, jokerCount?: number (default 2) }
 const WildInYourHandRules = (function () {
@@ -97,6 +101,20 @@ const WildInYourHandRules = (function () {
       rowDecisions: {},
       stayDecisions: {},
       pot: carriedPotChips || 0,
+      // Tracks JUST the ante-pool portion of the pot, cumulative across an
+      // escalating cycle -- carriedPotChips in this game is always itself a
+      // prior round's ante-pool match (see collectLoserAntePoolMatches), so
+      // this round's antePoolChips = whatever carried forward + this
+      // round's own fresh antes. Deliberately separate from `pot` (which
+      // also picks up this round's row-betting on top): a loser matches
+      // ONLY antePoolChips, so it has to escalate on its own across rounds
+      // the same way `rules-guts.js`'s shared collectLoserMatches naturally
+      // escalates by matching the whole (carry-inclusive) pot -- if this
+      // were instead recomputed fresh each round as a flat players.length *
+      // ante, a second unresolved round would charge the SAME amount as the
+      // first instead of a genuinely bigger one, breaking the escalating-
+      // cycle mechanic every other Guts game already has.
+      antePoolChips: carriedPotChips || 0,
       anteDollars,
       rowBetDollars: anteDollars, // "match the ante" -- flat, no raising
       status: "passing",
@@ -108,7 +126,9 @@ const WildInYourHandRules = (function () {
       noContest: false,
       cycleComplete: false,
     };
-    state.pot += BettingEngine.collectAntes(players, anteDollars);
+    const anteChipsCollected = BettingEngine.collectAntes(players, anteDollars);
+    state.pot += anteChipsCollected;
+    state.antePoolChips += anteChipsCollected;
     state.log.push(`Ante: $${anteDollars.toFixed(2)} each from ${players.length} players — pot starts at $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)}.`);
     return state;
   }
@@ -328,22 +348,39 @@ const WildInYourHandRules = (function () {
     state.log.push(`${winnerNames.join(", ")} ${verb} the $${ChipEconomy.chipsToDollars(state.potAtShowdown).toFixed(2)} pot with ${HandEvaluator.describe(bestHand)}.`);
   }
 
-  // A declare-stage loser only antes again for the next hand -- NOT the
-  // whole pot, unlike every other Guts game's collectLoserMatches. Row-
-  // betting folders and declare-folders are simply done for this whole
-  // deal (no further obligation); the WHOLE roster re-antes fresh on the
-  // very next hand regardless (createRoundState resets `folded` for
-  // everyone), so there's no separate "who's still in the cycle" state to
-  // track between hands here either.
-  function collectLoserAntes(state) {
+  // A declare-stage loser matches the ANTE POOL (state.antePoolChips --
+  // every seated player's ante THIS round, plus whatever ante-pool amount
+  // already carried in from a prior unresolved round), NOT the whole pot
+  // (which also includes everyone's row-betting contributions on top) --
+  // unlike every other Guts game's collectLoserMatches, which matches the
+  // entire contested pot outright. This is really the SAME shared Guts
+  // mechanic every other game in the family already uses (match the
+  // contested amount, escalating hand over hand): those games just have no
+  // row-betting to exclude in the first place, so "the pot" and "the ante
+  // pool" are the same number for them. Confirmed directly by the user
+  // (2026-09-13) after a live hand where this originally, incorrectly, only
+  // charged a single 50c ante instead of the full ante-pool total -- and a
+  // second correction right after, catching that a flat players.length *
+  // ante recomputed fresh every round would never actually escalate round
+  // over round the way the shared mechanic is supposed to (state.
+  // antePoolChips carries the prior round's match forward and adds this
+  // round's fresh antes on top, same as `rules-guts.js`'s potAtShowdown
+  // naturally does via its own carriedPotChips). Each loser independently
+  // pays this full amount (not a split share), same convention every other
+  // Guts game's collectLoserMatches already uses. Row-betting folders and
+  // declare-folders are simply done for this whole deal (no further
+  // obligation); the WHOLE roster re-antes fresh on the very next hand
+  // regardless (createRoundState resets `folded` for everyone), so there's
+  // no separate "who's still in the cycle" state to track between hands
+  // here either.
+  function collectLoserAntePoolMatches(state) {
     if (state.noContest) return state.potAtShowdown;
-    const anteChips = ChipEconomy.dollarsToChips(state.anteDollars);
     let carried = 0;
     for (const loserId of state.loserIds) {
       const loser = getPlayer(state, loserId);
-      const { paid } = ChipEconomy.pay(loser.wallet, anteChips);
+      const { paid } = ChipEconomy.pay(loser.wallet, state.antePoolChips);
       carried += paid;
-      state.log.push(`${loser.name} antes $${state.anteDollars.toFixed(2)} again to keep the game going.`);
+      state.log.push(`${loser.name} matches the $${ChipEconomy.chipsToDollars(state.antePoolChips).toFixed(2)} ante pool to keep the game going.`);
     }
     return carried;
   }
@@ -362,7 +399,7 @@ const WildInYourHandRules = (function () {
     allDeclared,
     inPlayers,
     resolveShowdown,
-    collectLoserAntes,
+    collectLoserAntePoolMatches,
     evaluateHand,
     getPlayer,
     isCardWild,

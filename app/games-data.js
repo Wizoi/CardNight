@@ -438,7 +438,7 @@ const GAMES = [
     betting: `Ante 50¢ (house default). After the deal and passing, 3 rounds of a flat call-or-fold: put in 50¢ (matching the ante) to stay, or fold — no raising.`,
     setup: `Deal cards face down to each player — count adjusts to tonight's player count (see above). Each player then chooses which of their own cards to pass left and which right. A 6-card pyramid also sits face down on the table: a row of 1, then 2, then 3.`,
     gameplay: `2 Jokers are always in this deck — one dealt into your own hand is simply wild. After passing, the pyramid's rows are revealed one at a time, each followed by a betting round: a revealed card's RANK is wild for anyone holding it (the card itself never joins anyone's hand) — unless the revealed card is a Joker, which becomes a real extra wild card everyone can use. Once all 3 rows and rounds are done, everyone still in declares in or out at once, same as any other Guts game.`,
-    win: `Best hand among players who declared in wins the whole pot. Anyone who declared in and lost antes again (not the whole pot) to play the next hand — the pot still escalates hand over hand, ending only once a single player is in alone and wins outright.`,
+    win: `Best hand among players who declared in wins the whole pot. Anyone who declared in and lost matches the ante pool — everyone's ante added together, not the whole pot — to play the next hand; the pot still escalates hand over hand, ending only once a single player is in alone and wins outright.`,
     keyDecisions: [
       "Which of your own cards to pass left vs. right",
       "Fold or pay 50¢ to stay, after each of the 3 pyramid reveals",
@@ -447,9 +447,9 @@ const GAMES = [
     repeats: [
       "A pyramid card's rank is wild only for whoever's actually holding that rank — the card itself stays out of every hand",
       "A revealed Joker is the one exception — that card is a real wild anyone can use",
-      "Losing the final declare only costs another ante next hand, not the whole pot",
+      "Losing the final declare costs the whole ante pool (everyone's ante added together) next hand, not the row-betting contributions on top",
     ],
-    script: `Everybody gets their cards face down, then passes some left and some right. On the table, a little pyramid builds up face down — one card, then two, then three. I'll flip each row as we go, and after each one, you either put in 50 cents to stay or fold — no raising. If a flipped card's rank shows up in your hand, that rank's wild for you; if I flip a Joker, that one's a real wild anyone can use. Once all three rows are up, whoever's left decides in or out, same as any Guts game. Best hand among those in takes the whole pot. Lose that last decision and you just ante again next hand — no need to match the pot.`,
+    script: `Everybody gets their cards face down, then passes some left and some right. On the table, a little pyramid builds up face down — one card, then two, then three. I'll flip each row as we go, and after each one, you either put in 50 cents to stay or fold — no raising. If a flipped card's rank shows up in your hand, that rank's wild for you; if I flip a Joker, that one's a real wild anyone can use. Once all three rows are up, whoever's left decides in or out, same as any Guts game. Best hand among those in takes the whole pot. Lose that last decision and you match the ante pool — everyone's ante added together — to keep going, not the whole pot.`,
   },
   {
     id: "mexican-sweat",
