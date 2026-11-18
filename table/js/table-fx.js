@@ -259,6 +259,12 @@ const TableFX = (function () {
     const statsBar = document.getElementById("game-bar-stats");
     if (!statsBar || document.getElementById("table-fx-controls")) return;
 
+    // On mobile screens, collapse the bottom play-by-play log drawer by default to save vertical space
+    const logDrawer = document.getElementById("log-drawer");
+    if (logDrawer && typeof window !== "undefined" && window.innerWidth <= 768) {
+      logDrawer.open = false;
+    }
+
     const wrap = document.createElement("div");
     wrap.id = "table-fx-controls";
     wrap.className = "fx-toolbar";
@@ -277,10 +283,10 @@ const TableFX = (function () {
     ).join("");
 
     wrap.innerHTML = `
-      <select id="fx-theme-select" class="fx-theme-select" title="Table Vibe & Lighting Theme" aria-label="Table Theme">
+      <select id="fx-theme-select" class="fx-theme-select fx-desktop-only-select" title="Table Vibe & Lighting Theme" aria-label="Table Theme">
         ${themeOptions}
       </select>
-      <select id="fx-layout-select" class="fx-theme-select fx-layout-select" title="Responsive Form Factor (Auto / Desktop / Phone Landscape / Phone Portrait)" aria-label="Layout Mode">
+      <select id="fx-layout-select" class="fx-theme-select fx-layout-select fx-desktop-only-select" title="Responsive Form Factor (Auto / Desktop / Phone Landscape / Phone Portrait)" aria-label="Layout Mode">
         ${layoutOptions}
       </select>
       <div class="fx-speed-group" role="group" aria-label="AI Turn Speed">
@@ -289,16 +295,35 @@ const TableFX = (function () {
       <button type="button" id="fx-sound-btn" class="fx-icon-btn" title="${soundMuted ? "Unmute Table Sounds" : "Mute Table Sounds"}" aria-label="Toggle Sound">
         ${soundMuted ? "🔇" : "🔊"}
       </button>
-      <button type="button" class="fx-exit-top-btn" data-fx-exit-main title="Return to Main Screen or Cash Out">
-        🏠 Main Screen
-      </button>
     `;
 
     statsBar.insertBefore(wrap, statsBar.firstChild);
 
+    // Also add a compact Theme selector inside #more-menu for mobile users
+    const moreMenu = document.getElementById("more-menu");
+    if (moreMenu && !moreMenu.querySelector(".fx-menu-settings")) {
+      const menuSettings = document.createElement("div");
+      menuSettings.className = "fx-menu-settings";
+      menuSettings.innerHTML = `
+        <label class="fx-menu-setting-lbl">Table Vibe
+          <select id="fx-menu-theme-select" class="fx-theme-select">${themeOptions}</select>
+        </label>
+      `;
+      moreMenu.appendChild(menuSettings);
+      const menuThemeSelect = menuSettings.querySelector("#fx-menu-theme-select");
+      menuThemeSelect.addEventListener("change", () => {
+        applyTheme(menuThemeSelect.value);
+        const topSelect = wrap.querySelector("#fx-theme-select");
+        if (topSelect) topSelect.value = menuThemeSelect.value;
+        Sound.chipClink();
+      });
+    }
+
     const themeSelect = wrap.querySelector("#fx-theme-select");
     themeSelect.addEventListener("change", () => {
       applyTheme(themeSelect.value);
+      const menuSelect = document.getElementById("fx-menu-theme-select");
+      if (menuSelect) menuSelect.value = themeSelect.value;
       Sound.chipClink();
     });
 
@@ -1089,31 +1114,6 @@ const TableFX = (function () {
         btn.classList.add("btn-action-deal");
       }
     });
-
-    // Whenever the player is prompted to Deal a hand (#deal-first-hand-btn / #deal-next-hand-btn)
-    // or advance to picking the next game ([data-pick-next-game]), surface companion
-    // "🔄 Change Game" and "🏠 Main Screen / Exit" buttons right in the dealing prompt bar!
-    const dealTriggerBtn = actionPanelEl.querySelector(
-      "#deal-first-hand-btn, #deal-next-hand-btn, [data-pick-next-game]"
-    );
-    if (dealTriggerBtn && !actionPanelEl.querySelector("[data-fx-exit-main]")) {
-      const isDirectDeal =
-        dealTriggerBtn.id === "deal-first-hand-btn" || dealTriggerBtn.id === "deal-next-hand-btn";
-      if (isDirectDeal && !actionPanelEl.querySelector("[data-fx-change-game]")) {
-        const changeBtn = document.createElement("button");
-        changeBtn.type = "button";
-        changeBtn.className = "btn-action-call deal-companion-btn";
-        changeBtn.setAttribute("data-fx-change-game", "");
-        changeBtn.textContent = "🔄 Change Game";
-        actionPanelEl.appendChild(changeBtn);
-      }
-      const exitBtn = document.createElement("button");
-      exitBtn.type = "button";
-      exitBtn.className = "btn-action-fold deal-companion-btn";
-      exitBtn.setAttribute("data-fx-exit-main", "");
-      exitBtn.textContent = "🏠 Main Screen / Exit";
-      actionPanelEl.appendChild(exitBtn);
-    }
   }
 
   // Signature rule hooks for Concept 3 Game Selection cards
@@ -1680,18 +1680,14 @@ const TableFX = (function () {
               : ""
           }
           <div class="confirm-instructions">${pickerCtx.scriptHtml(data, entry.id)}</div>
-          <div class="confirm-prompt-banner">
-            <span>Ready to deal <strong>${entry.name}</strong> — take your seat, switch games, or return to the Main Screen:</span>
-          </div>
           <div class="confirm-actions">
-            <button type="button" class="btn-action-fold" data-fx-exit-main>🏠 Main Screen / Exit</button>
             ${
               isAi
                 ? `
                   <button type="button" class="btn-action-call" data-confirm-ai-redraw>🎲 Dealer Redraw</button>
                   <button type="button" class="btn-action-call" data-confirm-override>🔄 Pick Game Myself</button>
                 `
-                : `<button type="button" class="btn-action-call" data-confirm-back>&larr; Back to Game Selector</button>`
+                : `<button type="button" class="btn-action-call" data-confirm-back>&larr; Back to Selector</button>`
             }
             <button type="button" class="btn-action-deal" data-confirm-continue>🃏 Sit &amp; Deal ${entry.name} &rarr;</button>
           </div>
@@ -1713,7 +1709,6 @@ const TableFX = (function () {
           <div class="picker-waiting-title"><strong>${name}</strong> (${picker && picker.archetypeLabel ? picker.archetypeLabel : "Dealer"}) is eyeing the 27 house games&hellip;</div>
           <div class="picker-waiting-actions">
             <button type="button" class="btn-action-call" data-confirm-override>🔄 Override &amp; Pick Game Myself</button>
-            <button type="button" class="btn-action-fold" data-fx-exit-main>🏠 Main Screen / Exit</button>
           </div>
         </div>
       `;
@@ -1848,16 +1843,13 @@ const TableFX = (function () {
             ${renderInlineVariantPills(entry)}
 
             <!-- Dealer's Bark / Rules Summary -->
-            <details class="pv-rules-drawer" open>
+            <details class="pv-rules-drawer" ${typeof window !== "undefined" && window.innerWidth <= 768 ? "" : "open"}>
               <summary>📜 Dealer's Bark &amp; Full House Rules</summary>
               <div class="pv-rules-body">${pickerCtx.scriptHtml(data, entry.id)}</div>
             </details>
 
             <!-- Instant Deal CTA -->
             <div class="pv-stage-cta-row">
-              <button type="button" class="btn-action-fold pv-cta-exit-btn" data-fx-exit-main>
-                🏠 Main Screen / Exit
-              </button>
               <button type="button" class="btn-hero-start pv-instant-deal-btn" data-fx-deal-now="${entry.id}">
                 🃏 Call &amp; Deal ${entry.name} Now &rarr;
               </button>

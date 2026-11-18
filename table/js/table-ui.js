@@ -955,18 +955,16 @@
         if (dealNextBtn) dealNextBtn.remove();
         if (!gvs.state) {
           el.actionPanel.innerHTML = `
-            <div>⚠️ You need more chips (${money(humanDollars)} remaining) to cover the ante/blinds for this game. Buy more chips or return to the main screen:</div>
+            <div>⚠️ You need more chips (${money(humanDollars)} remaining) to cover the ante/blinds. Buy more chips or cash out:</div>
             ${inlineRebuyButtonMarkup(vs)}
-            <button type="button" class="btn-action-call deal-companion-btn" data-fx-change-game>🔄 Change Game</button>
-            <button type="button" class="btn-action-fold deal-companion-btn" data-fx-exit-main>🏠 Main Screen / Cash Out</button>
+            <button type="button" class="btn-action-fold deal-companion-btn" data-fx-exit-main>🏠 Cash Out / Exit</button>
           `;
         } else if (!el.actionPanel.querySelector("[data-rebuy-inline]")) {
           el.actionPanel.insertAdjacentHTML(
             "beforeend",
             `
               ${inlineRebuyButtonMarkup(vs)}
-              ${!pickNextBtn ? `<button type="button" class="btn-action-call deal-companion-btn" data-fx-change-game>🔄 Change Game</button>` : ""}
-              <button type="button" class="btn-action-fold deal-companion-btn" data-fx-exit-main>🏠 Main Screen / Cash Out</button>
+              <button type="button" class="btn-action-fold deal-companion-btn" data-fx-exit-main>🏠 Cash Out / Exit</button>
             `
           );
         }
@@ -1456,6 +1454,7 @@
         el.moreMenuBtn.setAttribute("aria-expanded", String(!isOpen));
         return;
       }
+      if (e.target.closest(".fx-menu-settings")) return;
       if (!el.moreMenu.hidden) {
         el.moreMenu.hidden = true;
         el.moreMenuBtn.setAttribute("aria-expanded", "false");

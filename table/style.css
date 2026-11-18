@@ -4564,18 +4564,41 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
 .pv-exit-main-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.34rem 0.72rem;
+  gap: 0.28rem;
+  min-height: 30px;
+  margin: 0;
+  padding: 0.22rem 0.62rem;
   border-radius: 999px;
-  border: 1.5px solid rgba(255, 135, 135, 0.55);
-  background: linear-gradient(180deg, rgba(140, 29, 24, 0.75), rgba(68, 13, 11, 0.88));
+  border: 1px solid rgba(255, 135, 135, 0.5);
+  background: linear-gradient(180deg, rgba(140, 29, 24, 0.72), rgba(68, 13, 11, 0.85));
   color: #ffe3e3;
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 800;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
   transition: transform 0.14s ease, border-color 0.14s ease, filter 0.14s ease;
+}
+
+.fx-menu-settings {
+  border-top: 1px solid rgba(212, 175, 55, 0.28);
+  margin-top: 0.25rem;
+  padding: 0.45rem 0.5rem 0.25rem;
+}
+
+.fx-menu-setting-lbl {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gold-soft);
+}
+
+.fx-menu-setting-lbl select {
+  width: 100%;
 }
 
 .fx-exit-top-btn:hover,
@@ -4863,6 +4886,303 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
 .seat.seat-folded .seat-cards .card {
   filter: grayscale(0.75) brightness(0.76);
   opacity: 0.82;
+}
+
+/* ============================================================================
+   17. COMPREHENSIVE MOBILE & SMALL-SCREEN SPACE OPTIMIZATION (<= 768px)
+   Eliminates wasted vertical/horizontal space across Setup, Picker, Cut & Table
+   ============================================================================ */
+@media (max-width: 768px) {
+  /* Hide desktop theme/layout dropdowns from top bar (available in ⋯ menu) */
+  .fx-desktop-only-select {
+    display: none !important;
+  }
+
+  /* 1. Compact Top Game Bar (#game-bar) */
+  #table-view {
+    padding: 0.25rem 0.35rem 0.6rem;
+  }
+
+  #game-bar {
+    padding: 0.32rem 0.5rem;
+    gap: 0.35rem;
+    margin-bottom: 0.35rem;
+    border-radius: 11px;
+  }
+
+  #game-bar-identity {
+    gap: 0.4rem;
+    flex: 1 1 auto;
+  }
+
+  #game-icon-display {
+    min-width: 1.9rem;
+    min-height: 1.9rem;
+    padding: 0.1rem;
+  }
+
+  #game-icon-display svg {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  #game-name-eyebrow {
+    display: none;
+  }
+
+  #game-name-display {
+    font-size: 0.88rem;
+  }
+
+  #game-script-toggle-btn {
+    width: 1.55rem;
+    height: 1.55rem;
+  }
+
+  #game-bar-stats {
+    gap: 0.35rem;
+  }
+
+  .fx-speed-btn {
+    padding: 0.18rem 0.32rem;
+    font-size: 0.6rem;
+  }
+
+  .fx-icon-btn {
+    padding: 0.18rem 0.34rem;
+    font-size: 0.74rem;
+  }
+
+  #wallet-display {
+    font-size: 0.74rem;
+  }
+
+  #pot-hero {
+    padding: 0.16rem 0.48rem;
+    gap: 0.28rem;
+    border-radius: 9px;
+  }
+
+  #pot-hero .pot-hero-chips svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  #pot-hero-label {
+    font-size: 0.5rem;
+  }
+
+  #pot-display {
+    font-size: 0.96rem;
+  }
+
+  #more-menu-btn {
+    width: 1.85rem;
+    height: 1.85rem;
+  }
+
+  /* 2. Compact Table Stadium, Seats & Center Board */
+  #poker-table-stadium {
+    padding: 5px;
+    border-radius: 16px;
+    margin-bottom: 0.35rem;
+  }
+
+  .table-felt-surface {
+    padding: 0.38rem 0.35rem;
+    border-radius: 12px;
+  }
+
+  #seats {
+    grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+    gap: 0.28rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .seat {
+    padding: 0.25rem 0.2rem;
+    border-radius: 10px;
+    gap: 0.12rem;
+  }
+
+  .seat .avatar-portrait-wrap {
+    --avatar-px: 34px !important;
+  }
+
+  .c4-archetype-title {
+    font-size: 0.48rem;
+  }
+
+  .c4-person-name,
+  .seat-name {
+    font-size: 0.68rem;
+  }
+
+  .seat-chips {
+    font-size: 0.66rem;
+  }
+
+  .seat-cards .card {
+    width: 22px;
+    height: 32px;
+    font-size: 0.58rem;
+  }
+
+  .seat-cards .card + .card {
+    margin-left: -7px;
+  }
+
+  /* Hide decorative bottom telemetry icons on phone seats to save vertical space */
+  .c4-telemetry-row {
+    display: none !important;
+  }
+
+  .concept3-board {
+    padding: 0.4rem 0.45rem;
+    gap: 0.35rem;
+  }
+
+  /* 3. Compact Human Cockpit & Action Panel */
+  #human-cockpit {
+    gap: 0.3rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .human-hand-live-badge {
+    font-size: 0.7rem;
+    padding: 0.14rem 0.65rem;
+  }
+
+  #human-hand {
+    min-height: 64px;
+    padding: 0.2rem 0.25rem 0.1rem;
+    gap: 0.28rem;
+  }
+
+  #human-hand .card {
+    width: 46px;
+    height: 66px;
+    font-size: 0.95rem;
+  }
+
+  #action-panel {
+    padding: 0.42rem 0.55rem;
+    border-radius: 11px;
+  }
+
+  #action-panel button {
+    min-height: 36px;
+    padding: 0.34rem 0.68rem;
+    font-size: 0.82rem;
+    margin: 0.14rem;
+  }
+
+  /* 4. Compact Setup View (#setup-view), Cut-for-Deal (#cutfordeal-view) & Picker (#picker-view) */
+  #setup-view,
+  #cutfordeal-view,
+  #picker-view {
+    margin: 0.35rem auto 0.85rem;
+    padding: 0.75rem 0.65rem;
+    border-width: 2px;
+    border-radius: 16px;
+  }
+
+  .lobby-hero-marquee {
+    padding: 0.4rem 0.5rem 0.65rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .lobby-crest-svg {
+    width: 116px;
+    height: 62px;
+  }
+
+  #setup-view h1.lobby-title {
+    font-size: 1.45rem;
+    margin: 0.05rem 0 0.2rem;
+  }
+
+  .setup-lead {
+    font-size: 0.78rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .lobby-feature-pill {
+    font-size: 0.66rem;
+    padding: 0.14rem 0.5rem;
+  }
+
+  .lobby-panel {
+    padding: 0.75rem 0.8rem;
+    border-radius: 14px;
+  }
+
+  #setup-seat-boxes {
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    gap: 0.45rem;
+  }
+
+  .seat-box-v2 {
+    min-height: 118px;
+    padding: 0.45rem 0.35rem;
+  }
+
+  .seat-box-v2 .avatar-portrait-wrap {
+    --avatar-px: 48px !important;
+  }
+
+  .seat-box-oneliner {
+    display: none;
+  }
+
+  /* Compact Game Picker on Mobile */
+  .vault-header h2,
+  .ceremony-header h2 {
+    font-size: 1.15rem;
+    margin: 0.2rem 0;
+  }
+
+  .ceremony-eyebrow {
+    font-size: 0.6rem;
+  }
+
+  .pv-exit-main-btn {
+    min-height: 26px;
+    padding: 0.16rem 0.5rem;
+    font-size: 0.66rem;
+  }
+
+  .pv-icon-btn {
+    min-height: 32px;
+    padding: 0.26rem 0.65rem;
+    font-size: 0.74rem;
+  }
+
+  .pv-cartridge-list {
+    max-height: 175px;
+  }
+
+  .pv-cartridge-item {
+    padding: 0.35rem 0.5rem;
+  }
+
+  .pv-cart-icon svg {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .pv-spotlight-stage {
+    padding: 0.75rem;
+  }
+
+  .pv-stage-emblem svg {
+    width: 58px !important;
+    height: 58px !important;
+  }
+
+  .pv-stage-title {
+    font-size: 1.2rem;
+  }
 }
 
 
