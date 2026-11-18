@@ -121,9 +121,12 @@ const TableUIStud = (function () {
     if (gvs.state.status === "complete") {
       const canDeal = orchestrator.canDealNextHand();
       const potLine = money(ChipEconomy.chipsToDollars(typeof gvs.state.potAtShowdown === "number" ? gvs.state.potAtShowdown : gvs.state.pot));
+      const nextDealer = gvs.players && gvs.players.length ? gvs.players[(gvs.dealerIndex + 1) % gvs.players.length] : null;
       let resultLine;
+      let dealBtnLabel = "Deal next hand";
       if (gvs.state.rainedOut) {
-        resultLine = "Rained out! The pot carries forward to the next hand.";
+        resultLine = `⛈️ Rained out! The ${potLine} pot carries forward to the next round${nextDealer ? ` (next dealer: ${nextDealer.name})` : ""}.`;
+        dealBtnLabel = nextDealer ? `Deal next round (${nextDealer.name} deals) →` : "Deal next round →";
       } else if (gvs.state.lowWinnerIds && gvs.state.lowWinnerIds.length > 0) {
         const highNames = gvs.state.highWinnerIds.map((id) => StudRules.getPlayer(gvs.state, id).name).join(", ");
         const lowNames = gvs.state.lowWinnerIds.map((id) => StudRules.getPlayer(gvs.state, id).name).join(", ");
@@ -136,7 +139,7 @@ const TableUIStud = (function () {
       }
       el.actionPanel.innerHTML = `
         <div>${resultLine}</div>
-        ${canDeal ? `<button id="deal-next-hand-btn">Deal next hand</button>` : `<div>You're out of chips for this hand. Buy more chips or cash out to continue.</div>`}
+        ${canDeal ? `<button id="deal-next-hand-btn">${dealBtnLabel}</button>` : `<div>You're out of chips for this hand. Buy more chips or cash out to continue.</div>`}
       `;
       return;
     }

@@ -94,6 +94,7 @@ const SessionDrawPoker = (function () {
     }
 
     function dealNextHand() {
+      dealerIndex = (dealerIndex + 1) % players.length;
       beginHand();
     }
 

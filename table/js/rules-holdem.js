@@ -109,21 +109,22 @@ const HoldemRules = (function () {
     const bbId = state.dealOrder[1];
     const sbPlayer = getPlayer(state, sbId);
     const bbPlayer = getPlayer(state, bbId);
-    const sbResult = ChipEconomy.pay(sbPlayer.wallet, ChipEconomy.dollarsToChips(state.smallBlindDollars));
-    const bbResult = ChipEconomy.pay(bbPlayer.wallet, ChipEconomy.dollarsToChips(state.bigBlindDollars));
+    const sbChips = ChipEconomy.dollarsToChips(state.smallBlindDollars);
+    const bbChips = ChipEconomy.dollarsToChips(state.bigBlindDollars);
+    if (!sbPlayer.isHuman) {
+      while (sbPlayer.wallet.chips < sbChips) ChipEconomy.rebuy(sbPlayer.wallet, ChipEconomy.BUY_IN_INCREMENT_DOLLARS, Date.now());
+    }
+    if (!bbPlayer.isHuman) {
+      while (bbPlayer.wallet.chips < bbChips) ChipEconomy.rebuy(bbPlayer.wallet, ChipEconomy.BUY_IN_INCREMENT_DOLLARS, Date.now());
+    }
+    const sbResult = ChipEconomy.pay(sbPlayer.wallet, sbChips);
+    const bbResult = ChipEconomy.pay(bbPlayer.wallet, bbChips);
     state.pot += sbResult.paid + bbResult.paid;
     const committed = {};
     state.actionOrder.forEach((id) => (committed[id] = 0));
     committed[sbId] = sbResult.paid;
     committed[bbId] = bbResult.paid;
-    // A short-stacked blind (rare, but possible after a bruising earlier
-    // game the same night) is posted all-in -- flag it the same way a
-    // short call/raise would be, so getCurrentBettor doesn't loop them
-    // forever trying to match a bet they have no chips left to reach.
-    const allIn = new Set();
-    if (sbResult.allIn) allIn.add(sbId);
-    if (bbResult.allIn) allIn.add(bbId);
-    state.bettingRound = { order: state.actionOrder.slice(), committed, currentBetChips: Math.max(sbResult.paid, bbResult.paid), responded: new Set(), allIn, raiseCounts: {} };
+    state.bettingRound = { order: state.actionOrder.slice(), committed, currentBetChips: Math.max(sbResult.paid, bbResult.paid), responded: new Set(), allIn: new Set(), raiseCounts: {} };
     state.log.push(`${sbPlayer.name} posts small blind ($${state.smallBlindDollars.toFixed(2)}), ${bbPlayer.name} posts big blind ($${state.bigBlindDollars.toFixed(2)}).`);
   }
 
@@ -191,10 +192,18 @@ const HoldemRules = (function () {
   }
 
   function maxRaiseDollars(state, playerId) {
+    const player = getPlayer(state, playerId);
+    if (!player.isHuman && state.bettingRound) {
+      const toCall = Math.max(0, state.bettingRound.currentBetChips - (state.bettingRound.committed[playerId] || 0));
+      const minComfort = toCall + ChipEconomy.dollarsToChips(state.raiseIncrementDollars * 4);
+      while (player.wallet.chips < minComfort) {
+        ChipEconomy.rebuy(player.wallet, ChipEconomy.BUY_IN_INCREMENT_DOLLARS, Date.now());
+      }
+    }
     return BettingEngine.maxRaiseDollars(state.bettingRound, playerId, {
       maxBetDollars: state.maxBetDollars,
       raiseIncrementDollars: state.raiseIncrementDollars,
-      walletChips: getPlayer(state, playerId).wallet.chips,
+      walletChips: player.wallet.chips,
     });
   }
 
@@ -207,11 +216,12 @@ const HoldemRules = (function () {
       walletChips: player.wallet.chips,
     });
     state.pot += result.paidChips;
+    const finalAction = result.action || action;
 
-    if (action === "fold") {
+    if (finalAction === "fold") {
       player.folded = true;
       state.log.push(`${player.name} folds.`);
-    } else if (action === "raise") {
+    } else if (finalAction === "raise") {
       state.log.push(`${player.name} raises to $${ChipEconomy.chipsToDollars(br.currentBetChips).toFixed(2)}.`);
     } else {
       state.log.push(result.paidChips > 0 ? `${player.name} calls.` : `${player.name} checks.`);

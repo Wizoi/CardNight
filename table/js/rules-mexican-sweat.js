@@ -149,9 +149,10 @@ const MexicanSweatRules = (function () {
 
   function foldPlayer(state, playerId) {
     const player = getPlayer(state, playerId);
-    player.folded = true;
-    state.discardPile.push(...player.hand.map((c) => ({ rank: c.rank, suit: c.suit })));
-    player.hand = [];
+    if (!player.folded) {
+      player.folded = true;
+      state.discardPile.push(...player.hand.map((c) => ({ rank: c.rank, suit: c.suit })));
+    }
   }
 
   function startBettingRound(state) {
@@ -186,12 +187,13 @@ const MexicanSweatRules = (function () {
       walletChips: player.wallet.chips,
     });
     state.pot += result.paidChips;
+    const finalAction = result.action || action;
 
-    if (action === "fold") {
+    if (finalAction === "fold") {
       const showing = evaluateShowingHand(state, playerId);
       foldPlayer(state, playerId);
       state.log.push(`${player.name} folds — showing ${HandEvaluator.describe(showing)}.`);
-    } else if (action === "raise") {
+    } else if (finalAction === "raise") {
       state.log.push(`${player.name} raises to $${ChipEconomy.chipsToDollars(br.currentBetChips).toFixed(2)}.`);
     } else {
       state.log.push(result.paidChips > 0 ? `${player.name} calls.` : `${player.name} checks.`);

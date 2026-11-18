@@ -33,7 +33,7 @@ const TableUIBlindMansBluff = (function () {
         // The human's OWN seat is the one exception to "everyone else's
         // card is always visible" -- it stays a card-back until showdown,
         // same as it would look to every OTHER seat looking at their own.
-        const hideThisCard = p.isHuman && !revealed;
+        const hideThisCard = p.isHuman && !revealed && !p.folded;
         const cardMk = gvs.state ? cardMarkup(p.hand[0], hideThisCard) : "";
         return `
           <div class="seat ${p.folded ? "seat-folded" : ""} ${isTurn ? "seat-active" : ""}">
@@ -62,9 +62,14 @@ const TableUIBlindMansBluff = (function () {
   // never get to look at their own card at all, by design (their seat in
   // renderSeats is the only place this card would ever render, and even
   // there it's a card-back until showdown).
-  function renderHumanHand(el, gvs) {
+  function renderHumanHand(el, gvs, humanId) {
     if (!gvs.state) {
       el.humanHand.innerHTML = "";
+      return;
+    }
+    const human = gvs.players.find((p) => (humanId ? p.id === humanId : p.isHuman));
+    if (human && (human.folded || gvs.state.status === "complete") && human.hand && human.hand[0]) {
+      el.humanHand.innerHTML = cardMarkup(human.hand[0], false);
       return;
     }
     el.humanHand.innerHTML = `<em>Your card is on your forehead — you can't see it. Everyone else can.</em>`;

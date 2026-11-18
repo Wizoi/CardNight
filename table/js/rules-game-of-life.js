@@ -193,10 +193,11 @@ const RulesGameOfLife = (function () {
       walletChips: player.wallet.chips,
     });
     state.pot += result.paidChips;
-    if (action === "fold") {
+    const finalAction = result.action || action;
+    if (finalAction === "fold") {
       foldPlayer(state, playerId);
       state.log.push(`${player.name} folds.`);
-    } else if (action === "raise") {
+    } else if (finalAction === "raise") {
       state.log.push(`${player.name} raises to $${ChipEconomy.chipsToDollars(state.bettingRound.currentBetChips).toFixed(2)}.`);
     } else {
       state.log.push(result.paidChips > 0 ? `${player.name} calls.` : `${player.name} checks.`);

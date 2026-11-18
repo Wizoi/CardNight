@@ -117,8 +117,6 @@ const RulesDrawPoker = (function () {
     const player = getPlayer(state, playerId);
     if (state.status === "opening" && action === "raise" && !state.openedThisRound) {
       if (!qualifiesToOpen(evaluateHand(player.hand))) return { rejected: true };
-      state.openedThisRound = true;
-      state.log.push(`${player.name} opens the betting.`);
     }
     const result = BettingEngine.submitBet(state.bettingRound, player, action, raiseDollars, {
       raiseIncrementDollars: state.raiseIncrementDollars,
@@ -126,13 +124,15 @@ const RulesDrawPoker = (function () {
       walletChips: player.wallet.chips,
     });
     state.pot += result.paidChips;
-    if (action === "fold") {
+    const finalAction = result.action || action;
+    if (state.status === "opening" && finalAction === "raise" && !state.openedThisRound) {
+      state.openedThisRound = true;
+      state.log.push(`${player.name} opens the betting.`);
+    }
+    if (finalAction === "fold") {
       foldPlayer(state, playerId);
       state.log.push(`${player.name} folds.`);
-    } else if (action === "raise") {
-      if (!(state.status === "opening" && state.openedThisRound && result.paidChips === ChipEconomy.dollarsToChips(0))) {
-        // avoid a duplicate "opens the betting" + "raises to" pair of log lines for the very same action
-      }
+    } else if (finalAction === "raise") {
       state.log.push(`${player.name} raises to $${ChipEconomy.chipsToDollars(state.bettingRound.currentBetChips).toFixed(2)}.`);
     } else {
       state.log.push(result.paidChips > 0 ? `${player.name} calls.` : `${player.name} checks.`);

@@ -207,12 +207,20 @@ const WildInYourHandRules = (function () {
 
   function submitRowDecision(state, playerId, payingIn) {
     const player = getPlayer(state, playerId);
+    const neededChips = ChipEconomy.dollarsToChips(state.rowBetDollars);
+    if (payingIn && player.isHuman && player.wallet.chips < neededChips) {
+      payingIn = false;
+    } else if (payingIn && !player.isHuman) {
+      while (player.wallet.chips < neededChips) {
+        ChipEconomy.rebuy(player.wallet, ChipEconomy.BUY_IN_INCREMENT_DOLLARS, Date.now());
+      }
+    }
     state.rowDecisions[playerId] = payingIn;
     if (!payingIn) {
       player.folded = true;
       state.log.push(`${player.name} folds.`);
     } else {
-      const { paid } = ChipEconomy.pay(player.wallet, ChipEconomy.dollarsToChips(state.rowBetDollars));
+      const { paid } = ChipEconomy.pay(player.wallet, neededChips);
       state.pot += paid;
       state.log.push(`${player.name} puts in $${state.rowBetDollars.toFixed(2)} to stay in.`);
     }
@@ -378,6 +386,11 @@ const WildInYourHandRules = (function () {
     let carried = 0;
     for (const loserId of state.loserIds) {
       const loser = getPlayer(state, loserId);
+      if (!loser.isHuman) {
+        while (loser.wallet.chips < state.antePoolChips) {
+          ChipEconomy.rebuy(loser.wallet, ChipEconomy.BUY_IN_INCREMENT_DOLLARS, Date.now());
+        }
+      }
       const { paid } = ChipEconomy.pay(loser.wallet, state.antePoolChips);
       carried += paid;
       state.log.push(`${loser.name} matches the $${ChipEconomy.chipsToDollars(state.antePoolChips).toFixed(2)} ante pool to keep the game going.`);

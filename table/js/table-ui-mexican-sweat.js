@@ -79,7 +79,14 @@ const TableUIMexicanSweat = (function () {
       el.humanHand.innerHTML = "";
       return;
     }
-    el.humanHand.innerHTML = human.hand.map((c) => (c.faceUp ? cardMarkup(c, false) : cardMarkup(null, true))).join("");
+    const revealRemaining = human.folded || gvs.state.status === "complete";
+    el.humanHand.innerHTML = human.hand
+      .map((c) => {
+        if (c.faceUp) return cardMarkup(c, false);
+        if (revealRemaining) return cardMarkup(c, false);
+        return cardMarkup(null, true);
+      })
+      .join("");
   }
 
   function renderActionPanel(el, gvs, humanId, orchestrator, settings) {

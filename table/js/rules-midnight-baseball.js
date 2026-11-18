@@ -244,14 +244,16 @@ const MidnightBaseball = (function () {
     return HandEvaluator.isBetter(evaluateShowingHand(state, playerId), currentBestHand(state).hand);
   }
 
-  // A folded player's cards are taken off the table entirely — not shown
-  // anymore, win or lose — and go into the discard pile to be recycled into
-  // the draw pile for future 4-bonus buys once the deck runs dry.
+  // A folded player's cards stay visible (grayed out) on their seat and in
+  // #human-hand so players can always see their last flipped card and what
+  // they held; a copy is also added to discardPile once in case the deck runs
+  // dry on 4-bonus draws.
   function foldPlayer(state, playerId) {
     const player = getPlayer(state, playerId);
-    player.folded = true;
-    state.discardPile.push(...player.hand.map((c) => ({ rank: c.rank, suit: c.suit })));
-    player.hand = [];
+    if (!player.folded) {
+      player.folded = true;
+      state.discardPile.push(...player.hand.map((c) => ({ rank: c.rank, suit: c.suit })));
+    }
   }
 
   const STOP_MESSAGES = {
@@ -315,8 +317,9 @@ const MidnightBaseball = (function () {
       walletChips: player.wallet.chips,
     });
     state.pot += result.paidChips;
+    const finalAction = result.action || action;
 
-    if (action === "fold") {
+    if (finalAction === "fold") {
       const showing = evaluateShowingHand(state, playerId);
       const board = currentBestHand(state).hand;
       const remaining = remainingFaceDownCount(state, playerId);
@@ -324,7 +327,7 @@ const MidnightBaseball = (function () {
       state.log.push(
         `${player.name} folds — showing ${HandEvaluator.describe(showing)} with ${remaining} card(s) left, needed to beat: ${HandEvaluator.describe(board)}.`
       );
-    } else if (action === "raise") {
+    } else if (finalAction === "raise") {
       state.log.push(`${player.name} raises to $${ChipEconomy.chipsToDollars(br.currentBetChips).toFixed(2)}.`);
     } else {
       state.log.push(result.paidChips > 0 ? `${player.name} calls.` : `${player.name} checks.`);

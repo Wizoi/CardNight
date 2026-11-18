@@ -319,8 +319,16 @@ const StudRules = (function () {
   function resolveEnterpriseBuy(state, playerId, position) {
     const player = getPlayer(state, playerId);
     const priceDollars = currentEnterprisePriceDollars(state, position);
+    const neededChips = ChipEconomy.dollarsToChips(priceDollars);
+    if (player.isHuman && player.wallet.chips < neededChips) {
+      resolveEnterpriseFree(state, playerId);
+      return;
+    }
+    if (!player.isHuman && player.wallet.chips < neededChips) {
+      while (player.wallet.chips < neededChips) ChipEconomy.rebuy(player.wallet, ChipEconomy.BUY_IN_INCREMENT_DOLLARS, Date.now());
+    }
     const chosen = state.enterprisePile.splice(position, 1)[0];
-    const { paid } = ChipEconomy.pay(player.wallet, ChipEconomy.dollarsToChips(priceDollars));
+    const { paid } = ChipEconomy.pay(player.wallet, neededChips);
     state.pot += paid;
     player.hand.push({ rank: chosen.rank, suit: chosen.suit, faceUp: true, isWild: false, bought: false, isBonus: false });
     refillEnterprisePile(state);
@@ -343,7 +351,12 @@ const StudRules = (function () {
   const ENTERPRISE_WIPE_PRICE_DOLLARS = 1;
   function resolveEnterpriseWipe(state, playerId) {
     const player = getPlayer(state, playerId);
-    const { paid } = ChipEconomy.pay(player.wallet, ChipEconomy.dollarsToChips(ENTERPRISE_WIPE_PRICE_DOLLARS));
+    const neededChips = ChipEconomy.dollarsToChips(ENTERPRISE_WIPE_PRICE_DOLLARS);
+    if (player.isHuman && player.wallet.chips < neededChips) return;
+    if (!player.isHuman && player.wallet.chips < neededChips) {
+      while (player.wallet.chips < neededChips) ChipEconomy.rebuy(player.wallet, ChipEconomy.BUY_IN_INCREMENT_DOLLARS, Date.now());
+    }
+    const { paid } = ChipEconomy.pay(player.wallet, neededChips);
     state.pot += paid;
     state.discardPile.push(...state.enterprisePile.map((c) => ({ rank: c.rank, suit: c.suit })));
     state.enterprisePile = [];
@@ -442,9 +455,10 @@ const StudRules = (function () {
 
   function foldPlayer(state, playerId) {
     const player = getPlayer(state, playerId);
-    player.folded = true;
-    state.discardPile.push(...player.hand.map((c) => ({ rank: c.rank, suit: c.suit })));
-    player.hand = [];
+    if (!player.folded) {
+      player.folded = true;
+      state.discardPile.push(...player.hand.map((c) => ({ rank: c.rank, suit: c.suit })));
+    }
   }
 
   function startBettingRound(state) {
@@ -484,12 +498,13 @@ const StudRules = (function () {
       walletChips: player.wallet.chips,
     });
     state.pot += result.paidChips;
+    const finalAction = result.action || action;
 
-    if (action === "fold") {
+    if (finalAction === "fold") {
       const showing = evaluateShowingHand(state, playerId);
       foldPlayer(state, playerId);
       state.log.push(`${player.name} folds — showing ${HandEvaluator.describe(showing)}.`);
-    } else if (action === "raise") {
+    } else if (finalAction === "raise") {
       state.log.push(`${player.name} raises to $${ChipEconomy.chipsToDollars(br.currentBetChips).toFixed(2)}.`);
     } else {
       state.log.push(result.paidChips > 0 ? `${player.name} calls.` : `${player.name} checks.`);

@@ -34,11 +34,18 @@ const BettingEngine = (function () {
   // zero) is what actually stops that: a real bug this project didn't
   // catch until a Playwright multi-game-night pass sent a broke player
   // (busted out of one game's blinds) into a second game's betting round.
+  function ensureAiCanAfford(player, neededChips) {
+    if (!player || player.isHuman || !player.wallet) return;
+    while (player.wallet.chips < neededChips) {
+      ChipEconomy.rebuy(player.wallet, ChipEconomy.BUY_IN_INCREMENT_DOLLARS, Date.now());
+    }
+  }
+
   function getCurrentBettor(round, isFolded) {
     const activeCount = round.order.filter((id) => !isFolded(id)).length;
     if (activeCount <= 1) return null;
     for (const pid of round.order) {
-      if (isFolded(pid) || round.allIn.has(pid)) continue;
+      if (isFolded(pid)) continue;
       if (round.responded.has(pid) && round.committed[pid] === round.currentBetChips) continue;
       return pid;
     }
@@ -50,23 +57,18 @@ const BettingEngine = (function () {
   }
 
   // walletChips bounds the raise by what the player can actually still
-  // pay, on top of the configured maxBetDollars cap. Every game here used
-  // to rely on maxBetDollars alone (a low fixed cap like $2, always well
-  // under a $20 buy-in) to keep this implicitly safe — hold'em's genuinely
-  // uncapped maxBetDollars (games.md: "no cap on bet size") exposed that
-  // this function never actually checked affordability at all, so an AI
-  // could be told it "could" raise by an amount its own wallet couldn't
-  // cover, submit that raise anyway, and have it silently clamp to a
-  // confusing "$0.00" all-in with no chips actually moving. Defaults to
-  // Infinity (unbounded) so a caller that doesn't pass it behaves exactly
-  // as before.
+  // pay, on top of the configured maxBetDollars cap.
   function maxRaiseDollars(round, playerId, { maxBetDollars, raiseIncrementDollars, walletChips = Infinity }) {
-    const toCall = round.currentBetChips - round.committed[playerId];
-    const maxTotalChips = ChipEconomy.dollarsToChips(maxBetDollars);
-    const roomByCapChips = Math.max(0, maxTotalChips - (round.committed[playerId] + toCall));
+    const committed = (round && round.committed && round.committed[playerId]) || 0;
+    const toCall = Math.max(0, round.currentBetChips - committed);
+    if (walletChips <= toCall) return 0;
+    const effectiveMaxBet = maxBetDollars == null || maxBetDollars === Infinity ? Infinity : maxBetDollars;
+    const maxTotalChips = effectiveMaxBet === Infinity ? Infinity : ChipEconomy.dollarsToChips(effectiveMaxBet);
+    const roomByCapChips = effectiveMaxBet === Infinity ? Infinity : Math.max(0, maxTotalChips - (committed + toCall));
     const roomByWalletChips = Math.max(0, walletChips - toCall);
     const roomChips = Math.min(roomByCapChips, roomByWalletChips);
     const incrementChips = ChipEconomy.dollarsToChips(raiseIncrementDollars);
+    if (!incrementChips || incrementChips <= 0) return 0;
     const steps = Math.floor(roomChips / incrementChips);
     return steps * raiseIncrementDollars;
   }
@@ -74,37 +76,57 @@ const BettingEngine = (function () {
   // Pure chip accounting only — no folding, no logging, no win-checking.
   // player: {id, wallet}. Returns enough for the caller to log/react.
   function submitBet(round, player, action, raiseDollars, opts) {
-    const toCallChips = round.currentBetChips - round.committed[player.id];
+    const committed = (round.committed && round.committed[player.id]) || 0;
+    const toCallChips = Math.max(0, round.currentBetChips - committed);
 
     if (action === "fold") {
       round.responded.add(player.id);
-      return { action, paidChips: 0, toCallChips, newCurrentBetChips: round.currentBetChips };
+      return { action: "fold", paidChips: 0, toCallChips, newCurrentBetChips: round.currentBetChips };
     }
 
     if (action === "raise") {
-      const allowedRaiseDollars = Math.min(raiseDollars, maxRaiseDollars(round, player.id, opts));
+      if (!player.isHuman) {
+        const reqRaiseChips = ChipEconomy.dollarsToChips(Math.max(0, raiseDollars || 0));
+        ensureAiCanAfford(player, toCallChips + reqRaiseChips);
+      }
+      const currentOpts = Object.assign({}, opts, { walletChips: player.wallet.chips });
+      const allowedRaiseDollars = Math.min(raiseDollars || 0, maxRaiseDollars(round, player.id, currentOpts));
       const raiseChips = ChipEconomy.dollarsToChips(Math.max(0, allowedRaiseDollars));
-      const owed = toCallChips + raiseChips;
-      const { paid, allIn } = ChipEconomy.pay(player.wallet, owed);
-      round.committed[player.id] += paid;
-      round.currentBetChips = Math.max(round.currentBetChips, round.committed[player.id]);
-      round.responded = new Set([player.id]);
-      round.raiseCounts[player.id] = (round.raiseCounts[player.id] || 0) + 1;
-      if (allIn) round.allIn.add(player.id);
-      return { action, paidChips: paid, toCallChips, newCurrentBetChips: round.currentBetChips };
+      if (raiseChips > 0 && player.wallet.chips >= toCallChips + raiseChips) {
+        const owed = toCallChips + raiseChips;
+        const { paid } = ChipEconomy.pay(player.wallet, owed);
+        round.committed[player.id] = committed + paid;
+        round.currentBetChips = Math.max(round.currentBetChips, round.committed[player.id]);
+        round.responded = new Set([player.id]);
+        round.raiseCounts[player.id] = (round.raiseCounts[player.id] || 0) + 1;
+        return { action: "raise", paidChips: paid, toCallChips, newCurrentBetChips: round.currentBetChips };
+      }
+      // Cannot raise: if player cannot even cover toCallChips, force fold
+      if (player.wallet.chips < toCallChips) {
+        round.responded.add(player.id);
+        return { action: "fold", paidChips: 0, toCallChips, newCurrentBetChips: round.currentBetChips, forcedFold: true };
+      }
+      action = "call";
     }
 
-    const { paid, allIn } = ChipEconomy.pay(player.wallet, toCallChips);
-    round.committed[player.id] += paid;
+    if (!player.isHuman) {
+      ensureAiCanAfford(player, toCallChips);
+    } else if (toCallChips > player.wallet.chips) {
+      round.responded.add(player.id);
+      return { action: "fold", paidChips: 0, toCallChips, newCurrentBetChips: round.currentBetChips, forcedFold: true };
+    }
+
+    const { paid } = ChipEconomy.pay(player.wallet, toCallChips);
+    round.committed[player.id] = committed + paid;
     round.responded.add(player.id);
-    if (allIn) round.allIn.add(player.id);
-    return { action, paidChips: paid, toCallChips, newCurrentBetChips: round.currentBetChips };
+    return { action: "call", paidChips: paid, toCallChips, newCurrentBetChips: round.currentBetChips };
   }
 
   function collectAntes(players, anteDollars) {
     const chipsEach = ChipEconomy.dollarsToChips(anteDollars);
     let total = 0;
     for (const player of players) {
+      ensureAiCanAfford(player, chipsEach);
       const { paid } = ChipEconomy.pay(player.wallet, chipsEach);
       total += paid;
     }

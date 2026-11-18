@@ -44,6 +44,20 @@ const TablePeople = (function () {
     return TABLE_PEOPLE.find((p) => p.id === id) || null;
   }
 
+  // Stamp personId/archetypeId onto each avatar spec at load time so
+  // Avatar.render(spec, size) can load the illustrated portrait from
+  // people-images/<id>.jfif and apply the archetype's metallic frame
+  // without changing the 2-argument Avatar.render call across every UI file.
+  if (typeof TABLE_PEOPLE !== "undefined" && Array.isArray(TABLE_PEOPLE)) {
+    for (const p of TABLE_PEOPLE) {
+      if (p.avatar) {
+        p.avatar.personId = p.id;
+        p.avatar.archetypeId = p.archetypeId;
+        p.avatar.personName = p.name;
+      }
+    }
+  }
+
   function profileFor(archetypeId) {
     return ARCHETYPE_PROFILE[archetypeId] || "balanced";
   }

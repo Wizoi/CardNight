@@ -95,9 +95,11 @@ const TableUIMidnightBaseball = (function () {
       gvs.state.status !== "complete" &&
       MidnightBaseball.currentTurnPlayerId(gvs.state) === human.id &&
       !human.folded;
+    const revealRemaining = human.folded || gvs.state.status === "complete";
     el.humanHand.innerHTML = human.hand
       .map((c, i) => {
         if (c.faceUp) return cardMarkup(c, false);
+        if (revealRemaining) return cardMarkup(c, false, true);
         if (canClick) return `<button class="card card-back card-clickable" data-flip-index="${i}"></button>`;
         return cardMarkup(null, true);
       })

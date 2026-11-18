@@ -99,6 +99,11 @@ const AceyDuceyRules = (function () {
 
   function resolveBet(state, playerId, betDollars) {
     const player = getPlayer(state, playerId);
+    const maxAffordableDollars = ChipEconomy.chipsToDollars(player.wallet.chips);
+    const potDollars = ChipEconomy.chipsToDollars(state.pot);
+    if (player.isHuman && betDollars > 0) {
+      betDollars = Math.min(betDollars, maxAffordableDollars, potDollars);
+    }
     if (!betDollars || betDollars <= 0) {
       state.log.push(`${player.name} passes.`);
       state.lastResult = { playerId, betDollars: 0, outcome: "pass" };
@@ -130,7 +135,13 @@ const AceyDuceyRules = (function () {
       }
     } else {
       const lossDollars = outcome === "post" ? betDollars * 2 : betDollars;
-      const { paid } = ChipEconomy.pay(player.wallet, ChipEconomy.dollarsToChips(lossDollars));
+      const lossChips = ChipEconomy.dollarsToChips(lossDollars);
+      if (!player.isHuman) {
+        while (player.wallet.chips < lossChips) {
+          ChipEconomy.rebuy(player.wallet, ChipEconomy.BUY_IN_INCREMENT_DOLLARS, Date.now());
+        }
+      }
+      const { paid } = ChipEconomy.pay(player.wallet, lossChips);
       state.pot += paid;
       if (outcome === "post") {
         state.log.push(`${player.name} bets $${betDollars.toFixed(2)} — ${Deck.cardLabel(third)} hits the post! Loses double: $${lossDollars.toFixed(2)}.`);

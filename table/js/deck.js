@@ -59,10 +59,41 @@ const Deck = (function () {
   // stylesheet can squeeze it horizontally (scaleX) rather than shrinking
   // its font-size, which would otherwise make "10" look shorter than every
   // other rank instead of just narrower.
-  function cardFaceHtml(card) {
+  function cardFaceHtmlV1(card) {
     if (card.rank === "JOKER") return "Joker";
     const rankClass = card.rank.length > 1 ? "card-rank card-rank-wide" : "card-rank";
     return `<span class="${rankClass}">${card.rank}</span><span class="card-suit">${SUIT_SYMBOLS[card.suit] || card.suit}</span>`;
+  }
+
+  function cardFaceHtmlV2(card) {
+    if (card.rank === "JOKER") {
+      return `
+        <span class="card-corner card-corner-tl"><span class="card-rank card-rank-wide">JKR</span><span class="card-corner-suit">★</span></span>
+        <span class="card-center-art"><span class="card-suit card-joker-star">🃏</span><span class="card-joker-label">JOKER</span></span>
+        <span class="card-corner card-corner-br"><span class="card-rank card-rank-wide">JKR</span><span class="card-corner-suit">★</span></span>
+      `.trim();
+    }
+    const suitSym = SUIT_SYMBOLS[card.suit] || card.suit;
+    const rankClass = card.rank.length > 1 ? "card-rank card-rank-wide" : "card-rank";
+    const isRoyal = card.rank === "J" || card.rank === "Q" || card.rank === "K";
+    const isAce = card.rank === "A";
+    const royalCrown = isRoyal ? `<span class="card-royal-crown" aria-hidden="true">♛</span>` : "";
+    return `<span class="card-corner card-corner-tl"><span class="${rankClass}">${card.rank}</span><span class="card-corner-suit">${suitSym}</span></span><span class="card-center-art${isRoyal ? " card-center-royal" : ""}${isAce ? " card-center-ace" : ""}">${royalCrown}<span class="card-suit">${suitSym}</span></span><span class="card-corner card-corner-br"><span class="${rankClass}">${card.rank}</span><span class="card-corner-suit">${suitSym}</span></span>`;
+  }
+
+  // Pluggable card-face renderer: v1 uses the original stacked rank/suit span;
+  // v2 uses the artisanal playing-card layout with corner indices and court crowns.
+  let customCardFaceRenderer = null;
+  function setCardFaceRenderer(fn) {
+    customCardFaceRenderer = typeof fn === "function" ? fn : null;
+  }
+
+  function cardFaceHtml(card) {
+    if (customCardFaceRenderer) return customCardFaceRenderer(card);
+    if (typeof window !== "undefined" && window.CARDNIGHT_UI_VERSION === 1) {
+      return cardFaceHtmlV1(card);
+    }
+    return cardFaceHtmlV2(card);
   }
 
   // Draws one card from pile.deck, reshuffling pile.discardPile back in as a
@@ -82,5 +113,18 @@ const Deck = (function () {
     return { card: pile.deck.shift(), reshuffled };
   }
 
-  return { SUITS, SUIT_SYMBOLS, RANKS, RANK_VALUES, buildDeck, shuffle, cardLabel, cardFaceHtml, drawWithReshuffle };
+  return {
+    SUITS,
+    SUIT_SYMBOLS,
+    RANKS,
+    RANK_VALUES,
+    buildDeck,
+    shuffle,
+    cardLabel,
+    cardFaceHtml,
+    cardFaceHtmlV1,
+    cardFaceHtmlV2,
+    setCardFaceRenderer,
+    drawWithReshuffle,
+  };
 })();

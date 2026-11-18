@@ -132,10 +132,6 @@ const TableUI333 = (function () {
       el.humanHand.innerHTML = "";
       return;
     }
-    if (human.folded) {
-      el.humanHand.innerHTML = "<em>Folded</em>";
-      return;
-    }
     el.humanHand.innerHTML = human.hand.map((c) => cardMarkup(c, false)).join("") || "<em>No cards left</em>";
   }
 

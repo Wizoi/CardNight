@@ -373,6 +373,11 @@ const GutsRules = (function () {
     let carried = 0;
     for (const loserId of state.loserIds) {
       const loser = getPlayer(state, loserId);
+      if (!loser.isHuman) {
+        while (loser.wallet.chips < capChips) {
+          ChipEconomy.rebuy(loser.wallet, ChipEconomy.BUY_IN_INCREMENT_DOLLARS, Date.now());
+        }
+      }
       const { paid } = ChipEconomy.pay(loser.wallet, capChips);
       carried += paid;
       state.log.push(`${loser.name} matches ${capChips < state.potAtShowdown ? "the max loss" : "the pot"} ($${ChipEconomy.chipsToDollars(capChips).toFixed(2)}) to keep the game going.`);

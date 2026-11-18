@@ -83,11 +83,17 @@ const TableNight = (function () {
   // replacer/reviver pair fixes this for every current AND future Set
   // anywhere in a session's state, not just today's two call sites.
   function jsonReplacer(key, value) {
-    return value instanceof Set ? { __type: "Set", values: [...value] } : value;
+    if (value instanceof Set) return { __type: "Set", values: [...value] };
+    if (value === Infinity) return { __type: "Infinity" };
+    return value;
   }
 
   function jsonReviver(key, value) {
-    return value && typeof value === "object" && value.__type === "Set" ? new Set(value.values) : value;
+    if (value && typeof value === "object") {
+      if (value.__type === "Set") return new Set(value.values);
+      if (value.__type === "Infinity") return Infinity;
+    }
+    return value;
   }
 
   // Full-night persistence (2026-08-29, user's explicit request after

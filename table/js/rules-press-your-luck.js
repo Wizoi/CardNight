@@ -175,7 +175,15 @@ const PressYourLuckRules = (function () {
     const player = getPlayer(state, playerId);
     const card = player.hand[player.hand.length - 1];
     const priceDollars = state.gameConfig.flexTenPriceDollars;
-    const { paid } = ChipEconomy.pay(player.wallet, ChipEconomy.dollarsToChips(priceDollars));
+    const neededChips = ChipEconomy.dollarsToChips(priceDollars);
+    if (player.isHuman && player.wallet.chips < neededChips) {
+      state.log.push(`${player.name} keeps the card.`);
+      return;
+    }
+    if (!player.isHuman && player.wallet.chips < neededChips) {
+      while (player.wallet.chips < neededChips) ChipEconomy.rebuy(player.wallet, ChipEconomy.BUY_IN_INCREMENT_DOLLARS, Date.now());
+    }
+    const { paid } = ChipEconomy.pay(player.wallet, neededChips);
     state.pot += paid;
     card.flexTen = true;
     state.log.push(`${player.name} pays $${priceDollars.toFixed(2)} to make that 10 flexible (0 or 10).`);
@@ -184,17 +192,20 @@ const PressYourLuckRules = (function () {
   function applyBuyBack(state, playerId) {
     const player = getPlayer(state, playerId);
     const priceDollars = state.gameConfig.buyBack.priceScheduleDollars[player.buyBacksUsed];
-    const { paid } = ChipEconomy.pay(player.wallet, ChipEconomy.dollarsToChips(priceDollars));
+    const neededChips = ChipEconomy.dollarsToChips(priceDollars);
+    if (player.isHuman && player.wallet.chips < neededChips) {
+      state.log.push(`${player.name} keeps the card.`);
+      return;
+    }
+    if (!player.isHuman && player.wallet.chips < neededChips) {
+      while (player.wallet.chips < neededChips) ChipEconomy.rebuy(player.wallet, ChipEconomy.BUY_IN_INCREMENT_DOLLARS, Date.now());
+    }
+    const { paid } = ChipEconomy.pay(player.wallet, neededChips);
     state.pot += paid;
     player.buyBacksUsed += 1;
     const oldCard = player.hand[player.hand.length - 1];
     state.discardPile.push({ rank: oldCard.rank, suit: oldCard.suit });
     const replacement = drawCard(state);
-    // A bought-back card replaces a face-up card the player didn't want --
-    // the replacement is still dealt face up (same as any other dealt
-    // card in 7-27), not hidden. Real bug, reported 2026-08-29: this used
-    // to hardcode faceUp: false, silently taking a player's card OUT of
-    // view instead of just swapping it for a new one.
     player.hand[player.hand.length - 1] = { rank: replacement.rank, suit: replacement.suit, faceUp: true };
     state.log.push(`${player.name} buys back the card for $${priceDollars.toFixed(2)} — new card dealt face up.`);
   }
@@ -307,10 +318,11 @@ const PressYourLuckRules = (function () {
       walletChips: player.wallet.chips,
     });
     state.pot += result.paidChips;
-    if (action === "fold") {
+    const finalAction = result.action || action;
+    if (finalAction === "fold") {
       foldPlayer(state, playerId);
       state.log.push(`${player.name} folds.`);
-    } else if (action === "raise") {
+    } else if (finalAction === "raise") {
       state.log.push(`${player.name} raises to $${ChipEconomy.chipsToDollars(state.bettingRound.currentBetChips).toFixed(2)}.`);
     } else {
       state.log.push(result.paidChips > 0 ? `${player.name} calls.` : `${player.name} checks.`);

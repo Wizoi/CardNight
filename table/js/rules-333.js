@@ -128,9 +128,10 @@ const Rules333 = (function () {
 
   function foldPlayer(state, playerId) {
     const player = getPlayer(state, playerId);
-    player.folded = true;
-    state.discardPile.push(...player.hand.map((c) => ({ rank: c.rank, suit: c.suit })));
-    player.hand = [];
+    if (!player.folded) {
+      player.folded = true;
+      state.discardPile.push(...player.hand.map((c) => ({ rank: c.rank, suit: c.suit })));
+    }
   }
 
   function submitBet(state, playerId, action, raiseDollars) {
@@ -141,10 +142,11 @@ const Rules333 = (function () {
       walletChips: player.wallet.chips,
     });
     state.pot += result.paidChips;
-    if (action === "fold") {
+    const finalAction = result.action || action;
+    if (finalAction === "fold") {
       foldPlayer(state, playerId);
       state.log.push(`${player.name} folds.`);
-    } else if (action === "raise") {
+    } else if (finalAction === "raise") {
       state.log.push(`${player.name} raises to $${ChipEconomy.chipsToDollars(state.bettingRound.currentBetChips).toFixed(2)}.`);
     } else {
       state.log.push(result.paidChips > 0 ? `${player.name} calls.` : `${player.name} checks.`);

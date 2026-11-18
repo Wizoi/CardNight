@@ -119,6 +119,9 @@ const SessionStud = (function () {
     }
 
     function dealNextHand() {
+      if (state && state.rainedOut && !carriedPotChips && state.pot > 0) {
+        carriedPotChips = state.pot;
+      }
       dealerIndex = (dealerIndex + 1) % players.length;
       beginHand();
     }

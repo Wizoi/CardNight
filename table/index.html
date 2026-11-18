@@ -2,53 +2,142 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Luck of the Deal</title>
-  <meta name="description" content="A night of poker against computer opponents — sit down, cut for deal, and play any of the house games." />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Luck of the Deal — CardNight</title>
+  <meta name="description" content="A night of poker against computer opponents — sit down, cut for deal, and play any of the 27 house games." />
   <meta name="theme-color" content="#082a20" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="icon.svg" />
   <link rel="apple-touch-icon" href="icon.svg" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=3.2" />
 </head>
 <body>
   <div id="setup-view">
-    <h1>Luck of the Deal</h1>
-    <div id="resume-banner" hidden>
-      <p>You've got a night in progress — pick up right where you left off, cards and all.</p>
-      <button type="button" id="resume-night-btn">Resume where you left off</button>
-      <button type="button" id="discard-saved-night-btn">Start a new night instead</button>
+    <!-- Rich Game Title Hero Marquee -->
+    <div class="lobby-hero-marquee">
+      <div class="lobby-crest-art" aria-hidden="true">
+        <svg viewBox="0 0 180 96" class="lobby-crest-svg">
+          <defs>
+            <linearGradient id="crestGold" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fff3bf" />
+              <stop offset="50%" stop-color="#d4af37" />
+              <stop offset="100%" stop-color="#7a5c10" />
+            </linearGradient>
+          </defs>
+          <!-- Fanned Cards Behind Crest -->
+          <g transform="translate(90, 62)">
+            <g transform="rotate(-24) translate(-22, -48)">
+              <rect width="38" height="54" rx="5" fill="#fbf6e8" stroke="url(#crestGold)" stroke-width="2" />
+              <text x="6" y="14" font-size="11" font-weight="900" fill="#d63629">A</text>
+              <text x="19" y="36" font-size="20" text-anchor="middle" fill="#d63629">♥</text>
+            </g>
+            <g transform="rotate(-8) translate(-19, -52)">
+              <rect width="38" height="54" rx="5" fill="#fbf6e8" stroke="url(#crestGold)" stroke-width="2" />
+              <text x="6" y="14" font-size="11" font-weight="900" fill="#18181b">A</text>
+              <text x="19" y="36" font-size="20" text-anchor="middle" fill="#18181b">♠</text>
+            </g>
+            <g transform="rotate(8) translate(-19, -52)">
+              <rect width="38" height="54" rx="5" fill="#fff3bf" stroke="url(#crestGold)" stroke-width="2" />
+              <text x="6" y="13" font-size="9" font-weight="900" fill="#b8860b">W</text>
+              <text x="19" y="36" font-size="18" text-anchor="middle" fill="#18181b">★</text>
+            </g>
+            <g transform="rotate(24) translate(-16, -48)">
+              <rect width="38" height="54" rx="5" fill="#fbf6e8" stroke="url(#crestGold)" stroke-width="2" />
+              <text x="6" y="14" font-size="11" font-weight="900" fill="#d63629">Q</text>
+              <text x="19" y="36" font-size="20" text-anchor="middle" fill="#d63629">♦</text>
+            </g>
+          </g>
+          <!-- Brass Ribbon Banner -->
+          <rect x="16" y="64" width="148" height="22" rx="11" fill="#24140b" stroke="url(#crestGold)" stroke-width="2" />
+          <text x="90" y="79" font-size="9.5" font-weight="900" letter-spacing="1.8" text-anchor="middle" fill="#f1d77e">LUCK OF THE DEAL</text>
+        </svg>
+      </div>
+      <h1 class="lobby-title">LUCK OF THE DEAL</h1>
+      <p class="setup-lead">27 House Dealer's Choice Games &middot; 30 Reactive Table Regulars &middot; Pull up a chair, cut the deck, and call the game.</p>
+      <div class="lobby-pills-row">
+        <span class="lobby-feature-pill">⚾ Baseball &amp; Wilds</span>
+        <span class="lobby-feature-pill">🏪 Free Enterprise</span>
+        <span class="lobby-feature-pill">🔥 3-5-7 Guts</span>
+        <span class="lobby-feature-pill">🎯 7-27 &amp; 3-33 Dials</span>
+        <span class="lobby-feature-pill">🐍 Anaconda</span>
+      </div>
     </div>
-    <p>Sit down for a night of poker against computer opponents — highest card picks the first game, then take turns picking after that.</p>
-    <input id="setup-name" type="text" placeholder="Your name" />
-    <div id="setup-seat-boxes"></div>
-    <details id="setup-settings-details">
-      <summary>Settings</summary>
-      <label>Initial buy-in ($)
-        <input id="setup-buyin" type="number" value="20" step="20" min="20" />
-      </label>
-      <label>Additional rebuy cap ($)
-        <input id="setup-cap" type="number" value="60" step="20" min="0" />
-      </label>
-      <fieldset id="deal-mode-fieldset">
-        <legend>Game selection</legend>
-        <label>
-          <input type="radio" name="deal-mode" value="dealersChoice" checked />
-          Dealer's choice — each hand, whoever's dealing picks the game
+
+    <div id="resume-banner" hidden>
+      <div class="resume-banner-inner">
+        <div class="resume-banner-text">
+          <strong>🔥 Night in Progress!</strong>
+          <p>Pick up right where you left off — chip stacks, seats, and active hand intact.</p>
+        </div>
+        <div class="resume-banner-actions">
+          <button type="button" id="resume-night-btn" class="btn-action-deal">Resume Table &rarr;</button>
+          <button type="button" id="discard-saved-night-btn" class="btn-action-fold">New Night</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="lobby-grid-layout">
+      <!-- Left Column: Tonight's Table Lineup -->
+      <div class="lobby-panel lobby-lineup-panel">
+        <div class="lobby-panel-header">
+          <h2>Tonight's Table Lineup</h2>
+          <span class="lobby-panel-sub">Click any regular to swap seats &middot; Up to 7 AI opponents</span>
+        </div>
+        <div id="setup-seat-boxes"></div>
+      </div>
+
+      <!-- Right Column: Your Seat, Stakes & Game Mode -->
+      <div class="lobby-panel lobby-controls-panel">
+        <div class="lobby-panel-header">
+          <h2>Your Seat &amp; House Rules</h2>
+          <span class="lobby-panel-sub">Configure your buy-in and dealer rotation</span>
+        </div>
+
+        <label class="lobby-field-label">Your Player Name
+          <input id="setup-name" type="text" placeholder="Your name at the felt (e.g., Ace)" />
         </label>
-        <label>
-          <input type="radio" name="deal-mode" value="continuous" />
-          Stay on a game — pick once, keep dealing it until you change games
-        </label>
-        <label>
-          <input type="radio" name="deal-mode" value="humanChoice" />
-          My choice — you pick the game every time, no matter who's dealing
-        </label>
-      </fieldset>
-    </details>
-    <button id="setup-start">Sit down</button>
-    <button type="button" id="setup-history-btn">History</button>
-    <p id="setup-game-list-link"><a href="../app/index.html" target="_blank" rel="noopener">See the full game list &amp; house rules</a></p>
+
+        <div class="lobby-stakes-row">
+          <label class="lobby-field-label">Initial Buy-In ($)
+            <input id="setup-buyin" type="number" value="20" step="20" min="20" />
+          </label>
+          <label class="lobby-field-label">Rebuy Cap ($)
+            <input id="setup-cap" type="number" value="60" step="20" min="0" />
+          </label>
+        </div>
+
+        <fieldset id="deal-mode-fieldset" class="lobby-mode-cards">
+          <legend>Dealer's Choice Mode</legend>
+          <label class="lobby-mode-option">
+            <input type="radio" name="deal-mode" value="dealersChoice" checked />
+            <span class="mode-option-body">
+              <strong>🎲 Dealer's Choice Rotation</strong>
+              <small>Cut for first deal, then the button rotates and each dealer calls the game.</small>
+            </span>
+          </label>
+          <label class="lobby-mode-option">
+            <input type="radio" name="deal-mode" value="humanChoice" />
+            <span class="mode-option-body">
+              <strong>👑 My Choice Every Hand</strong>
+              <small>Skip the cut — you pick from all 27 house games every hand.</small>
+            </span>
+          </label>
+          <label class="lobby-mode-option">
+            <input type="radio" name="deal-mode" value="continuous" />
+            <span class="mode-option-body">
+              <strong>🔁 Stay on One Game</strong>
+              <small>Pick once and keep dealing the same game until you switch.</small>
+            </span>
+          </label>
+        </fieldset>
+
+        <div class="setup-cta-row">
+          <button id="setup-start" class="btn-action-deal lobby-sit-btn">🃏 Sit Down at the Table</button>
+          <button type="button" id="setup-history-btn" class="lobby-secondary-btn">📜 Ledger &amp; Regulars</button>
+        </div>
+        <p id="setup-game-list-link"><a href="../app/index.html" target="_blank" rel="noopener">📖 Open the Illustrated House Rulebook (All 27 Games) &rarr;</a></p>
+      </div>
+    </div>
   </div>
 
   <div id="table-view" hidden>
@@ -69,17 +158,21 @@
           <button type="button" id="rebuy-btn" hidden>Buy more</button>
         </div>
         <div id="pot-hero">
-          <span id="pot-hero-label">Pot</span>
-          <span id="pot-display"></span>
+          <div class="pot-hero-text">
+            <span id="pot-hero-label">Pot</span>
+            <span id="pot-display"></span>
+          </div>
         </div>
         <div id="more-menu-wrap">
           <button type="button" id="more-menu-btn" aria-haspopup="true" aria-expanded="false" title="More">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="19" cy="12" r="1.5"></circle></svg>
           </button>
           <div id="more-menu" hidden>
-            <button type="button" id="change-game-btn">Change game</button>
-            <button type="button" id="cashout-btn">Cash out</button>
-            <button type="button" id="history-btn">History</button>
+            <button type="button" id="change-game-btn">🔄 Change game</button>
+            <button type="button" data-fx-exit-main>🏠 Main Screen / Exit</button>
+            <button type="button" id="cashout-btn">💰 Cash out &amp; End</button>
+            <button type="button" id="history-btn">📜 History &amp; Ledger</button>
+            <button type="button" onclick="window.location.href='v1/index.html'">Switch to Classic UI (v1)</button>
           </div>
         </div>
       </div>
@@ -89,36 +182,73 @@
       <div id="game-script-body"></div>
       <div id="game-script-variants"></div>
     </div>
-    <label id="debug-toggle-label">
-      <input type="checkbox" id="debug-toggle" />
-      Show AI hands &amp; reasoning (debug)
-    </label>
-    <div id="seats"></div>
-    <div id="board-hand"></div>
-    <div id="human-hand"></div>
-    <div id="action-panel"></div>
-    <div id="log-feed"></div>
+
+    <div id="table-main-stage">
+      <div id="poker-table-stadium">
+        <div class="table-felt-surface">
+          <div id="seats"></div>
+          <div id="board-hand"></div>
+        </div>
+      </div>
+
+      <div id="human-cockpit">
+        <div id="human-hand-wrap">
+          <div id="human-hand-live-badge" class="human-hand-live-badge" hidden></div>
+          <div id="human-hand"></div>
+        </div>
+        <div id="action-panel"></div>
+      </div>
+    </div>
+
+    <div id="table-footer-bar">
+      <details id="log-drawer" open>
+        <summary class="log-drawer-summary">Table Log &amp; Play-by-Play</summary>
+        <div id="log-feed"></div>
+      </details>
+      <label id="debug-toggle-label">
+        <input type="checkbox" id="debug-toggle" />
+        Peek AI hands &amp; math (debug)
+      </label>
+    </div>
   </div>
 
   <div id="cutfordeal-view" hidden>
-    <h2>Highest Card Picks First Game — click a card</h2>
+    <div class="ceremony-header">
+      <div class="ceremony-header-top">
+        <span class="ceremony-eyebrow">CEREMONIAL DECK CUT</span>
+        <button type="button" class="pv-exit-main-btn" data-fx-exit-main>🏠 Main Screen / Exit</button>
+      </div>
+      <h2>Highest Card Claims the Dealer Button — Tap Any Card in the Spread</h2>
+    </div>
     <div id="cutfordeal-draws"></div>
     <div id="cutfordeal-winner"></div>
-    <button type="button" id="cutfordeal-continue-btn" hidden>Continue</button>
+    <div class="cutfordeal-cta-row">
+      <button type="button" class="btn-action-fold" data-fx-exit-main>🏠 Main Screen / Exit</button>
+      <button type="button" id="cutfordeal-continue-btn" class="btn-action-deal" hidden>Enter the Game Vault &rarr;</button>
+    </div>
   </div>
 
   <div id="picker-view" hidden>
-    <h2 id="picker-heading">Pick the next game</h2>
+    <div class="vault-header">
+      <div class="ceremony-header-top">
+        <span class="ceremony-eyebrow">DEALER'S CHOICE VAULT &middot; 27 HOUSE GAMES</span>
+        <button type="button" class="pv-exit-main-btn" data-fx-exit-main>🏠 Main Screen / Exit</button>
+      </div>
+      <h2 id="picker-heading">Pick the next game</h2>
+      <div id="picker-category-tabs" class="picker-category-tabs"></div>
+    </div>
     <div id="picker-menu"></div>
   </div>
 
   <div id="history-view" hidden>
-    <h2>Chip history</h2>
+    <h2>Chip Ledger</h2>
     <div id="history-list"></div>
-    <h2>Regulars</h2>
+    <h2>Table Regulars Record</h2>
     <div id="regulars-list"></div>
-    <button id="export-history-btn">Export as JSON</button>
-    <button id="back-to-table-btn">Back to table</button>
+    <div class="history-actions">
+      <button id="export-history-btn">Export as JSON</button>
+      <button id="back-to-table-btn" class="btn-action-call">Back to table</button>
+    </div>
   </div>
 
   <div id="roster-modal" hidden>
@@ -127,7 +257,7 @@
         <h2 id="roster-modal-title">Choose a player</h2>
         <button type="button" id="roster-close-btn">&times;</button>
       </div>
-      <div class="roster-hint">Every table person plays Cautious, Balanced, or Aggressive under the hood — shown on each card.</div>
+      <div class="roster-hint">Every regular has a sculpted frame showing their temperament: Steel Square (Cautious), Gold Medallion (Balanced), or Copper Octagon (Aggressive).</div>
       <div id="roster-filters">
         <select id="roster-archetype-filter"></select>
         <select id="roster-pronoun-filter">
@@ -143,91 +273,88 @@
     </div>
   </div>
 
-  <script src="../app/games-data.js"></script>
-  <script src="js/deck.js"></script>
-  <script src="js/hand-evaluator.js"></script>
-  <script src="js/chip-economy.js"></script>
-  <script src="js/betting-engine.js"></script>
-  <script src="js/baseball-family-wildcards.js"></script>
-  <script src="js/rules-midnight-baseball.js"></script>
-  <script src="js/rules-stud.js"></script>
-  <script src="js/game-configs-stud.js"></script>
-  <script src="js/rules-mexican-sweat.js"></script>
-  <script src="js/game-configs-mexican-sweat.js"></script>
-  <script src="js/rules-community-stud.js"></script>
-  <script src="js/game-configs-community-stud.js"></script>
-  <script src="js/rules-guts.js"></script>
-  <script src="js/game-configs-guts.js"></script>
-  <script src="js/rules-wild-in-your-hand.js"></script>
-  <script src="js/game-configs-wild-in-your-hand.js"></script>
-  <script src="js/rules-holdem.js"></script>
-  <script src="js/game-configs-holdem.js"></script>
-  <script src="js/target-sum-evaluator.js"></script>
-  <script src="js/rules-press-your-luck.js"></script>
-  <script src="js/game-configs-press-your-luck.js"></script>
-  <script src="js/rules-333.js"></script>
-  <script src="js/rules-acey-ducey.js"></script>
-  <script src="js/rules-blind-mans-bluff.js"></script>
-  <script src="js/rules-game-of-life.js"></script>
-  <script src="js/rules-draw-poker.js"></script>
-  <script src="js/rules-anaconda.js"></script>
-  <script src="js/ai-profiles.js"></script>
-  <script src="js/ai-stud-profiles.js"></script>
-  <script src="js/ai-mexican-sweat-profiles.js"></script>
-  <script src="js/ai-community-stud-profiles.js"></script>
-  <script src="js/ai-guts-profiles.js"></script>
-  <script src="js/ai-wild-in-your-hand-profiles.js"></script>
-  <script src="js/ai-holdem-profiles.js"></script>
-  <script src="js/ai-press-your-luck-profiles.js"></script>
-  <script src="js/ai-333-profiles.js"></script>
-  <script src="js/ai-acey-ducey-profiles.js"></script>
-  <script src="js/ai-blind-mans-bluff-profiles.js"></script>
-  <script src="js/ai-game-of-life-profiles.js"></script>
-  <script src="js/ai-draw-poker-profiles.js"></script>
-  <script src="js/ai-anaconda-profiles.js"></script>
-  <script src="js/history-store.js"></script>
-  <script src="js/avatar.js"></script>
-  <script src="js/table-people-data.js"></script>
-  <script src="js/table-people.js"></script>
-  <script src="js/game-registry.js"></script>
-  <script src="js/session-midnight-baseball.js"></script>
-  <script src="js/session-stud.js"></script>
-  <script src="js/session-mexican-sweat.js"></script>
-  <script src="js/session-community-stud.js"></script>
-  <script src="js/session-guts.js"></script>
-  <script src="js/session-wild-in-your-hand.js"></script>
-  <script src="js/session-holdem.js"></script>
-  <script src="js/session-press-your-luck.js"></script>
-  <script src="js/session-333.js"></script>
-  <script src="js/session-acey-ducey.js"></script>
-  <script src="js/session-blind-mans-bluff.js"></script>
-  <script src="js/session-game-of-life.js"></script>
-  <script src="js/session-draw-poker.js"></script>
-  <script src="js/session-anaconda.js"></script>
-  <script src="js/table-night.js"></script>
-  <script src="js/table-ui-midnight-baseball.js"></script>
-  <script src="js/table-ui-stud.js"></script>
-  <script src="js/table-ui-mexican-sweat.js"></script>
-  <script src="js/table-ui-community-stud.js"></script>
-  <script src="js/table-ui-guts.js"></script>
-  <script src="js/table-ui-wild-in-your-hand.js"></script>
-  <script src="js/table-ui-holdem.js"></script>
-  <script src="js/table-ui-press-your-luck.js"></script>
-  <script src="js/table-ui-333.js"></script>
-  <script src="js/table-ui-acey-ducey.js"></script>
-  <script src="js/table-ui-blind-mans-bluff.js"></script>
-  <script src="js/table-ui-game-of-life.js"></script>
-  <script src="js/table-ui-draw-poker.js"></script>
-  <script src="js/table-ui-anaconda.js"></script>
-  <script src="js/table-ui.js"></script>
+  <script src="../app/games-data.js?v=3.2"></script>
+  <script src="js/deck.js?v=3.2"></script>
+  <script src="js/hand-evaluator.js?v=3.2"></script>
+  <script src="js/chip-economy.js?v=3.2"></script>
+  <script src="js/betting-engine.js?v=3.2"></script>
+  <script src="js/baseball-family-wildcards.js?v=3.2"></script>
+  <script src="js/rules-midnight-baseball.js?v=3.2"></script>
+  <script src="js/rules-stud.js?v=3.2"></script>
+  <script src="js/game-configs-stud.js?v=3.2"></script>
+  <script src="js/rules-mexican-sweat.js?v=3.2"></script>
+  <script src="js/game-configs-mexican-sweat.js?v=3.2"></script>
+  <script src="js/rules-community-stud.js?v=3.2"></script>
+  <script src="js/game-configs-community-stud.js?v=3.2"></script>
+  <script src="js/rules-guts.js?v=3.2"></script>
+  <script src="js/game-configs-guts.js?v=3.2"></script>
+  <script src="js/rules-wild-in-your-hand.js?v=3.2"></script>
+  <script src="js/game-configs-wild-in-your-hand.js?v=3.2"></script>
+  <script src="js/rules-holdem.js?v=3.2"></script>
+  <script src="js/game-configs-holdem.js?v=3.2"></script>
+  <script src="js/target-sum-evaluator.js?v=3.2"></script>
+  <script src="js/rules-press-your-luck.js?v=3.2"></script>
+  <script src="js/game-configs-press-your-luck.js?v=3.2"></script>
+  <script src="js/rules-333.js?v=3.2"></script>
+  <script src="js/rules-acey-ducey.js?v=3.2"></script>
+  <script src="js/rules-blind-mans-bluff.js?v=3.2"></script>
+  <script src="js/rules-game-of-life.js?v=3.2"></script>
+  <script src="js/rules-draw-poker.js?v=3.2"></script>
+  <script src="js/rules-anaconda.js?v=3.2"></script>
+  <script src="js/ai-profiles.js?v=3.2"></script>
+  <script src="js/ai-stud-profiles.js?v=3.2"></script>
+  <script src="js/ai-mexican-sweat-profiles.js?v=3.2"></script>
+  <script src="js/ai-community-stud-profiles.js?v=3.2"></script>
+  <script src="js/ai-guts-profiles.js?v=3.2"></script>
+  <script src="js/ai-wild-in-your-hand-profiles.js?v=3.2"></script>
+  <script src="js/ai-holdem-profiles.js?v=3.2"></script>
+  <script src="js/ai-press-your-luck-profiles.js?v=3.2"></script>
+  <script src="js/ai-333-profiles.js?v=3.2"></script>
+  <script src="js/ai-acey-ducey-profiles.js?v=3.2"></script>
+  <script src="js/ai-blind-mans-bluff-profiles.js?v=3.2"></script>
+  <script src="js/ai-game-of-life-profiles.js?v=3.2"></script>
+  <script src="js/ai-draw-poker-profiles.js?v=3.2"></script>
+  <script src="js/ai-anaconda-profiles.js?v=3.2"></script>
+  <script src="js/history-store.js?v=3.2"></script>
+  <script src="js/avatar.js?v=3.2"></script>
+  <script src="js/table-people-data.js?v=3.2"></script>
+  <script src="js/table-people.js?v=3.2"></script>
+  <script src="js/game-registry.js?v=3.2"></script>
+  <script src="js/session-midnight-baseball.js?v=3.2"></script>
+  <script src="js/session-stud.js?v=3.2"></script>
+  <script src="js/session-mexican-sweat.js?v=3.2"></script>
+  <script src="js/session-community-stud.js?v=3.2"></script>
+  <script src="js/session-guts.js?v=3.2"></script>
+  <script src="js/session-wild-in-your-hand.js?v=3.2"></script>
+  <script src="js/session-holdem.js?v=3.2"></script>
+  <script src="js/session-press-your-luck.js?v=3.2"></script>
+  <script src="js/session-333.js?v=3.2"></script>
+  <script src="js/session-acey-ducey.js?v=3.2"></script>
+  <script src="js/session-blind-mans-bluff.js?v=3.2"></script>
+  <script src="js/session-game-of-life.js?v=3.2"></script>
+  <script src="js/session-draw-poker.js?v=3.2"></script>
+  <script src="js/session-anaconda.js?v=3.2"></script>
+  <script src="js/table-night.js?v=3.2"></script>
+  <script src="js/table-ui-midnight-baseball.js?v=3.2"></script>
+  <script src="js/table-ui-stud.js?v=3.2"></script>
+  <script src="js/table-ui-mexican-sweat.js?v=3.2"></script>
+  <script src="js/table-ui-community-stud.js?v=3.2"></script>
+  <script src="js/table-ui-guts.js?v=3.2"></script>
+  <script src="js/table-ui-wild-in-your-hand.js?v=3.2"></script>
+  <script src="js/table-ui-holdem.js?v=3.2"></script>
+  <script src="js/table-ui-press-your-luck.js?v=3.2"></script>
+  <script src="js/table-ui-333.js?v=3.2"></script>
+  <script src="js/table-ui-acey-ducey.js?v=3.2"></script>
+  <script src="js/table-ui-blind-mans-bluff.js?v=3.2"></script>
+  <script src="js/table-ui-game-of-life.js?v=3.2"></script>
+  <script src="js/table-ui-draw-poker.js?v=3.2"></script>
+  <script src="js/table-ui-anaconda.js?v=3.2"></script>
+  <script src="js/table-fx.js?v=3.2"></script>
+  <script src="js/table-ui.js?v=3.2"></script>
   <script>
-    // Registered after everything else has loaded so a failed/slow
-    // registration never blocks the app itself -- offline support is a
-    // bonus, not a dependency. Silently does nothing in browsers without
-    // serviceWorker support (older Safari, etc.) rather than erroring.
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("sw.js").catch((err) => console.error("Service worker registration failed", err));
+        navigator.serviceWorker.register("sw.js?v=3.2").catch((err) => console.error("Service worker registration failed", err));
       });
     }
   </script>

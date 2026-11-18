@@ -132,31 +132,93 @@ const Avatar = (function () {
   // default (only a viewBox), so a blind string replace risks resizing the
   // first inner element with a width/height attribute instead. Match only
   // the root tag explicitly.
-  function injectSize(svgString, size) {
+  function injectSize(svgString, size, extraAttrs) {
     return svgString.replace(/<svg([^>]*)>/, (match, attrs) => {
       const cleaned = attrs.replace(/\s(width|height)="[^"]*"/g, "");
-      return `<svg${cleaned} width="${size}" height="${size}" class="avatar-svg">`;
+      return `<svg${cleaned} width="${size}" height="${size}" class="avatar-svg"${extraAttrs || ""}>`;
     });
   }
 
-  // Returns an inline <svg> string. size is the rendered CSS pixel size
-  // (square); the internal viewBox is always 0 0 100 100.
-  function render(spec, size) {
-    size = size || 56;
-    if (spec.svg) return injectSize(spec.svg, size);
-    const skin = colorFor(SKIN_TONES, spec.skinTone, "#D9A066");
-    const accent = spec.accentColor || "#12746B";
+  const TEMPERAMENT_BY_ARCHETYPE = {
+    "the-calculator": "cautious",
+    fortress: "cautious",
+    statistician: "cautious",
+    "steady-hand": "cautious",
+    diplomat: "balanced",
+    wall: "balanced",
+    "live-wire": "aggressive",
+    storm: "aggressive",
+    "streak-chaser": "aggressive",
+    subversive: "aggressive",
+  };
+
+  function resolvePersonMeta(spec) {
+    if (!spec) return { personId: null, archetypeId: null, personName: "Player" };
+    if (spec.personId) {
+      return {
+        personId: spec.personId,
+        archetypeId: spec.archetypeId || spec.personId.split("--")[0],
+        personName: spec.personName || "Player",
+      };
+    }
+    if (typeof TABLE_PEOPLE !== "undefined" && Array.isArray(TABLE_PEOPLE)) {
+      const match = TABLE_PEOPLE.find(
+        (p) =>
+          p.avatar &&
+          p.avatar.accentColor === spec.accentColor &&
+          p.avatar.skinTone === spec.skinTone &&
+          p.avatar.hairStyle === spec.hairStyle
+      );
+      if (match) {
+        spec.personId = match.id;
+        spec.archetypeId = match.archetypeId;
+        spec.personName = match.name;
+        return { personId: match.id, archetypeId: match.archetypeId, personName: match.name };
+      }
+    }
+    return { personId: null, archetypeId: null, personName: "Player" };
+  }
+
+  function renderFallbackSvg(spec, size, hiddenByDefault) {
+    const hideAttr = hiddenByDefault ? ' style="display:none"' : "";
+    if (spec && spec.svg) return injectSize(spec.svg, size, hideAttr);
+    const skin = colorFor(SKIN_TONES, spec && spec.skinTone, "#D9A066");
+    const accent = (spec && spec.accentColor) || "#12746B";
     return `
-      <svg viewBox="0 0 100 100" width="${size}" height="${size}" class="avatar-svg" role="img" aria-label="player avatar">
+      <svg viewBox="0 0 100 100" width="${size}" height="${size}" class="avatar-svg"${hideAttr} role="img" aria-label="player avatar">
         <circle cx="50" cy="50" r="49" fill="${accent}"/>
         <circle cx="50" cy="54" r="30" fill="${skin}"/>
-        ${accessoryMarkup(spec)}
-        ${expressionMarkup(spec)}
-        ${hairMarkup(spec)}
-        ${facialHairMarkup(spec)}
+        ${spec ? accessoryMarkup(spec) : ""}
+        ${spec ? expressionMarkup(spec) : ""}
+        ${spec ? hairMarkup(spec) : ""}
+        ${spec ? facialHairMarkup(spec) : ""}
       </svg>
     `;
   }
 
-  return { render, SKIN_TONES, HAIR_COLORS };
+  let customAvatarRenderer = null;
+  function setRenderer(fn) {
+    customAvatarRenderer = typeof fn === "function" ? fn : null;
+  }
+
+  // Returns an inline portrait badge string using the illustrated portraits in
+  // people-images/<id>.jfif (with automatic fallback to the inline SVG if an
+  // image is unavailable) wrapped in an archetype-colored metallic frame and
+  // reactive status/thinking rings.
+  function render(spec, size) {
+    if (customAvatarRenderer) return customAvatarRenderer(spec, size);
+    size = size || 64;
+    // Upgrade compact 40px seat calls to 68px so the illustrated faces and metallic frames pop clearly on the table.
+    const displaySize = size <= 44 ? 68 : size;
+    const meta = resolvePersonMeta(spec);
+    const temperament = TEMPERAMENT_BY_ARCHETYPE[meta.archetypeId] || "balanced";
+    if (meta.personId) {
+      const imgSrc = `people-images/${meta.personId}.jfif`;
+      const fallbackSvg = renderFallbackSvg(spec, displaySize, true);
+      return `<div class="avatar-portrait-wrap avatar-frame-${temperament}" style="--avatar-px:${displaySize}px" data-person-id="${meta.personId}" data-archetype="${meta.archetypeId || ""}"><span class="avatar-thinking-ring" aria-hidden="true"></span><div class="avatar-inner-bevel"><img src="${imgSrc}" width="${displaySize}" height="${displaySize}" alt="${meta.personName}" class="avatar-portrait-img" loading="lazy" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='block';" />${fallbackSvg}<span class="avatar-vignette" aria-hidden="true"></span></div><span class="avatar-mood-badge" hidden></span></div>`;
+    }
+    return `<div class="avatar-portrait-wrap avatar-frame-${temperament}" style="--avatar-px:${displaySize}px"><div class="avatar-inner-bevel">${renderFallbackSvg(spec, displaySize, false)}<span class="avatar-vignette" aria-hidden="true"></span></div><span class="avatar-mood-badge" hidden></span></div>`;
+  }
+
+  return { render, setRenderer, SKIN_TONES, HAIR_COLORS };
 })();

@@ -204,7 +204,6 @@ const CommunityStudRules = (function () {
   function foldPlayer(state, playerId) {
     const player = getPlayer(state, playerId);
     player.folded = true;
-    player.hand = [];
   }
 
   function startBettingRound(state) {
@@ -239,11 +238,12 @@ const CommunityStudRules = (function () {
       walletChips: player.wallet.chips,
     });
     state.pot += result.paidChips;
+    const finalAction = result.action || action;
 
-    if (action === "fold") {
+    if (finalAction === "fold") {
       foldPlayer(state, playerId);
       state.log.push(`${player.name} folds.`);
-    } else if (action === "raise") {
+    } else if (finalAction === "raise") {
       state.log.push(`${player.name} raises to $${ChipEconomy.chipsToDollars(br.currentBetChips).toFixed(2)}.`);
     } else {
       state.log.push(result.paidChips > 0 ? `${player.name} calls.` : `${player.name} checks.`);

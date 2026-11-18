@@ -45,6 +45,7 @@
   // activeGameId stays unset the whole time this is set -- see
   // maybeAutoPickForAI/renderPicker and the picker-menu click handler.
   let pendingConfirm = null;
+  let humanOverridePick = false;
 
   function loadSetupPrefs() {
     try {
@@ -149,12 +150,17 @@
       clearTimeout(autoPickTimer);
       autoPickTimer = null;
     }
+    if (name !== "cutfordeal" && cutForDealAutoTimer) {
+      clearTimeout(cutForDealAutoTimer);
+      cutForDealAutoTimer = null;
+    }
     // A variant-choice form or AI-pick summary left mid-flow (e.g. "Jump to
     // game" interrupting the real picker ceremony) shouldn't linger and
     // resurface stale the next time the picker screen shows.
     if (name !== "picker") {
       pendingVariantGameId = null;
       pendingConfirm = null;
+      humanOverridePick = false;
     }
     currentView = name;
     el.setupView.hidden = name !== "setup";
@@ -162,6 +168,103 @@
     el.historyView.hidden = name !== "history";
     el.cutForDealView.hidden = name !== "cutfordeal";
     el.pickerView.hidden = name !== "picker";
+    if (name === "setup" && el.resumeBanner) {
+      el.resumeBanner.hidden = !TableNight.hasSavedSnapshot();
+    }
+  }
+
+  function closeExitPromptModal() {
+    const modal = document.getElementById("exit-prompt-modal");
+    if (modal) modal.hidden = true;
+  }
+
+  function promptExitToMainScreen() {
+    let modal = document.getElementById("exit-prompt-modal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "exit-prompt-modal";
+      modal.className = "exit-prompt-modal";
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+      modal.setAttribute("aria-labelledby", "exit-modal-title");
+      document.body.appendChild(modal);
+
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal || e.target.closest("[data-exit-modal-cancel]")) {
+          closeExitPromptModal();
+          return;
+        }
+        if (e.target.closest("[data-exit-modal-save]")) {
+          closeExitPromptModal();
+          showView("setup");
+          return;
+        }
+        if (e.target.closest("[data-exit-modal-cashout]")) {
+          closeExitPromptModal();
+          TableNight.cashOut();
+          showView("setup");
+        }
+      });
+    }
+
+    const vs = lastViewState || (typeof TableNight !== "undefined" ? TableNight.getViewState() : null);
+    const human = vs && vs.players ? vs.players.find((p) => p.isHuman) : null;
+    const chipsDollars = human && human.wallet ? ChipEconomy.chipsToDollars(human.wallet.chips) : 0;
+    const netDollars = human && human.wallet ? ChipEconomy.netDollars(human.wallet) : 0;
+    const netSign = netDollars >= 0 ? "+" : "-";
+    const netFormatted = `${netSign}$${Math.abs(netDollars).toFixed(2)}`;
+    const activeEntry = vs && vs.activeGameId ? GameRegistry.get(vs.activeGameId) : null;
+    const gameLabel = activeEntry ? activeEntry.name : "Dealer's Choice Selection";
+
+    modal.innerHTML = `
+      <div class="exit-prompt-card">
+        <div class="exit-prompt-header">
+          <span class="exit-prompt-eyebrow">TABLE NAVIGATION &middot; SITTING OPTIONS</span>
+          <h2 id="exit-modal-title">Return to Main Screen or Exit?</h2>
+          <p class="exit-prompt-sub">Choose whether to pause tonight's sitting (kept saved so you can resume anytime) or cash out your chips to the permanent ledger.</p>
+        </div>
+
+        <div class="exit-prompt-telemetry">
+          <div class="exit-stat-pill">
+            <span class="exit-stat-lbl">CURRENT TABLE</span>
+            <strong>${gameLabel}</strong>
+          </div>
+          <div class="exit-stat-pill">
+            <span class="exit-stat-lbl">YOUR CHIP STACK</span>
+            <strong>$${chipsDollars.toFixed(2)}</strong>
+          </div>
+          <div class="exit-stat-pill ${netDollars >= 0 ? "exit-stat-pos" : "exit-stat-neg"}">
+            <span class="exit-stat-lbl">TONIGHT'S NET</span>
+            <strong>${netFormatted}</strong>
+          </div>
+        </div>
+
+        <div class="exit-prompt-options">
+          <button type="button" class="exit-option-btn exit-option-save" data-exit-modal-save>
+            <span class="exit-opt-icon">💾</span>
+            <span class="exit-opt-body">
+              <strong>Return to Main Screen (Keep Night Saved)</strong>
+              <small>Leaves the table for now — your chip stacks, seats, and hand stay saved on the Main Screen banner.</small>
+            </span>
+            <span class="exit-opt-arrow">&rarr;</span>
+          </button>
+
+          <button type="button" class="exit-option-btn exit-option-cashout" data-exit-modal-cashout>
+            <span class="exit-opt-icon">💰</span>
+            <span class="exit-opt-body">
+              <strong>Cash Out &amp; End Tonight's Sitting</strong>
+              <small>Records your final $${chipsDollars.toFixed(2)} stack (${netFormatted}) in the Chip Ledger and closes this sitting.</small>
+            </span>
+            <span class="exit-opt-arrow">&rarr;</span>
+          </button>
+        </div>
+
+        <div class="exit-prompt-footer">
+          <button type="button" class="btn-action-call exit-cancel-btn" data-exit-modal-cancel>↩️ Stay at the Table &amp; Keep Playing</button>
+        </div>
+      </div>
+    `;
+    modal.hidden = false;
   }
 
   function playStyleBadge(archetypeId) {
@@ -189,16 +292,23 @@
       const person = TablePeople.getById(seatAssignments[i]);
       const canRemove = activeAiSeatCount > MIN_AI_SEATS;
       boxes.push(`
-        <div class="seat-box" data-choose-seat="${i}" title="${person.name} — ${person.archetypeLabel}. Click to choose someone else.">
-          ${canRemove ? `<button type="button" class="seat-box-remove" data-remove-seat="${i}" title="Remove this seat">×</button>` : ""}
-          ${Avatar.render(person.avatar, 40)}
-          <div class="seat-box-name">${person.name}</div>
+        <div class="seat-box seat-box-v2" data-choose-seat="${i}" title="${person.name} — ${person.archetypeLabel}. Click to swap regular.">
+          ${canRemove ? `<button type="button" class="seat-box-remove" data-remove-seat="${i}" title="Remove Seat ${i + 2}">×</button>` : ""}
+          <div class="seat-box-seatnum">SEAT ${i + 2}</div>
+          ${Avatar.render(person.avatar, 68)}
+          <div class="seat-box-archetype">${person.archetypeLabel.toUpperCase()}</div>
+          <div class="seat-box-name">${person.name} <span class="pronoun-tag">${person.pronouns}</span></div>
+          ${playStyleBadge(person.archetypeId)}
+          <div class="seat-box-oneliner">&ldquo;${person.oneLiner}&rdquo;</div>
         </div>
       `);
     }
     if (activeAiSeatCount < MAX_AI_SEATS) {
       boxes.push(`
-        <button type="button" class="seat-box seat-box-add" data-add-seat title="Add a seat">+</button>
+        <button type="button" class="seat-box seat-box-add" data-add-seat title="Add another AI regular to the table">
+          <span class="add-seat-plus">+</span>
+          <span class="add-seat-label">Add Seat (${activeAiSeatCount + 1}/7 AI)</span>
+        </button>
       `);
     }
     el.setupSeatBoxes.innerHTML = boxes.join("");
@@ -402,14 +512,19 @@
     }
     const rulesId = RULES_PAGE_ID_BY_GAME[vs.activeGameId];
     if (rulesId) {
-      el.rulesLink.href = `../app/index.html#/game/${rulesId}`;
+      const prefix = (typeof window !== "undefined" && window.CARDNIGHT_ASSETS_PREFIX) || "";
+      el.rulesLink.href = `${prefix}../app/index.html#/game/${rulesId}`;
       el.rulesLink.hidden = false;
     } else {
       el.rulesLink.hidden = true;
     }
 
     const data = entry ? gameDataFor(vs.activeGameId) : null;
-    el.gameIconDisplay.textContent = data ? data.icon : "";
+    if (typeof TableFX !== "undefined" && typeof TableFX.getGameEmblemSvg === "function" && window.CARDNIGHT_UI_VERSION !== 1) {
+      el.gameIconDisplay.innerHTML = TableFX.getGameEmblemSvg(vs.activeGameId, 38);
+    } else {
+      el.gameIconDisplay.textContent = data ? data.icon : "";
+    }
     el.gameScriptToggleBtn.hidden = !data;
     if (data) {
       el.gameScriptBody.innerHTML = scriptHtml(data, vs.activeGameId);
@@ -440,7 +555,17 @@
     el.potDisplay.textContent = potChips != null ? money(ChipEconomy.chipsToDollars(potChips)) : "—";
     const rebuyRoom = human.wallet.isTracked ? vs.settings.rebuyCapDollars - ChipEconomy.totalRebuysDollars(human.wallet) : 0;
     el.rebuyBtn.disabled = rebuyRoom < ChipEconomy.BUY_IN_INCREMENT_DOLLARS;
-    el.rebuyBtn.hidden = ChipEconomy.chipsToDollars(human.wallet.chips) > LOW_CHIPS_DOLLARS;
+    let needsChipsForAction = false;
+    if (TableNight.orchestrator && typeof TableNight.orchestrator.canDealNextHand === "function" && (!gvs || !gvs.state || gvs.state.status === "complete")) {
+      if (!TableNight.orchestrator.canDealNextHand()) needsChipsForAction = true;
+    }
+    if (gvs && gvs.state && gvs.state.bettingRound) {
+      const br = gvs.state.bettingRound;
+      const toCallChips = Math.max(0, br.currentBetChips - ((br.committed && br.committed[human.id]) || 0));
+      const raiseStepChips = ChipEconomy.dollarsToChips(gvs.state.raiseIncrementDollars || vs.settings.raiseIncrementDollars || 0.25);
+      if (human.wallet.chips < toCallChips + raiseStepChips) needsChipsForAction = true;
+    }
+    el.rebuyBtn.hidden = ChipEconomy.chipsToDollars(human.wallet.chips) > LOW_CHIPS_DOLLARS && !needsChipsForAction;
     // Only between hands -- switching games mid-hand would abandon the
     // outgoing orchestrator's still-running async turn loop (AI actions on
     // a sleep-based delay) rather than cleanly stopping it, letting a
@@ -536,13 +661,19 @@
         return `<div class="card card-back"></div>`;
       })
       .join("");
+    const isV2 = typeof window === "undefined" || window.CARDNIGHT_UI_VERSION !== 1;
     const resultsMarkup = eligiblePlayers
       .map((player) => {
         const entry = round.find((e) => e.seatId === player.id);
         const drawn = entry ? `<div class="card ${entry.card.suit === "H" || entry.card.suit === "D" ? "card-red" : "card-black"}">${Deck.cardFaceHtml(entry.card)}</div>` : `<div class="cutfordeal-waiting">…</div>`;
+        const avatarThumb = isV2 && !player.isHuman && player.avatarSpec ? Avatar.render(player.avatarSpec, 44) : "";
+        const isHighWinner = state.status === "complete" && state.winnerSeatId === player.id;
         return `
-          <div class="cutfordeal-result-row">
-            <div class="cutfordeal-seat-name">${player.name}${player.isHuman ? " (you)" : ""}</div>
+          <div class="cutfordeal-result-row ${isHighWinner ? "cutfordeal-row-winner" : ""}">
+            <div class="cutfordeal-seat-identity">
+              ${avatarThumb}
+              <div class="cutfordeal-seat-name">${player.name}${player.isHuman ? " (you)" : ""}${isHighWinner ? ' <span class="cut-crown-badge">👑 DEALER</span>' : ""}</div>
+            </div>
             ${drawn}
           </div>
         `;
@@ -581,14 +712,15 @@
   }
 
   function gameCardsMarkup(gameList) {
+    const useSvgEmblem = typeof TableFX !== "undefined" && typeof TableFX.getGameEmblemSvg === "function" && window.CARDNIGHT_UI_VERSION !== 1;
     return gameList
       .map((g) => {
         const data = gameDataFor(g.id);
-        const icon = data ? data.icon : "🎴";
+        const iconMarkup = useSvgEmblem ? TableFX.getGameEmblemSvg(g.id, 60) : (data ? data.icon : "🎴");
         const category = data ? data.category : "";
         return `
           <button type="button" class="game-pick-card" data-pick-game="${g.id}">
-            <span class="game-pick-icon">${icon}</span>
+            <span class="game-pick-icon">${iconMarkup}</span>
             <span class="game-pick-name">${g.name}</span>
             ${category ? `<span class="game-pick-category">${category}</span>` : ""}
           </button>
@@ -663,26 +795,59 @@
   // instead of only being one click away mid-hand.
   function renderConfirmScreen(entry, variantChoices, isAi) {
     const data = gameDataFor(entry.id);
-    const icon = data ? data.icon : "🎴";
+    const useSvgEmblem = typeof TableFX !== "undefined" && typeof TableFX.getGameEmblemSvg === "function" && window.CARDNIGHT_UI_VERSION !== 1;
+    const iconMarkup = useSvgEmblem ? TableFX.getGameEmblemSvg(entry.id, 84) : (data ? data.icon : "🎴");
     const lines = variantSummaryLines(entry, variantChoices);
     el.pickerHeading.textContent = "Game selected";
     el.pickerMenu.innerHTML = `
       <div class="confirm-screen">
-        <div class="game-pick-icon">${icon}</div>
-        <div>${isAi ? `The dealer is playing <strong>${entry.name}</strong>.` : `You're playing <strong>${entry.name}</strong>.`}</div>
+        <div class="game-pick-icon confirm-emblem-hero">${iconMarkup}</div>
+        <div class="confirm-headline">${isAi ? `The dealer calls <strong>${entry.name}</strong>!` : `You called <strong>${entry.name}</strong>!`}</div>
         ${lines.length ? `<ul class="confirm-variant-lines">${lines.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}
         <div class="confirm-instructions">${scriptHtml(data, entry.id)}</div>
         <div class="confirm-actions">
-          ${isAi ? "" : `<button type="button" data-confirm-back>&larr; Back</button>`}
-          <button type="button" data-confirm-continue>Continue</button>
+          <button type="button" class="btn-action-fold" data-fx-exit-main>🏠 Main Screen / Exit</button>
+          ${isAi ? `<button type="button" class="btn-action-call" data-confirm-override>🔄 Pick Different Game</button>` : `<button type="button" class="btn-action-call" data-confirm-back>&larr; Back to Vault</button>`}
+          <button type="button" class="btn-action-deal" data-confirm-continue>Sit &amp; Deal ${entry.name} &rarr;</button>
         </div>
       </div>
     `;
   }
 
   function renderPicker(vs) {
+    if (
+      typeof TableFX !== "undefined" &&
+      typeof TableFX.renderRichPicker === "function" &&
+      window.CARDNIGHT_UI_VERSION !== 1
+    ) {
+      const handled = TableFX.renderRichPicker(el, vs, {
+        pendingConfirm,
+        pendingVariantGameId,
+        humanOverridePick,
+        gameDataFor,
+        scriptHtml,
+        variantSummaryLines,
+        rerender: () => render(TableNight.getViewState()),
+        onPreviewConfirm: (entry, variantChoices) => {
+          pendingVariantGameId = null;
+          humanOverridePick = false;
+          pendingConfirm = { entry, variantChoices, isAi: false };
+          render(TableNight.getViewState());
+        },
+        onCallGameNow: (gameId, variantChoices) => {
+          pendingVariantGameId = null;
+          pendingConfirm = null;
+          humanOverridePick = false;
+          TableNight.chooseNextGame(gameId, variantChoices);
+          showView("table");
+        },
+      });
+      if (handled) return;
+    }
+
     if (pendingConfirm) {
       renderConfirmScreen(pendingConfirm.entry, pendingConfirm.variantChoices, pendingConfirm.isAi);
+      if (typeof TableFX !== "undefined" && typeof TableFX.enhancePickerMenu === "function") TableFX.enhancePickerMenu(el.pickerMenu, false);
       return;
     }
 
@@ -690,16 +855,20 @@
       const entry = GameRegistry.get(pendingVariantGameId);
       el.pickerHeading.textContent = "Pick the next game";
       el.pickerMenu.innerHTML = variantFormMarkup(entry);
+      if (typeof TableFX !== "undefined" && typeof TableFX.enhancePickerMenu === "function") TableFX.enhancePickerMenu(el.pickerMenu, false);
       return;
     }
 
     const picker = vs.players.find((p) => p.id === vs.currentPickerSeatId);
-    if (picker.isHuman) {
+    if (picker.isHuman || humanOverridePick) {
       el.pickerHeading.textContent = "Pick the next game";
       el.pickerMenu.innerHTML = gameCardsMarkup(vs.gameList);
+      if (typeof TableFX !== "undefined" && typeof TableFX.enhancePickerMenu === "function") TableFX.enhancePickerMenu(el.pickerMenu, true);
     } else {
       el.pickerHeading.textContent = `${picker.name} is picking the next game...`;
-      el.pickerMenu.innerHTML = `<div class="picker-waiting">Waiting for ${picker.name} to choose&hellip;</div>`;
+      const avatarHtml = picker.avatarSpec ? Avatar.render(picker.avatarSpec, 68) : "";
+      el.pickerMenu.innerHTML = `<div class="picker-waiting">${avatarHtml}<div>Waiting for <strong>${picker.name}</strong> to choose from the vault&hellip;</div><div class="picker-waiting-actions"><button type="button" class="btn-action-fold" data-fx-exit-main>🏠 Main Screen / Exit</button></div></div>`;
+      if (typeof TableFX !== "undefined" && typeof TableFX.enhancePickerMenu === "function") TableFX.enhancePickerMenu(el.pickerMenu, false);
     }
   }
 
@@ -712,7 +881,7 @@
   // behavior) could silently auto-pick and yank the view to the table
   // before the player ever saw the picker screen at all.
   function maybeAutoPickForAI() {
-    if (currentView !== "picker" || pendingConfirm || TableNight.currentPickerIsHuman() || autoPickTimer) return;
+    if (currentView !== "picker" || pendingConfirm || humanOverridePick || TableNight.currentPickerIsHuman() || autoPickTimer) return;
     autoPickTimer = setTimeout(() => {
       autoPickTimer = null;
       // Stays on the picker screen showing the game-selected/instructions
@@ -735,23 +904,247 @@
   // keep dealing the same game via "Deal next hand" until "Change game".
   function maybeSwapForNextDealerPick(el, vs) {
     if (vs.dealMode !== "dealersChoice" && vs.dealMode !== "humanChoice") return;
-    // The Guts family's escalating-pot cycle can finish a ROUND (a winner
-    // paid, losers charged to match) without the CYCLE itself being over --
-    // cycleComplete stays false until exactly one player wins solo. That
-    // still renders #deal-next-hand-btn (the correct "keep escalating the
-    // SAME game" action), but this function used to swap it for "pick the
-    // next game" unconditionally on every button of that id, incorrectly
-    // treating an in-progress cycle's own next round as if the whole game
-    // were finished. Reported directly: a $3 pot with 3 losers should have
-    // continued for a $12 pot in the SAME game, not jumped to picking a
-    // different one entirely. cycleComplete is undefined for every other
-    // family, so this check is a no-op everywhere else.
+    // When a hand ends with a pot that carries forward into another round of
+    // the SAME game — such as a Rainy Day Baseball rain-out (`rainedOut`),
+    // an unfinished Guts / Wild in Your Hand pot-match cycle (`cycleComplete === false`),
+    // or Pair of Jacks Trips to Win when nobody reached Trips-or-better —
+    // keep `#deal-next-hand-btn` so the game continues for another round
+    // with the next dealer in the cycle before picking another game.
     const gvs = vs.orchestratorViewState;
-    if (gvs && gvs.state && gvs.state.cycleComplete === false) return;
+    if (gvs && gvs.state) {
+      if (gvs.state.rainedOut) return;
+      if (gvs.state.cycleComplete === false) return;
+      if (vs.activeGameId === "pairOfJacksTripsToWin" && gvs.state.pot > 0) return;
+    }
     const dealBtn = el.actionPanel.querySelector("#deal-next-hand-btn");
     if (!dealBtn) return;
     const label = vs.dealMode === "humanChoice" ? "Pick the next game →" : "Next dealer picks the game →";
     dealBtn.outerHTML = `<button data-pick-next-game>${label}</button>`;
+  }
+
+  function inlineRebuyButtonMarkup(vs) {
+    const amount = ChipEconomy.BUY_IN_INCREMENT_DOLLARS;
+    if (TableNight.canRebuy(amount)) {
+      return `<button type="button" class="btn-action-deal btn-rebuy-inline" data-rebuy-inline>💰 Buy More Chips (+${money(amount)})</button>`;
+    }
+    return `<span class="rebuy-cap-notice">⚠️ Rebuy cap ($${vs.settings.rebuyCapDollars}) reached</span>`;
+  }
+
+  // Central affordability guard across all 27 games:
+  // Ensures that whenever the human player cannot cover a bet, ante/blind,
+  // card purchase, or row fee, they cannot call or raise for $0 — their
+  // options are strictly Fold/Pass or Buy More Chips (+$20.00).
+  function enforceAffordabilityInActionPanel(el, vs) {
+    const gvs = vs.orchestratorViewState;
+    if (!gvs || !el.actionPanel) return;
+    const human = vs.players.find((p) => p.id === vs.humanId);
+    if (!human) return;
+    const humanChips = human.wallet.chips;
+    const humanDollars = ChipEconomy.chipsToDollars(humanChips);
+
+    // 1. Pre-deal or post-hand: check if player can afford the next hand's ante / big blind
+    if (!gvs.state || gvs.state.status === "complete") {
+      const canDeal = TableNight.orchestrator && typeof TableNight.orchestrator.canDealNextHand === "function"
+        ? TableNight.orchestrator.canDealNextHand()
+        : true;
+      if (!canDeal) {
+        const dealFirstBtn = el.actionPanel.querySelector("#deal-first-hand-btn");
+        const dealNextBtn = el.actionPanel.querySelector("#deal-next-hand-btn");
+        const pickNextBtn = el.actionPanel.querySelector("[data-pick-next-game]");
+        if (dealFirstBtn) dealFirstBtn.remove();
+        if (dealNextBtn) dealNextBtn.remove();
+        if (!gvs.state) {
+          el.actionPanel.innerHTML = `
+            <div>⚠️ You need more chips (${money(humanDollars)} remaining) to cover the ante/blinds for this game. Buy more chips or return to the main screen:</div>
+            ${inlineRebuyButtonMarkup(vs)}
+            <button type="button" class="btn-action-call deal-companion-btn" data-fx-change-game>🔄 Change Game</button>
+            <button type="button" class="btn-action-fold deal-companion-btn" data-fx-exit-main>🏠 Main Screen / Cash Out</button>
+          `;
+        } else if (!el.actionPanel.querySelector("[data-rebuy-inline]")) {
+          el.actionPanel.insertAdjacentHTML(
+            "beforeend",
+            `
+              ${inlineRebuyButtonMarkup(vs)}
+              ${!pickNextBtn ? `<button type="button" class="btn-action-call deal-companion-btn" data-fx-change-game>🔄 Change Game</button>` : ""}
+              <button type="button" class="btn-action-fold deal-companion-btn" data-fx-exit-main>🏠 Main Screen / Cash Out</button>
+            `
+          );
+        }
+      }
+      return;
+    }
+
+    // 2. Active Betting Round (Hold'em, Stud, Community Stud, Midnight Baseball, Mexican Sweat, 5.5-21, 3-33, Blind Man's Bluff, Game of Life, Draw Poker, Anaconda)
+    const callBtn = el.actionPanel.querySelector("[data-bet-call]");
+    const foldBtn = el.actionPanel.querySelector("[data-bet-fold]");
+    const raiseBtn = el.actionPanel.querySelector("[data-bet-raise]");
+    if (gvs.state.bettingRound && (callBtn || foldBtn || raiseBtn)) {
+      const br = gvs.state.bettingRound;
+      const committedChips = (br.committed && br.committed[human.id]) || 0;
+      const toCallChips = Math.max(0, br.currentBetChips - committedChips);
+      const toCallDollars = ChipEconomy.chipsToDollars(toCallChips);
+      const raiseStepDollars = gvs.state.raiseIncrementDollars || vs.settings.raiseIncrementDollars || 0.25;
+      const raiseStepChips = ChipEconomy.dollarsToChips(raiseStepDollars);
+
+      if (humanChips < toCallChips) {
+        // Player CANNOT afford the call — options are strictly Fold or Buy More Chips!
+        if (callBtn) callBtn.remove();
+        if (raiseBtn) raiseBtn.remove();
+        const promptDiv = el.actionPanel.querySelector("div");
+        if (promptDiv) {
+          promptDiv.innerHTML = `⚠️ Bet to call is <strong>${money(toCallDollars)}</strong>, but you have <strong>${money(humanDollars)}</strong>. Choose <strong>Fold</strong> or <strong>Buy More Chips</strong>:`;
+        }
+        if (!el.actionPanel.querySelector("[data-bet-fold]")) {
+          el.actionPanel.insertAdjacentHTML("beforeend", `<button data-bet-fold class="btn-action-fold">Fold</button>`);
+        }
+        if (!el.actionPanel.querySelector("[data-rebuy-inline]")) {
+          el.actionPanel.insertAdjacentHTML("beforeend", inlineRebuyButtonMarkup(vs));
+        }
+      } else if (humanChips < toCallChips + raiseStepChips) {
+        // Player can afford to call/check, but CANNOT afford to raise without buying chips
+        if (raiseBtn) raiseBtn.remove();
+        if (TableNight.canRebuy(ChipEconomy.BUY_IN_INCREMENT_DOLLARS) && !el.actionPanel.querySelector("[data-rebuy-inline]")) {
+          el.actionPanel.insertAdjacentHTML("beforeend", inlineRebuyButtonMarkup(vs));
+        }
+      }
+      return;
+    }
+
+    // 3. Baseball family card-buy decisions (buy3 = $3, buy9 = $2, buy4 = $1)
+    if (gvs.pending && (gvs.pending.kind === "buy3" || gvs.pending.kind === "buy9" || gvs.pending.kind === "buy4")) {
+      const priceDollars = gvs.pending.kind === "buy3" ? 3 : gvs.pending.kind === "buy9" ? 2 : 1;
+      const neededChips = ChipEconomy.dollarsToChips(priceDollars);
+      if (humanChips < neededChips) {
+        const buyYesBtn = el.actionPanel.querySelector("[data-buy-yes]");
+        if (buyYesBtn) buyYesBtn.remove();
+        const promptDiv = el.actionPanel.querySelector("div");
+        if (promptDiv) {
+          promptDiv.innerHTML += ` <strong>(Requires ${money(priceDollars)} — you have ${money(humanDollars)}; buy more chips or ${gvs.pending.kind === "buy3" ? "fold" : "pass"}.)</strong>`;
+        }
+        if (!el.actionPanel.querySelector("[data-rebuy-inline]")) {
+          el.actionPanel.insertAdjacentHTML("beforeend", inlineRebuyButtonMarkup(vs));
+        }
+      }
+      return;
+    }
+
+    // 4. Free Enterprise pile buy ($1/$2/$3 or doubled) & wipe ($1)
+    if (gvs.pending && (gvs.pending.kind === "enterprisePile" || gvs.pending.kind === "enterprisePileAfterWipe")) {
+      let anyUnaffordable = false;
+      el.actionPanel.querySelectorAll("[data-enterprise-buy]").forEach((btn) => {
+        const slotIdx = Number(btn.getAttribute("data-enterprise-buy"));
+        const priceDollars = StudRules.currentEnterprisePriceDollars(gvs.state, slotIdx);
+        if (humanChips < ChipEconomy.dollarsToChips(priceDollars)) {
+          btn.remove();
+          anyUnaffordable = true;
+        }
+      });
+      const wipeBtn = el.actionPanel.querySelector("[data-enterprise-wipe]");
+      if (wipeBtn && humanChips < ChipEconomy.dollarsToChips(1)) {
+        wipeBtn.remove();
+        anyUnaffordable = true;
+      }
+      if (anyUnaffordable && !el.actionPanel.querySelector("[data-rebuy-inline]")) {
+        el.actionPanel.insertAdjacentHTML("beforeend", inlineRebuyButtonMarkup(vs));
+      }
+      return;
+    }
+
+    // 5. Wild in Your Hand pyramid row bet ($0.50)
+    if (gvs.pending && gvs.pending.kind === "rowDecision") {
+      const neededChips = ChipEconomy.dollarsToChips(gvs.state.rowBetDollars);
+      if (humanChips < neededChips) {
+        const rowPayBtn = el.actionPanel.querySelector("[data-row-pay]");
+        if (rowPayBtn) rowPayBtn.remove();
+        const promptDiv = el.actionPanel.querySelector("div");
+        if (promptDiv) {
+          promptDiv.innerHTML = `⚠️ Row ${gvs.state.rowIndex + 1} bet is <strong>${money(gvs.state.rowBetDollars)}</strong>, but you have <strong>${money(humanDollars)}</strong>. Choose <strong>Fold</strong> or <strong>Buy More Chips</strong>:`;
+        }
+        if (!el.actionPanel.querySelector("[data-rebuy-inline]")) {
+          el.actionPanel.insertAdjacentHTML("beforeend", inlineRebuyButtonMarkup(vs));
+        }
+      }
+      return;
+    }
+
+    // 6. Guts & Wild in Your Hand stay/fold declaration
+    if (gvs.pending && gvs.pending.kind === "stayDecision") {
+      if (humanChips <= 0) {
+        const stayYesBtn = el.actionPanel.querySelector("[data-stay-yes]");
+        if (stayYesBtn) stayYesBtn.remove();
+        const promptDiv = el.actionPanel.querySelector("div");
+        if (promptDiv) {
+          promptDiv.innerHTML = `⚠️ You have <strong>$0.00</strong> in chips. To stay in and risk matching the pot, you must <strong>Buy More Chips</strong> or <strong>Fold</strong>:`;
+        }
+        if (!el.actionPanel.querySelector("[data-rebuy-inline]")) {
+          el.actionPanel.insertAdjacentHTML("beforeend", inlineRebuyButtonMarkup(vs));
+        }
+      }
+      return;
+    }
+
+    // 7. 3 Buy 5 / 5 Buy 5 card exchange ($1.00)
+    if (gvs.pending && gvs.pending.kind === "exchangeDecision" && gvs.pending.playerId === vs.humanId) {
+      const priceDollars = gvs.state.gameConfig.exchangePriceDollars;
+      if (humanChips < ChipEconomy.dollarsToChips(priceDollars)) {
+        if (el.humanHand) {
+          el.humanHand.querySelectorAll("[data-exchange-card]").forEach((cardEl) => cardEl.removeAttribute("data-exchange-card"));
+        }
+        const promptDiv = el.actionPanel.querySelector("div");
+        if (promptDiv) {
+          promptDiv.innerHTML = `⚠️ Exchanging a card costs <strong>${money(priceDollars)}</strong>, but you have <strong>${money(humanDollars)}</strong>. Keep your hand or buy more chips:`;
+        }
+        if (!el.actionPanel.querySelector("[data-rebuy-inline]")) {
+          el.actionPanel.insertAdjacentHTML("beforeend", inlineRebuyButtonMarkup(vs));
+        }
+      }
+      return;
+    }
+
+    // 8. 7-27 initialBuyback / buyBack / payFlex
+    if (gvs.pending && (gvs.pending.kind === "initialBuyback" || gvs.pending.kind === "buyBack") && gvs.pending.playerId === vs.humanId) {
+      const cfg = gvs.state.gameConfig;
+      const buyBackPrice = cfg.buyBack.priceScheduleDollars[human.buyBacksUsed];
+      let removedAny = false;
+      if (humanChips < ChipEconomy.dollarsToChips(buyBackPrice)) {
+        const bbBtn = el.actionPanel.querySelector('[data-buyback-choice="buyBack"]');
+        if (bbBtn) bbBtn.remove();
+        removedAny = true;
+      }
+      if (cfg.flexTenPriceDollars && humanChips < ChipEconomy.dollarsToChips(cfg.flexTenPriceDollars)) {
+        const flexBtn = el.actionPanel.querySelector('[data-buyback-choice="payFlex"]');
+        if (flexBtn) flexBtn.remove();
+        removedAny = true;
+      }
+      if (removedAny && !el.actionPanel.querySelector("[data-rebuy-inline]")) {
+        el.actionPanel.insertAdjacentHTML("beforeend", inlineRebuyButtonMarkup(vs));
+      }
+      return;
+    }
+
+    // 9. Acey Ducey bet input
+    if (gvs.pending && gvs.pending.kind === "bet" && gvs.pending.playerId === vs.humanId) {
+      const aceyInput = el.actionPanel.querySelector("#acey-bet-input");
+      if (aceyInput) {
+        const potDollars = ChipEconomy.chipsToDollars(gvs.state.pot);
+        const maxBet = Math.min(potDollars, humanDollars);
+        if (humanChips <= 0) {
+          aceyInput.remove();
+          const submitBtn = el.actionPanel.querySelector("[data-bet-submit]");
+          if (submitBtn) submitBtn.remove();
+          const promptDiv = el.actionPanel.querySelector("div");
+          if (promptDiv) {
+            promptDiv.innerHTML = `⚠️ You have <strong>$0.00</strong> in chips. Pass your turn or buy more chips to bet:`;
+          }
+          if (!el.actionPanel.querySelector("[data-rebuy-inline]")) {
+            el.actionPanel.insertAdjacentHTML("beforeend", inlineRebuyButtonMarkup(vs));
+          }
+        } else {
+          aceyInput.max = String(maxBet);
+          if (Number(aceyInput.value) > maxBet) aceyInput.value = String(maxBet);
+        }
+      }
+    }
   }
 
   // Always refreshes content, regardless of which view is currently
@@ -779,6 +1172,7 @@
       familyModule.renderActionPanel(el, gvs, vs.humanId, TableNight.orchestrator, vs.settings);
       renderLog(gvs);
       maybeSwapForNextDealerPick(el, vs);
+      enforceAffordabilityInActionPanel(el, vs);
     }
 
     if (vs.cutForDealState) {
@@ -791,20 +1185,19 @@
     // picker still needs to render.
     if (vs.cutForDealState && vs.cutForDealState.status === "revealing") {
       maybeAutoRevealCutForDeal(vs);
-    } else if (!vs.activeGameId || pendingConfirm) {
-      // The `|| pendingConfirm` half keeps the game-selected/instructions
-      // screen rendering even after chooseNextGame has already set
-      // activeGameId -- it's waiting on the human to click "Continue,"
-      // not blocked by the normal "nothing picked yet" gate. (In
-      // practice chooseNextGame doesn't run until that click anyway --
-      // see the picker-menu click handler -- so activeGameId is still
-      // unset here too; this condition is belt-and-suspenders.)
+    } else if (!vs.activeGameId || pendingConfirm || humanOverridePick) {
+      // The `|| pendingConfirm || humanOverridePick` half keeps the
+      // game-selected/instructions screen or override selector rendering
+      // even after chooseNextGame has already set activeGameId.
       renderPicker(vs);
       maybeAutoPickForAI();
     }
 
     renderHistory(vs);
     renderRegulars(vs);
+    if (typeof TableFX !== "undefined" && typeof TableFX.enhanceTable === "function") {
+      TableFX.enhanceTable(el, vs);
+    }
   }
 
   function wireEvents() {
@@ -881,6 +1274,8 @@
     });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && !el.rosterModal.hidden) closeRosterModal();
+      const exitModal = document.getElementById("exit-prompt-modal");
+      if (e.key === "Escape" && exitModal && !exitModal.hidden) closeExitPromptModal();
     });
     el.rosterArchetypeFilter.addEventListener("change", () => {
       rosterFilters.archetypeId = el.rosterArchetypeFilter.value;
@@ -979,11 +1374,32 @@
         return;
       }
 
+      const confirmOverrideBtn = e.target.closest("[data-confirm-override]");
+      if (confirmOverrideBtn) {
+        if (autoPickTimer) {
+          clearTimeout(autoPickTimer);
+          autoPickTimer = null;
+        }
+        humanOverridePick = true;
+        pendingConfirm = null;
+        render(TableNight.getViewState());
+        return;
+      }
+
+      const confirmAiRedrawBtn = e.target.closest("[data-confirm-ai-redraw]");
+      if (confirmAiRedrawBtn) {
+        const { choice, variantChoices } = TableNight.autoPickForAI();
+        pendingConfirm = { entry: choice, variantChoices, isAi: true };
+        render(TableNight.getViewState());
+        return;
+      }
+
       const continueBtn = e.target.closest("[data-confirm-continue]");
       if (continueBtn) {
         const { entry, variantChoices } = pendingConfirm;
         TableNight.chooseNextGame(entry.id, variantChoices);
         pendingConfirm = null;
+        humanOverridePick = false;
         showView("table");
       }
     });
@@ -992,6 +1408,32 @@
       TableNight.rotatePickerAfterGameEnds();
       showView("picker");
       render(TableNight.getViewState());
+    });
+
+    // Global delegated handlers for Exit / Return to Main Screen ([data-fx-exit-main]),
+    // Quick Change Game ([data-fx-change-game]), and Inline Rebuy ([data-rebuy-inline]).
+    document.addEventListener("click", (e) => {
+      const rebuyInlineBtn = e.target.closest("[data-rebuy-inline]");
+      if (rebuyInlineBtn) {
+        const amount = ChipEconomy.BUY_IN_INCREMENT_DOLLARS;
+        if (!TableNight.canRebuy(amount)) {
+          alert(`That would exceed tonight's rebuy cap.`);
+          return;
+        }
+        TableNight.rebuy(amount);
+        return;
+      }
+      const exitBtn = e.target.closest("[data-fx-exit-main]");
+      if (exitBtn) {
+        promptExitToMainScreen();
+        return;
+      }
+      const changeGameQuickBtn = e.target.closest("[data-fx-change-game]");
+      if (changeGameQuickBtn) {
+        TableNight.rotatePickerAfterGameEnds();
+        showView("picker");
+        render(TableNight.getViewState());
+      }
     });
 
     el.gameScriptToggleBtn.addEventListener("click", () => {
@@ -1056,10 +1498,7 @@
       TableNight.rebuy(amount);
     });
     el.cashoutBtn.addEventListener("click", () => {
-      if (confirm("Cash out and leave the table? This ends tonight's sitting — you can start a new one anytime.")) {
-        TableNight.cashOut();
-        showView("setup");
-      }
+      promptExitToMainScreen();
     });
   }
 

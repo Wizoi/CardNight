@@ -19,16 +19,26 @@ const BaseballWildcards = (function () {
   const BUY4_DOLLARS = 1;
 
   function resolveBuy3(card, wallet, willBuy) {
+    const neededChips = ChipEconomy.dollarsToChips(BUY3_DOLLARS);
     if (!willBuy) return { paidChips: 0, wild: false, declined: true };
-    const { paid } = ChipEconomy.pay(wallet, ChipEconomy.dollarsToChips(BUY3_DOLLARS));
+    if (wallet.isTracked && wallet.chips < neededChips) return { paidChips: 0, wild: false, declined: true };
+    if (!wallet.isTracked && wallet.chips < neededChips) {
+      while (wallet.chips < neededChips) ChipEconomy.rebuy(wallet, ChipEconomy.BUY_IN_INCREMENT_DOLLARS, Date.now());
+    }
+    const { paid } = ChipEconomy.pay(wallet, neededChips);
     card.isWild = true;
     card.bought = true;
     return { paidChips: paid, wild: true, declined: false };
   }
 
   function resolveBuy9(card, wallet, willBuy) {
+    const neededChips = ChipEconomy.dollarsToChips(BUY9_DOLLARS);
     if (!willBuy) return { paidChips: 0, wild: false };
-    const { paid } = ChipEconomy.pay(wallet, ChipEconomy.dollarsToChips(BUY9_DOLLARS));
+    if (wallet.isTracked && wallet.chips < neededChips) return { paidChips: 0, wild: false };
+    if (!wallet.isTracked && wallet.chips < neededChips) {
+      while (wallet.chips < neededChips) ChipEconomy.rebuy(wallet, ChipEconomy.BUY_IN_INCREMENT_DOLLARS, Date.now());
+    }
+    const { paid } = ChipEconomy.pay(wallet, neededChips);
     card.isWild = true;
     card.bought = true;
     return { paidChips: paid, wild: true };
@@ -37,10 +47,15 @@ const BaseballWildcards = (function () {
   // drawFn: () => card|null — caller supplies the deck/discard draw source
   // (each engine may recycle a discard pile differently).
   function resolveBuy4(hand, wallet, willBuy, drawFn) {
+    const neededChips = ChipEconomy.dollarsToChips(BUY4_DOLLARS);
     if (!willBuy) return { paidChips: 0, drew: null };
+    if (wallet.isTracked && wallet.chips < neededChips) return { paidChips: 0, drew: null };
+    if (!wallet.isTracked && wallet.chips < neededChips) {
+      while (wallet.chips < neededChips) ChipEconomy.rebuy(wallet, ChipEconomy.BUY_IN_INCREMENT_DOLLARS, Date.now());
+    }
     const bonus = drawFn();
     if (!bonus) return { paidChips: 0, drew: null, exhausted: true };
-    const { paid } = ChipEconomy.pay(wallet, ChipEconomy.dollarsToChips(BUY4_DOLLARS));
+    const { paid } = ChipEconomy.pay(wallet, neededChips);
     hand.push({ rank: bonus.rank, suit: bonus.suit, faceUp: false, isWild: false, bought: false, isBonus: true });
     return { paidChips: paid, drew: bonus };
   }
