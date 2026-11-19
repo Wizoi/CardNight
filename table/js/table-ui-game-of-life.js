@@ -34,9 +34,8 @@ const TableUIGameOfLife = (function () {
             : "";
         let debugLine = "";
         if (peekAi && !p.isHuman && gvs.state && !revealed) {
-          const cards = p.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: c.rank === "JOKER" }));
-          const hand = HandEvaluator.evaluatePartial(cards);
-          debugLine = `<div class="seat-debug">AI's actual hand: ${HandEvaluator.describe(hand)} (${p.hand.length} cards)</div>`;
+          const hand = RulesGameOfLife.evaluatePlayerHand(gvs.state, p);
+          debugLine = `<div class="seat-debug">AI's actual hand: ${HandEvaluator.describe(hand)} (${p.hand.length} hole cards left)</div>`;
         }
         const cards = gvs.state ? p.hand.map((c) => cardMarkup(c, !revealed)).join("") : "";
         return `
@@ -96,8 +95,9 @@ const TableUIGameOfLife = (function () {
     if (gvs.state.status === "complete") {
       const canDeal = orchestrator.canDealNextHand();
       const names = (gvs.state.winnerIds || []).map((id) => RulesGameOfLife.getPlayer(gvs.state, id).name);
+      const handSuffix = gvs.state.bestHandDescribed ? ` with ${gvs.state.bestHandDescribed}` : "";
       const resultLine = names.length
-        ? `${names.join(", ")} win${names.length > 1 ? "" : "s"} the ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))} pot.`
+        ? `${names.join(", ")} win${names.length > 1 ? "" : "s"} the ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))} pot${handSuffix}.`
         : "Hand over.";
       el.actionPanel.innerHTML = `
         <div>${resultLine}</div>

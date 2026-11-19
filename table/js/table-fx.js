@@ -463,6 +463,10 @@ const TableFX = (function () {
         const best = GutsRules.evaluateHand(gvs.state, human);
         if (best && best.category >= 0) return `${foldPrefix}Your Hand: <strong>${HandEvaluator.describe(best)}</strong>`;
       }
+      if (gameId === "gameOfLife" && typeof RulesGameOfLife !== "undefined") {
+        const best = RulesGameOfLife.evaluatePlayerHand(gvs.state, human);
+        if (best && best.category >= 0) return `${foldPrefix}Your Best Hand: <strong>${HandEvaluator.describe(best)}</strong>`;
+      }
       if (gameId === "wildInYourHand" && typeof WildInYourHandRules !== "undefined") {
         const best = WildInYourHandRules.evaluateHand(gvs.state, human);
         if (best && best.category >= 0) return `${foldPrefix}Your Hand: <strong>${HandEvaluator.describe(best)}</strong>`;
@@ -1001,9 +1005,7 @@ const TableFX = (function () {
           const cardMarkup = fxCardHtml(c, false, isPoisoned ? "card-gol-poisoned" : "");
           const subTag = isPoisoned
             ? `<span class="gol-card-tag gol-tag-poisoned">☠️ Poisoned</span>`
-            : c.claimedBy
-            ? `<span class="gol-card-tag gol-tag-claimed">&rarr; ${c.claimedBy.split(" ")[0]}</span>`
-            : "";
+            : `<span class="gol-card-tag gol-tag-claimed">✓ Shared</span>`;
           return `<div class="gol-card-slot ${isPoisoned ? "gol-slot-poisoned" : ""}">${cardMarkup}${subTag}</div>`;
         })
         .join("");
@@ -1018,7 +1020,7 @@ const TableFX = (function () {
         <div class="concept3-board board-game-of-life">
           <div class="gol-lanes">
             <div class="gol-lane gol-lane-good">
-              <div class="gol-lane-title">🌿 GOOD ROW (Claimed Into Flipper's Hand)</div>
+              <div class="gol-lane-title">🌿 GOOD ROW (Shared Community Cards — Unless Poisoned)</div>
               <div class="gol-lane-cards">${goodCards}</div>
             </div>
             <div class="gol-lane gol-lane-bad">
@@ -1201,7 +1203,7 @@ const TableFX = (function () {
     threeThirtyThree: "Fixed 5-Card Stud · Closest to 3 Low & 33 High Splits Pot",
     aceyDucey: "2 Goalpost Cards · Bet Pot That 3rd Lands Between (Posts = 2x)",
     blindMansBluff: "1 Forehead Card · See Everyone Else's Card Except Your Own!",
-    gameOfLife: "5 Hole Cards + Good Row (Claim) & Bad Row (Poison Rank)",
+    gameOfLife: "5 Hole Cards + Good Row (Shared Community) & Bad Row (Poison Rank)",
     pairOfJacksTripsToWin: "5-Card Draw · Jacks to Open · Trips to Win or Pot Carries",
     anaconda: "7 Cards · Pass 3 Left · Discard 2 · Roll Your Own Reveal",
   };
@@ -1549,7 +1551,7 @@ const TableFX = (function () {
     threeThirtyThree: { shelf: "target", cards: "5 Hole + 5 Community", wilds: 1, wildTxt: "Face=0.5 · Ace=1 or 11", vol: 2, volTxt: "3 Low / 33 High" },
     aceyDucey: { shelf: "specials", cards: "2 Posts + 1 Mid Draw", wilds: 1, wildTxt: "Post Hit = Pay 2× Pot!", vol: 3, volTxt: "Pot-Limit Spread" },
     blindMansBluff: { shelf: "specials", cards: "1 Forehead Card", wilds: 1, wildTxt: "See Opponents' Cards Only", vol: 2, volTxt: "Pure Bluff Showdown" },
-    gameOfLife: { shelf: "specials", cards: "5 Hole + 10 Good/Bad", wilds: 2, wildTxt: "Good=Claim / Bad=Poison", vol: 3, volTxt: "Rank Stripping" },
+    gameOfLife: { shelf: "specials", cards: "5 Hole + 10 Good/Bad", wilds: 2, wildTxt: "Good=Shared / Bad=Poison", vol: 3, volTxt: "Rank Stripping" },
     pairOfJacksTripsToWin: { shelf: "specials", cards: "5-Card Draw (Up to 3)", wilds: 2, wildTxt: "Optional Jokers", vol: 2, volTxt: "JJ+ Open / Trips Win" },
     anaconda: { shelf: "specials", cards: "7 Dealt → Pass 3 →Trash 2", wilds: 2, wildTxt: "Optional Jokers", vol: 2, volTxt: "4 Betting Streets" },
   };

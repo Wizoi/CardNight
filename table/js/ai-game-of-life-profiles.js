@@ -40,8 +40,7 @@ const GameOfLifeAIProfiles = (function () {
   function decideBet(player, state, profile) {
     const br = state.bettingRound;
     const toCallChips = br.currentBetChips - br.committed[player.id];
-    const cards = player.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: c.rank === "JOKER" }));
-    const myHand = HandEvaluator.evaluatePartial(cards);
+    const myHand = RulesGameOfLife.evaluatePlayerHand(state, player);
     const flipsLeft = 10 - state.flipsDone;
 
     if (AIProfiles.shouldBluff(profile)) {

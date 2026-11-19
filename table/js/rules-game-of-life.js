@@ -142,11 +142,9 @@ const RulesGameOfLife = (function () {
     if (isBad) {
       card.poisoned = true;
       const cascaded = resolveBadCard(state, card);
-      state.log.push(`${player.name} flips ${Deck.cardLabel(card)} from the ${actualRow} row — bad${cascaded ? `, ${card.rank}s are now poisoned` : ""}.`);
+      state.log.push(`${player.name} flips ${Deck.cardLabel(card)} from the ${actualRow} row — bad${cascaded ? `, ${card.rank}s are now poisoned and stripped from all hands` : " (already poisoned)"}.`);
     } else {
-      card.claimedBy = player.name;
-      player.hand.push({ rank: card.rank, suit: card.suit });
-      state.log.push(`${player.name} flips ${Deck.cardLabel(card)} from the good row — added to their hand.`);
+      state.log.push(`${player.name} flips ${Deck.cardLabel(card)} in the good row — shared community card.`);
     }
 
     if (isRowsComplete(state)) {
@@ -229,17 +227,26 @@ const RulesGameOfLife = (function () {
     state.status = "flipping";
   }
 
+  function activeGoodRowCards(state) {
+    return state.goodRow
+      .filter((c) => c.flipped && !c.poisoned && !state.poisonedRanks.includes(c.rank))
+      .map((c) => ({ rank: c.rank, suit: c.suit, isWild: c.rank === "JOKER" }));
+  }
+
+  function evaluatePlayerHand(state, player) {
+    const hole = player.hand
+      .filter((c) => !state.poisonedRanks.includes(c.rank))
+      .map((c) => ({ rank: c.rank, suit: c.suit, isWild: c.rank === "JOKER" }));
+    const community = activeGoodRowCards(state);
+    return HandEvaluator.bestHand(hole.concat(community));
+  }
+
   function resolveShowdown(state) {
     let bestHand = null;
     let winnerIds = [];
     for (const p of state.players) {
       if (p.folded) continue;
-      // A Joker (games.md's "House rule: playing with Jokers" -- Game of
-      // Life has no wildcard rule of its own; its bad-row effect discards/
-      // poisons ranks, it doesn't make anything wild) is wild wherever it
-      // lands in a hand, same as any other card drafted from the good row.
-      const cards = p.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: c.rank === "JOKER" }));
-      const hand = HandEvaluator.bestHand(cards);
+      const hand = evaluatePlayerHand(state, p);
       if (bestHand == null || HandEvaluator.isBetter(hand, bestHand)) {
         bestHand = hand;
         winnerIds = [p.id];
@@ -247,6 +254,7 @@ const RulesGameOfLife = (function () {
         winnerIds.push(p.id);
       }
     }
+    state.bestHandDescribed = bestHand ? HandEvaluator.describe(bestHand) : null;
     completeHand(state, winnerIds);
   }
 
@@ -262,7 +270,8 @@ const RulesGameOfLife = (function () {
       winnerIds.forEach((id, i) => {
         ChipEconomy.award(getPlayer(state, id).wallet, share + (i < remainder ? 1 : 0));
       });
-      state.log.push(`${winnerIds.map((id) => getPlayer(state, id).name).join(", ")} win${winnerIds.length > 1 ? "" : "s"} the $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)} pot.`);
+      const handSuffix = state.bestHandDescribed ? ` with ${state.bestHandDescribed}` : "";
+      state.log.push(`${winnerIds.map((id) => getPlayer(state, id).name).join(", ")} win${winnerIds.length > 1 ? "" : "s"} the $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)} pot${handSuffix}.`);
       state.pot = 0;
     }
   }
@@ -273,6 +282,8 @@ const RulesGameOfLife = (function () {
     nextUnflippedIndex,
     requiredRowFor,
     resolveFlip,
+    activeGoodRowCards,
+    evaluatePlayerHand,
     getCurrentBettor,
     isBettingRoundOver,
     maxRaiseDollars,

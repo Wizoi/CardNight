@@ -225,9 +225,9 @@ Entries marked **(New)** in their Category field aren't part of our original hou
 
 - **Category:** Poker Scored
 - **Deal:** 5 cards to each player.
-- **Setup:** Two rows of 5 cards are placed face down on the table — one "good" row (cards can be added to your hand) and one "bad" row (cards are discarded).
-- **Play:** Players take turns flipping a card from either row. Turn order rotates each round, and whichever player goes first in a round gets to choose which side (good or bad) they flip from.
-- **Bad-card effect:** Flipping a bad-row card poisons its rank for the rest of the hand. Any card of that rank already in a player's hand is discarded — placed on top of the bad card to show it's out of play. Any card of that rank still face-down in the good row also moves over to the bad side instead. From then on, any future flip — from either row — that matches a poisoned rank is immediately treated as bad and discarded rather than added to a hand.
+- **Setup:** Two rows of 5 cards are placed face down on the table — one "good" row (shared community cards) and one "bad" row (cards are discarded and poison their rank).
+- **Play:** Players take turns flipping a card from the rows (alternating good/bad after the first player's initial row choice).
+- **Bad-card effect:** Flipping a bad-row card poisons its rank for the rest of the hand. Every player immediately loses any card of that rank from their hand (reducing their hand size). Any card of that rank in the good row (flipped earlier or later) is also poisoned and canceled out of play. Best 5-card hand combining your remaining hole cards with the active, unpoisoned good-row community cards wins at showdown.
 - **Wildcards:** None by default; dealer's choice to add 1-2 Jokers per "House rule: playing with Jokers."
 - **Sources:** None found for this mechanic — appears to be original to our group. (A same-named-theme game turned up — ["The Good, the Bad and the Ugly" – poker.com](https://poker.com/game/stud-poker-games/good-bad-ugly/), a seven-card stud variant with three community "reveal" cards that trigger wildcards/discards/eliminations — but it's mechanically unrelated to our face-down good/bad row draft.)
 
