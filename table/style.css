@@ -5185,5 +5185,166 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
   }
 }
 
+/* ============================================================================
+   18. CARD & TABLE SIZE ZOOM CONTROLS (- Size / + Size in ⋯ Menu)
+       & GAME OF LIFE POISONED GOOD-ROW CARD INDICATORS
+   ============================================================================ */
+
+.fx-menu-size-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.25rem 0 0.65rem;
+}
+
+#more-menu .fx-size-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 34px;
+  padding: 0.32rem 0.5rem;
+  border-radius: 8px;
+  background: rgba(212, 175, 55, 0.18);
+  border: 1px solid rgba(212, 175, 55, 0.55);
+  color: var(--gold-soft);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+#more-menu .fx-size-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #ffe380, #d4af37);
+  color: #18181b;
+}
+
+#more-menu .fx-size-readout {
+  min-height: 34px;
+  padding: 0.25rem 0.45rem;
+  text-align: center;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--cream);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+}
+
+/* Scale Cards, Seats & Text Proportionally by --ui-scale (0.85x to 1.45x) */
+#human-hand .card {
+  width: calc(62px * var(--ui-scale, 1));
+  height: calc(88px * var(--ui-scale, 1));
+  font-size: calc(1.22rem * var(--ui-scale, 1));
+}
+
+#board-hand .card,
+.concept3-board .card {
+  width: calc(46px * var(--ui-scale, 1));
+  height: calc(66px * var(--ui-scale, 1));
+  font-size: calc(0.95rem * var(--ui-scale, 1));
+}
+
+.seat-cards .card {
+  width: calc(28px * var(--ui-scale, 1));
+  height: calc(40px * var(--ui-scale, 1));
+  font-size: calc(0.72rem * var(--ui-scale, 1));
+}
+
+.seat .avatar-portrait-wrap {
+  --avatar-px: calc(56px * var(--ui-scale, 1)) !important;
+}
+
+.c4-person-name,
+.seat-name {
+  font-size: calc(0.8rem * var(--ui-scale, 1));
+}
+
+.seat-chips {
+  font-size: calc(0.76rem * var(--ui-scale, 1));
+}
+
+.human-hand-live-badge {
+  font-size: calc(0.78rem * var(--ui-scale, 1));
+}
+
+#action-panel button {
+  font-size: calc(0.9rem * var(--ui-scale, 1));
+}
+
+@media (max-width: 768px) {
+  #human-hand .card {
+    width: calc(48px * var(--ui-scale, 1));
+    height: calc(68px * var(--ui-scale, 1));
+    font-size: calc(0.96rem * var(--ui-scale, 1));
+  }
+
+  #board-hand .card,
+  .concept3-board .card {
+    width: calc(40px * var(--ui-scale, 1));
+    height: calc(58px * var(--ui-scale, 1));
+    font-size: calc(0.84rem * var(--ui-scale, 1));
+  }
+
+  .seat-cards .card {
+    width: calc(24px * var(--ui-scale, 1));
+    height: calc(34px * var(--ui-scale, 1));
+    font-size: calc(0.62rem * var(--ui-scale, 1));
+  }
+
+  .seat .avatar-portrait-wrap {
+    --avatar-px: calc(36px * var(--ui-scale, 1)) !important;
+  }
+
+  .c4-person-name,
+  .seat-name {
+    font-size: calc(0.68rem * var(--ui-scale, 1));
+  }
+
+  .seat-chips {
+    font-size: calc(0.66rem * var(--ui-scale, 1));
+  }
+
+  #action-panel button {
+    font-size: calc(0.82rem * var(--ui-scale, 1));
+  }
+}
+
+/* Game of Life: Poisoned Good-Row Cards & Claimed Badges */
+.gol-card-slot {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.18rem;
+}
+
+.card.card-gol-poisoned {
+  filter: grayscale(0.85) brightness(0.68);
+  opacity: 0.72;
+  outline: 2px dashed rgba(255, 107, 107, 0.75);
+}
+
+.gol-card-tag {
+  display: inline-block;
+  padding: 0.08rem 0.36rem;
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 800;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.gol-tag-poisoned {
+  background: rgba(201, 42, 42, 0.55);
+  border: 1px solid #ff8787;
+  color: #ffe3e3;
+}
+
+.gol-tag-claimed {
+  background: rgba(47, 179, 100, 0.32);
+  border: 1px solid rgba(105, 219, 124, 0.65);
+  color: #d3f9d8;
+}
+
+
 
 

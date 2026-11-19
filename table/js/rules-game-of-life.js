@@ -115,7 +115,7 @@ const RulesGameOfLife = (function () {
         if (p.hand.length < before) state.log.push(`${p.name}'s ${card.rank}(s) are discarded — ${card.rank}s are poisoned.`);
       }
       for (const c of state.goodRow) {
-        if (!c.flipped && c.rank === card.rank) c.poisoned = true;
+        if (c.rank === card.rank) c.poisoned = true;
       }
     }
     return !alreadyPoisoned;
@@ -140,9 +140,11 @@ const RulesGameOfLife = (function () {
 
     const isBad = actualRow === "bad" || card.poisoned || state.poisonedRanks.includes(card.rank);
     if (isBad) {
+      card.poisoned = true;
       const cascaded = resolveBadCard(state, card);
       state.log.push(`${player.name} flips ${Deck.cardLabel(card)} from the ${actualRow} row — bad${cascaded ? `, ${card.rank}s are now poisoned` : ""}.`);
     } else {
+      card.claimedBy = player.name;
       player.hand.push({ rank: card.rank, suit: card.suit });
       state.log.push(`${player.name} flips ${Deck.cardLabel(card)} from the good row — added to their hand.`);
     }

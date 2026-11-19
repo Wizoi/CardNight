@@ -17,6 +17,8 @@ const TableFX = (function () {
   const SPEED_KEY = "cardnight.table.aiSpeed.v1";
   const SOUND_KEY = "cardnight.table.soundMuted.v1";
   const LAYOUT_KEY = "cardnight.table.layoutMode.v1";
+  const SIZE_KEY = "cardnight.table.uiScale.v1";
+  const UI_SCALES = [0.85, 1, 1.15, 1.3, 1.45];
 
   const THEMES = [
     { id: "basement", label: "Basement Rec Room", icon: "🍺" },
@@ -42,6 +44,8 @@ const TableFX = (function () {
   let currentSpeed = localStorage.getItem(SPEED_KEY) || "1x";
   let currentLayout = localStorage.getItem(LAYOUT_KEY) || "auto";
   let soundMuted = localStorage.getItem(SOUND_KEY) === "true";
+  let currentScale = Number(localStorage.getItem(SIZE_KEY)) || 1;
+  if (!UI_SCALES.includes(currentScale)) currentScale = 1;
 
   // Intercept typical AI pacing delays (350ms - 950ms) when 2x or Turbo speed is selected.
   const nativeSetTimeout = window.setTimeout.bind(window);
@@ -243,6 +247,28 @@ const TableFX = (function () {
     document.documentElement.setAttribute("data-layout-mode", layoutId);
   }
 
+  function applyUiScale(scaleVal) {
+    currentScale = UI_SCALES.includes(scaleVal) ? scaleVal : 1;
+    localStorage.setItem(SIZE_KEY, String(currentScale));
+    document.documentElement.style.setProperty("--ui-scale", String(currentScale));
+    document.documentElement.setAttribute("data-ui-scale", String(currentScale));
+    const readout = document.getElementById("fx-size-readout");
+    if (readout) {
+      readout.textContent = `${Math.round(currentScale * 100)}%`;
+    }
+    const minusBtn = document.querySelector('[data-fx-size-step="-1"]');
+    const plusBtn = document.querySelector('[data-fx-size-step="1"]');
+    if (minusBtn) minusBtn.disabled = currentScale <= UI_SCALES[0];
+    if (plusBtn) plusBtn.disabled = currentScale >= UI_SCALES[UI_SCALES.length - 1];
+  }
+
+  function stepUiScale(delta) {
+    const idx = UI_SCALES.indexOf(currentScale);
+    const nextIdx = Math.max(0, Math.min(UI_SCALES.length - 1, (idx === -1 ? 1 : idx) + delta));
+    applyUiScale(UI_SCALES[nextIdx]);
+    Sound.chipClink();
+  }
+
   function applySpeed(speedId) {
     currentSpeed = speedId;
     localStorage.setItem(SPEED_KEY, speedId);
@@ -299,17 +325,36 @@ const TableFX = (function () {
 
     statsBar.insertBefore(wrap, statsBar.firstChild);
 
-    // Also add a compact Theme selector inside #more-menu for mobile users
+    // Add Card & UI Size (- Size / + Size) and Table Vibe controls inside #more-menu
     const moreMenu = document.getElementById("more-menu");
     if (moreMenu && !moreMenu.querySelector(".fx-menu-settings")) {
       const menuSettings = document.createElement("div");
       menuSettings.className = "fx-menu-settings";
       menuSettings.innerHTML = `
+        <div class="fx-menu-setting-lbl">Card &amp; Table Size</div>
+        <div class="fx-menu-size-row">
+          <button type="button" class="fx-size-btn" data-fx-size-step="-1" title="Decrease card &amp; text size">&minus; Size</button>
+          <button type="button" id="fx-size-readout" class="fx-size-readout" data-fx-size-reset title="Tap to reset size to 100%">${Math.round(currentScale * 100)}%</button>
+          <button type="button" class="fx-size-btn" data-fx-size-step="1" title="Increase card &amp; text size">+ Size</button>
+        </div>
         <label class="fx-menu-setting-lbl">Table Vibe
           <select id="fx-menu-theme-select" class="fx-theme-select">${themeOptions}</select>
         </label>
       `;
       moreMenu.appendChild(menuSettings);
+      applyUiScale(currentScale);
+      menuSettings.addEventListener("click", (e) => {
+        const sizeStepBtn = e.target.closest("[data-fx-size-step]");
+        if (sizeStepBtn) {
+          stepUiScale(Number(sizeStepBtn.getAttribute("data-fx-size-step")));
+          return;
+        }
+        const resetBtn = e.target.closest("[data-fx-size-reset]");
+        if (resetBtn) {
+          applyUiScale(1);
+          Sound.chipClink();
+        }
+      });
       const menuThemeSelect = menuSettings.querySelector("#fx-menu-theme-select");
       menuThemeSelect.addEventListener("change", () => {
         applyTheme(menuThemeSelect.value);
@@ -949,8 +994,22 @@ const TableFX = (function () {
 
     // ---- H. GAME OF LIFE: Emerald Sanctuary Row vs Crimson Poison Row ----
     if (gameId === "gameOfLife") {
-      const goodCards = state.goodRow.map((c) => (c.flipped ? fxCardHtml(c, false) : fxCardHtml(null, true))).join("");
-      const badCards = state.badRow.map((c) => (c.flipped ? fxCardHtml(c, false) : fxCardHtml(null, true))).join("");
+      const goodCards = state.goodRow
+        .map((c) => {
+          if (!c.flipped) return `<div class="gol-card-slot">${fxCardHtml(null, true)}</div>`;
+          const isPoisoned = c.poisoned || state.poisonedRanks.includes(c.rank);
+          const cardMarkup = fxCardHtml(c, false, isPoisoned ? "card-gol-poisoned" : "");
+          const subTag = isPoisoned
+            ? `<span class="gol-card-tag gol-tag-poisoned">☠️ Poisoned</span>`
+            : c.claimedBy
+            ? `<span class="gol-card-tag gol-tag-claimed">&rarr; ${c.claimedBy.split(" ")[0]}</span>`
+            : "";
+          return `<div class="gol-card-slot ${isPoisoned ? "gol-slot-poisoned" : ""}">${cardMarkup}${subTag}</div>`;
+        })
+        .join("");
+      const badCards = state.badRow
+        .map((c) => `<div class="gol-card-slot">${c.flipped ? fxCardHtml(c, false) : fxCardHtml(null, true)}</div>`)
+        .join("");
       const poisons = state.poisonedRanks.length
         ? state.poisonedRanks.map((r) => `<span class="poison-vial-badge">☠️ ${r}s Stripped</span>`).join("")
         : `<span class="c3-leader-pill">No ranks poisoned yet</span>`;
@@ -2472,6 +2531,7 @@ const TableFX = (function () {
 
   applyTheme(currentTheme);
   applyLayoutMode(currentLayout);
+  applyUiScale(currentScale);
 
   return {
     enhanceTable,
