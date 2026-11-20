@@ -53,29 +53,6 @@ const TableUIGameOfLife = (function () {
       .join("");
   }
 
-  function rowMarkup(row) {
-    return row
-      .map((c) => {
-        if (!c.flipped) return cardMarkup(null, true);
-        return cardMarkup(c, false);
-      })
-      .join("");
-  }
-
-  function renderBoard(el, gvs) {
-    if (!gvs.state) {
-      el.boardHand.innerHTML = "";
-      return;
-    }
-    const poisonLine = gvs.state.poisonedRanks.length ? `<div><strong>Poisoned ranks:</strong> ${gvs.state.poisonedRanks.join(", ")}</div>` : "";
-    const potDisplay = gvs.state.status === "complete" ? gvs.state.potAtShowdown : gvs.state.pot;
-    el.boardHand.innerHTML = `
-      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>
-      <div><strong>Good row:</strong> ${rowMarkup(gvs.state.goodRow)}</div>
-      <div><strong>Bad row:</strong> ${rowMarkup(gvs.state.badRow)}</div>
-      ${poisonLine}
-    `;
-  }
 
   function renderHumanHand(el, gvs, humanId) {
     const human = gvs.players.find((p) => p.id === humanId);
@@ -147,5 +124,5 @@ const TableUIGameOfLife = (function () {
     };
   }
 
-  return { renderSeats, renderBoard, renderHumanHand, renderActionPanel, wireActions };
+  return { renderSeats, renderHumanHand, renderActionPanel, wireActions };
 })();

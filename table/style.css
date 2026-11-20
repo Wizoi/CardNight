@@ -5231,6 +5231,18 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
 }
 
 /* Scale Cards, Seats & Text Proportionally by --ui-scale (0.85x to 1.45x) */
+.seat {
+  overflow: hidden;
+  min-width: 0;
+}
+
+.seat-cards {
+  flex-wrap: wrap;
+  row-gap: 3px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 #human-hand .card {
   width: calc(62px * var(--ui-scale, 1));
   height: calc(88px * var(--ui-scale, 1));
@@ -5248,6 +5260,23 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
   width: calc(28px * var(--ui-scale, 1));
   height: calc(40px * var(--ui-scale, 1));
   font-size: calc(0.72rem * var(--ui-scale, 1));
+}
+
+/* Desktop/Tablet: When zoomed to 115%, 130%, or 145%, drop from 8 across to 4 across
+   (2 rows of 4 when 8 are playing) so enlarged seat cards have plenty of room and minimal overlap */
+html[data-ui-scale="1.15"] #seats,
+html[data-ui-scale="1.3"] #seats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+html[data-ui-scale="1.45"] #seats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+html[data-ui-scale="1.15"] .seat-cards .card + .card,
+html[data-ui-scale="1.3"] .seat-cards .card + .card,
+html[data-ui-scale="1.45"] .seat-cards .card + .card {
+  margin-left: -3px;
 }
 
 .seat .avatar-portrait-wrap {
@@ -5272,6 +5301,33 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
 }
 
 @media (max-width: 768px) {
+  /* Default mobile (85% / 100%): 4 seats across (2 rows of 4 when 8 are playing) */
+  #seats,
+  html[data-ui-scale="0.85"] #seats,
+  html[data-ui-scale="1"] #seats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  /* Mobile at 115%: 3 seats across so enlarged cards stay inside the seat box */
+  html[data-ui-scale="1.15"] #seats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* Mobile at 130% & 145%: 2 seats across so 5-7 enlarged cards fit side-by-side without heavy overlap */
+  html[data-ui-scale="1.3"] #seats,
+  html[data-ui-scale="1.45"] #seats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  html[data-ui-scale="1.15"] .seat-cards .card + .card {
+    margin-left: -4px;
+  }
+
+  html[data-ui-scale="1.3"] .seat-cards .card + .card,
+  html[data-ui-scale="1.45"] .seat-cards .card + .card {
+    margin-left: -2px;
+  }
+
   #human-hand .card {
     width: calc(48px * var(--ui-scale, 1));
     height: calc(68px * var(--ui-scale, 1));

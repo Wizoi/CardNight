@@ -52,28 +52,6 @@ const TableUIAnaconda = (function () {
       .join("");
   }
 
-  function renderBoard(el, gvs) {
-    if (!gvs.state) {
-      el.boardHand.innerHTML = "";
-      return;
-    }
-    const phaseLine =
-      {
-        discard1: "Discard 3 (passed to your left)",
-        betting1: "Betting round",
-        discard2: "Discard 2 more",
-        betting2: "Betting round",
-        revealing: "Rolling your own...",
-        revealingBet: `Betting round (reveal ${gvs.state.revealsDone}/5)`,
-        complete: "Hand complete",
-      }[gvs.state.status] || "";
-    const potDisplay = gvs.state.status === "complete" ? gvs.state.potAtShowdown : gvs.state.pot;
-    el.boardHand.innerHTML = `
-      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>
-      <div>${phaseLine}</div>
-    `;
-  }
-
   function renderHumanHand(el, gvs, humanId) {
     const human = gvs.players.find((p) => p.id === humanId);
     if (!gvs.state) {
@@ -252,5 +230,5 @@ const TableUIAnaconda = (function () {
     };
   }
 
-  return { renderSeats, renderBoard, renderHumanHand, renderActionPanel, wireActions };
+  return { renderSeats, renderHumanHand, renderActionPanel, wireActions };
 })();

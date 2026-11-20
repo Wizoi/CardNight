@@ -72,37 +72,6 @@ const TableUIStud = (function () {
       .join("");
   }
 
-  function renderBoard(el, gvs) {
-    if (!gvs.state) {
-      el.boardHand.innerHTML = "";
-      return;
-    }
-    const best = StudRules.currentBestShowingHand(gvs.state);
-    const holder = best.holderId ? StudRules.getPlayer(gvs.state, best.holderId) : null;
-    const tableCardsLine =
-      gvs.state.tableCards && gvs.state.tableCards.length
-        ? `<div><strong>Table cards:</strong> ${gvs.state.tableCards
-            .map((c, i) => {
-              const label = gvs.state.gameConfig.tableReveals[i].label;
-              return c.revealed ? `${label}: ${cardMarkup(c, false)}` : `${label}: ${cardMarkup(null, true)}`;
-            })
-            .join(" ")}</div>`
-        : "";
-    const enterprisePileLine =
-      gvs.state.enterprisePile && gvs.state.enterprisePile.length
-        ? `<div><strong>Enterprise pile:</strong> ${gvs.state.enterprisePile
-            .map((c, i) => `${cardMarkup(c, false)} ${money(StudRules.currentEnterprisePriceDollars(gvs.state, i))}`)
-            .join(" &nbsp; ")}</div>`
-        : "";
-    const potChips = typeof gvs.state.potAtShowdown === "number" ? gvs.state.potAtShowdown : gvs.state.pot;
-    el.boardHand.innerHTML = `
-      <div><strong>Best showing hand:</strong> ${holder ? `${HandEvaluator.describe(best.hand)} (held by ${holder.name})` : "None yet"}</div>
-      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potChips))}</div>
-      ${tableCardsLine}
-      ${enterprisePileLine}
-    `;
-  }
-
   function renderHumanHand(el, gvs, humanId) {
     const human = gvs.players.find((p) => p.id === humanId);
     if (!gvs.state) {
@@ -215,5 +184,5 @@ const TableUIStud = (function () {
     };
   }
 
-  return { renderSeats, renderBoard, renderHumanHand, renderActionPanel, wireActions };
+  return { renderSeats, renderHumanHand, renderActionPanel, wireActions };
 })();

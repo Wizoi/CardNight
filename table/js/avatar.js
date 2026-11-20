@@ -196,17 +196,11 @@ const Avatar = (function () {
     `;
   }
 
-  let customAvatarRenderer = null;
-  function setRenderer(fn) {
-    customAvatarRenderer = typeof fn === "function" ? fn : null;
-  }
-
   // Returns an inline portrait badge string using the illustrated portraits in
   // people-images/<id>.jfif (with automatic fallback to the inline SVG if an
   // image is unavailable) wrapped in an archetype-colored metallic frame and
   // reactive status/thinking rings.
   function render(spec, size) {
-    if (customAvatarRenderer) return customAvatarRenderer(spec, size);
     size = size || 64;
     // Upgrade compact 40px seat calls to 68px so the illustrated faces and metallic frames pop clearly on the table.
     const displaySize = size <= 44 ? 68 : size;
@@ -220,5 +214,5 @@ const Avatar = (function () {
     return `<div class="avatar-portrait-wrap avatar-frame-${temperament}" style="--avatar-px:${displaySize}px"><div class="avatar-inner-bevel">${renderFallbackSvg(spec, displaySize, false)}<span class="avatar-vignette" aria-hidden="true"></span></div><span class="avatar-mood-badge" hidden></span></div>`;
   }
 
-  return { render, setRenderer, SKIN_TONES, HAIR_COLORS };
+  return { render, SKIN_TONES, HAIR_COLORS };
 })();

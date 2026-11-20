@@ -67,21 +67,6 @@ const TableUIHoldem = (function () {
       .join("");
   }
 
-  function renderBoard(el, gvs) {
-    if (!gvs.state) {
-      el.boardHand.innerHTML = "";
-      return;
-    }
-    const cards = gvs.state.communityCards.map((c) => cardMarkup(c, false)).join("");
-    // potAtShowdown is captured pre-payout so the board keeps showing what was
-    // actually won instead of the now-zeroed live pot once a hand's complete.
-    const potDisplay = gvs.state.status === "complete" ? gvs.state.potAtShowdown : gvs.state.pot;
-    el.boardHand.innerHTML = `
-      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>
-      <div class="community-row">${cards}</div>
-    `;
-  }
-
   function renderHumanHand(el, gvs, humanId) {
     const human = gvs.players.find((p) => p.id === humanId);
     if (!gvs.state) {
@@ -144,5 +129,5 @@ const TableUIHoldem = (function () {
     };
   }
 
-  return { renderSeats, renderBoard, renderHumanHand, renderActionPanel, wireActions };
+  return { renderSeats, renderHumanHand, renderActionPanel, wireActions };
 })();

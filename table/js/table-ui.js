@@ -520,7 +520,7 @@
     }
 
     const data = entry ? gameDataFor(vs.activeGameId) : null;
-    if (typeof TableFX !== "undefined" && typeof TableFX.getGameEmblemSvg === "function" && window.CARDNIGHT_UI_VERSION !== 1) {
+    if (typeof TableFX !== "undefined" && typeof TableFX.getGameEmblemSvg === "function") {
       el.gameIconDisplay.innerHTML = TableFX.getGameEmblemSvg(vs.activeGameId, 38);
     } else {
       el.gameIconDisplay.textContent = data ? data.icon : "";
@@ -661,12 +661,11 @@
         return `<div class="card card-back"></div>`;
       })
       .join("");
-    const isV2 = typeof window === "undefined" || window.CARDNIGHT_UI_VERSION !== 1;
     const resultsMarkup = eligiblePlayers
       .map((player) => {
         const entry = round.find((e) => e.seatId === player.id);
         const drawn = entry ? `<div class="card ${entry.card.suit === "H" || entry.card.suit === "D" ? "card-red" : "card-black"}">${Deck.cardFaceHtml(entry.card)}</div>` : `<div class="cutfordeal-waiting">…</div>`;
-        const avatarThumb = isV2 && !player.isHuman && player.avatarSpec ? Avatar.render(player.avatarSpec, 44) : "";
+        const avatarThumb = !player.isHuman && player.avatarSpec ? Avatar.render(player.avatarSpec, 44) : "";
         const isHighWinner = state.status === "complete" && state.winnerSeatId === player.id;
         return `
           <div class="cutfordeal-result-row ${isHighWinner ? "cutfordeal-row-winner" : ""}">
@@ -712,7 +711,7 @@
   }
 
   function gameCardsMarkup(gameList) {
-    const useSvgEmblem = typeof TableFX !== "undefined" && typeof TableFX.getGameEmblemSvg === "function" && window.CARDNIGHT_UI_VERSION !== 1;
+    const useSvgEmblem = typeof TableFX !== "undefined" && typeof TableFX.getGameEmblemSvg === "function";
     return gameList
       .map((g) => {
         const data = gameDataFor(g.id);
@@ -795,7 +794,7 @@
   // instead of only being one click away mid-hand.
   function renderConfirmScreen(entry, variantChoices, isAi) {
     const data = gameDataFor(entry.id);
-    const useSvgEmblem = typeof TableFX !== "undefined" && typeof TableFX.getGameEmblemSvg === "function" && window.CARDNIGHT_UI_VERSION !== 1;
+    const useSvgEmblem = typeof TableFX !== "undefined" && typeof TableFX.getGameEmblemSvg === "function";
     const iconMarkup = useSvgEmblem ? TableFX.getGameEmblemSvg(entry.id, 84) : (data ? data.icon : "🎴");
     const lines = variantSummaryLines(entry, variantChoices);
     el.pickerHeading.textContent = "Game selected";
@@ -817,8 +816,7 @@
   function renderPicker(vs) {
     if (
       typeof TableFX !== "undefined" &&
-      typeof TableFX.renderRichPicker === "function" &&
-      window.CARDNIGHT_UI_VERSION !== 1
+      typeof TableFX.renderRichPicker === "function"
     ) {
       const handled = TableFX.renderRichPicker(el, vs, {
         pendingConfirm,
@@ -1165,7 +1163,13 @@
       const familyModule = familyModuleFor(vs.activeGameId);
       familyModule.wireActions(el, TableNight.orchestrator);
       familyModule.renderSeats(el, gvs, debugMode, activeQuip);
-      familyModule.renderBoard(el, gvs);
+      // #board-hand itself is rendered by TableFX.enhanceTable's
+      // renderCustomGameBoard below, not by the family module -- every
+      // registered game has its own bespoke board there now, and it always
+      // runs after this point in the same render pass, so calling a
+      // family's own renderBoard here would just be immediately discarded
+      // work (see table-fx.js's renderCustomGameBoard for the real,
+      // single source of truth for #board-hand).
       familyModule.renderHumanHand(el, gvs, vs.humanId);
       familyModule.renderActionPanel(el, gvs, vs.humanId, TableNight.orchestrator, vs.settings);
       renderLog(gvs);

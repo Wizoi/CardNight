@@ -68,21 +68,6 @@ const TableUIMidnightBaseball = (function () {
       .join("");
   }
 
-  function renderBoard(el, gvs) {
-    if (!gvs.state) {
-      el.boardHand.innerHTML = "";
-      return;
-    }
-    const best = MidnightBaseball.currentBestHand(gvs.state);
-    const holder = best.holderId ? MidnightBaseball.getPlayer(gvs.state, best.holderId) : null;
-    const beatCardBeaten = !!holder;
-    el.boardHand.innerHTML = `
-      <div><strong>Beat card:</strong> ${cardMarkup(gvs.state.referenceCard, false, false, beatCardBeaten)}</div>
-      <div><strong>Hand to beat:</strong> ${HandEvaluator.describe(best.hand)}${holder ? ` (held by ${holder.name})` : ""}</div>
-      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(gvs.state.pot))}</div>
-    `;
-  }
-
   function renderHumanHand(el, gvs, humanId) {
     const human = gvs.players.find((p) => p.id === humanId);
     if (!gvs.state) {
@@ -187,5 +172,5 @@ const TableUIMidnightBaseball = (function () {
     };
   }
 
-  return { renderSeats, renderBoard, renderHumanHand, renderActionPanel, wireActions };
+  return { renderSeats, renderHumanHand, renderActionPanel, wireActions };
 })();

@@ -4,12 +4,6 @@
 // hands to speak of (no player ever holds cards) -- the "board" IS the
 // game: the two shown cards, and the third card once a bet resolves.
 const TableUIAceyDucey = (function () {
-  function cardMarkup(card) {
-    if (!card) return `<div class="card card-back"></div>`;
-    const red = card.suit === "H" || card.suit === "D";
-    return `<div class="card ${red ? "card-red" : "card-black"}">${Deck.cardFaceHtml(card)}</div>`;
-  }
-
   function money(dollars) {
     return `$${dollars.toFixed(2)}`;
   }
@@ -44,22 +38,6 @@ const TableUIAceyDucey = (function () {
     if (result.outcome === "win") return `Won $${result.betDollars.toFixed(2)} bet`;
     if (result.outcome === "post") return `Hit the post — lost $${(result.betDollars * 2).toFixed(2)}`;
     return `Lost $${result.betDollars.toFixed(2)}`;
-  }
-
-  function renderBoard(el, gvs) {
-    if (!gvs.state) {
-      el.boardHand.innerHTML = "";
-      return;
-    }
-    const shown = gvs.state.shownCards
-      ? `<div><strong>Shown:</strong> ${gvs.state.shownCards.map((c) => cardMarkup(c)).join("")}</div>`
-      : "";
-    const third = gvs.state.thirdCard ? `<div><strong>Drawn:</strong> ${cardMarkup(gvs.state.thirdCard)}</div>` : "";
-    el.boardHand.innerHTML = `
-      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(gvs.state.pot))}</div>
-      ${shown}
-      ${third}
-    `;
   }
 
   function renderHumanHand(el) {
@@ -108,5 +86,5 @@ const TableUIAceyDucey = (function () {
     };
   }
 
-  return { renderSeats, renderBoard, renderHumanHand, renderActionPanel, wireActions };
+  return { renderSeats, renderHumanHand, renderActionPanel, wireActions };
 })();

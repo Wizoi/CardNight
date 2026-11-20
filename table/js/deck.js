@@ -81,18 +81,10 @@ const Deck = (function () {
     return `<span class="card-corner card-corner-tl"><span class="${rankClass}">${card.rank}</span><span class="card-corner-suit">${suitSym}</span></span><span class="card-center-art${isRoyal ? " card-center-royal" : ""}${isAce ? " card-center-ace" : ""}">${royalCrown}<span class="card-suit">${suitSym}</span></span><span class="card-corner card-corner-br"><span class="${rankClass}">${card.rank}</span><span class="card-corner-suit">${suitSym}</span></span>`;
   }
 
-  // Pluggable card-face renderer: v1 uses the original stacked rank/suit span;
-  // v2 uses the artisanal playing-card layout with corner indices and court crowns.
-  let customCardFaceRenderer = null;
-  function setCardFaceRenderer(fn) {
-    customCardFaceRenderer = typeof fn === "function" ? fn : null;
-  }
-
+  // cardFaceHtmlV1 (the original stacked rank/suit span) is kept as a named
+  // export for reference -- cardFaceHtml itself always renders the V2
+  // artisanal playing-card layout now, the only one any UI actually uses.
   function cardFaceHtml(card) {
-    if (customCardFaceRenderer) return customCardFaceRenderer(card);
-    if (typeof window !== "undefined" && window.CARDNIGHT_UI_VERSION === 1) {
-      return cardFaceHtmlV1(card);
-    }
     return cardFaceHtmlV2(card);
   }
 
@@ -124,7 +116,6 @@ const Deck = (function () {
     cardFaceHtml,
     cardFaceHtmlV1,
     cardFaceHtmlV2,
-    setCardFaceRenderer,
     drawWithReshuffle,
   };
 })();

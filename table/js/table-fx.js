@@ -47,17 +47,19 @@ const TableFX = (function () {
   let currentScale = Number(localStorage.getItem(SIZE_KEY)) || 1;
   if (!UI_SCALES.includes(currentScale)) currentScale = 1;
 
-  // Intercept typical AI pacing delays (350ms - 950ms) when 2x or Turbo speed is selected.
-  const nativeSetTimeout = window.setTimeout.bind(window);
-  window.setTimeout = function (fn, delay, ...args) {
-    if (typeof delay === "number" && delay >= 300 && delay <= 950) {
-      const speedObj = SPEEDS.find((s) => s.id === currentSpeed) || SPEEDS[0];
-      if (speedObj.factor !== 1) {
-        delay = Math.max(40, Math.round(delay * speedObj.factor));
-      }
-    }
-    return nativeSetTimeout(fn, delay, ...args);
-  };
+  // Scales an AI-pacing delay by the current speed setting (1x/2x/Turbo).
+  // Deliberately NOT a global window.setTimeout patch -- a patch keyed only
+  // on a numeric delay range (the original 2026-11 version of this) would
+  // speed up ANY unrelated timer that happens to land in that range (e.g.
+  // table-ui.js's own cut-for-deal/auto-pick timers), not just real AI
+  // pacing. Every session-<family>.js's own `sleep(ms)` helper calls this
+  // explicitly instead, so only genuine AI-turn delays are ever affected.
+  function paceDelay(ms) {
+    if (typeof ms !== "number") return ms;
+    const speedObj = SPEEDS.find((s) => s.id === currentSpeed) || SPEEDS[0];
+    if (speedObj.factor === 1) return ms;
+    return Math.max(40, Math.round(ms * speedObj.factor));
+  }
 
   // ---- 1. Procedural Web Audio Synthesizer (Zero External Assets) ----
   const Sound = (function () {
@@ -539,6 +541,16 @@ const TableFX = (function () {
     `;
   }
 
+  // The SOLE renderer of #board-hand for every registered game -- the
+  // table-ui-<family>.js files no longer have their own renderBoard at
+  // all (removed 2026-11-19; each one used to build board markup that
+  // this function immediately overwrote on every render anyway, which
+  // left 4 of them emitting CSS classes style.css doesn't define
+  // anymore). Every gameId branch below is expected to return true; if a
+  // future game is added to game-registry.js without a matching branch
+  // here, its board silently stays blank rather than showing stale
+  // family markup -- deliberately preferred over a second, independently
+  // drifting rendering path for the same area.
   function renderCustomGameBoard(boardEl, vs, gvs) {
     if (!boardEl || !gvs || !gvs.state) return false;
     const gameId = vs.activeGameId;
@@ -2541,6 +2553,7 @@ const TableFX = (function () {
     renderRichPicker,
     getGameEmblemSvg,
     renderChipStackSvg,
+    paceDelay,
     Sound,
   };
 })();

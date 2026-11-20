@@ -54,26 +54,6 @@ const TableUIDrawPoker = (function () {
       .join("");
   }
 
-  function renderBoard(el, gvs) {
-    if (!gvs.state) {
-      el.boardHand.innerHTML = "";
-      return;
-    }
-    const phaseLine =
-      gvs.state.status === "opening"
-        ? "Opening round (Jacks-or-better to open)"
-        : gvs.state.status === "drawing"
-        ? "Draw"
-        : gvs.state.status === "finalBetting"
-        ? "Final betting round"
-        : "";
-    const potDisplay = gvs.state.status === "complete" ? gvs.state.potAtShowdown : gvs.state.pot;
-    el.boardHand.innerHTML = `
-      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>
-      <div>${phaseLine}</div>
-    `;
-  }
-
   function renderHumanHand(el, gvs, humanId) {
     const human = gvs.players.find((p) => p.id === humanId);
     if (!gvs.state) {
@@ -188,5 +168,5 @@ const TableUIDrawPoker = (function () {
     };
   }
 
-  return { renderSeats, renderBoard, renderHumanHand, renderActionPanel, wireActions };
+  return { renderSeats, renderHumanHand, renderActionPanel, wireActions };
 })();

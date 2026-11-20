@@ -49,15 +49,6 @@ const TableUIBlindMansBluff = (function () {
       .join("");
   }
 
-  function renderBoard(el, gvs) {
-    if (!gvs.state) {
-      el.boardHand.innerHTML = "";
-      return;
-    }
-    const potDisplay = gvs.state.status === "complete" ? gvs.state.potAtShowdown : gvs.state.pot;
-    el.boardHand.innerHTML = `<div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>`;
-  }
-
   // The human's own hand panel stays empty/hidden the whole hand -- they
   // never get to look at their own card at all, by design (their seat in
   // renderSeats is the only place this card would ever render, and even
@@ -121,5 +112,5 @@ const TableUIBlindMansBluff = (function () {
     };
   }
 
-  return { renderSeats, renderBoard, renderHumanHand, renderActionPanel, wireActions };
+  return { renderSeats, renderHumanHand, renderActionPanel, wireActions };
 })();

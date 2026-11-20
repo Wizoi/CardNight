@@ -70,32 +70,6 @@ const TableUICommunityStud = (function () {
       .join("");
   }
 
-  function renderCommunityLayout(gvs) {
-    const cards = gvs.state.communityCards.map((c) => (c.revealed ? cardMarkup(c, false) : cardMarkup(null, true)));
-    if (gvs.state.gameConfig.arms) {
-      // Cross layout: top / left-center-right / bottom.
-      return `
-        <div class="community-cross">
-          <div class="cross-row">${cards[0]}</div>
-          <div class="cross-row">${cards[1]}${cards[2]}${cards[3]}</div>
-          <div class="cross-row">${cards[4]}</div>
-        </div>
-      `;
-    }
-    return `<div class="community-row">${cards.join("")}</div>`;
-  }
-
-  function renderBoard(el, gvs) {
-    if (!gvs.state) {
-      el.boardHand.innerHTML = "";
-      return;
-    }
-    el.boardHand.innerHTML = `
-      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(gvs.state.pot))}</div>
-      ${renderCommunityLayout(gvs)}
-    `;
-  }
-
   function renderHumanHand(el, gvs, humanId) {
     const human = gvs.players.find((p) => p.id === humanId);
     if (!gvs.state) {
@@ -161,5 +135,5 @@ const TableUICommunityStud = (function () {
     };
   }
 
-  return { renderSeats, renderBoard, renderHumanHand, renderActionPanel, wireActions };
+  return { renderSeats, renderHumanHand, renderActionPanel, wireActions };
 })();

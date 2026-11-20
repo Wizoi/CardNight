@@ -64,7 +64,11 @@ const SessionAnaconda = (function () {
     }
 
     function sleep(ms) {
-      return new Promise((resolve) => setTimeout(resolve, ms));
+      // Routed through TableFX.paceDelay so the 1x/2x/Turbo AI-speed
+      // setting scales real AI-turn pacing only -- never a blanket
+      // window.setTimeout patch that could also speed up unrelated timers.
+      const scaled = typeof TableFX !== "undefined" && typeof TableFX.paceDelay === "function" ? TableFX.paceDelay(ms) : ms;
+      return new Promise((resolve) => setTimeout(resolve, scaled));
     }
 
     function getHuman() {

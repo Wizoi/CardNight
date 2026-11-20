@@ -70,32 +70,6 @@ const TableUIWildInYourHand = (function () {
       .join("");
   }
 
-  function pyramidMarkup(state) {
-    return state.pyramid
-      .map((row, i) => {
-        const revealed = state.pyramidRevealed[i];
-        const cards = row
-          .map((c) => (revealed ? cardMarkup({ ...c, isWild: WildInYourHandRules.isCardWild(state, c) }, false) : cardMarkup(null, true)))
-          .join("");
-        return `<div class="pyramid-row"><span class="pyramid-row-label">Row ${i + 1}:</span> ${cards}</div>`;
-      })
-      .join("");
-  }
-
-  function renderBoard(el, gvs) {
-    if (!gvs.state) {
-      el.boardHand.innerHTML = "";
-      return;
-    }
-    const wildLine = gvs.state.wildRanks.length ? `<div><strong>Wild:</strong> ${gvs.state.wildRanks.join(", ")}s${gvs.state.communityJokerRevealed ? ", plus the revealed Joker" : ""}</div>` : gvs.state.communityJokerRevealed ? `<div><strong>Wild:</strong> the revealed Joker</div>` : "";
-    const potDisplay = gvs.state.status === "complete" ? gvs.state.potAtShowdown : gvs.state.pot;
-    el.boardHand.innerHTML = `
-      <div><strong>Pot:</strong> ${money(ChipEconomy.chipsToDollars(potDisplay))}</div>
-      ${wildLine}
-      <div class="pyramid">${pyramidMarkup(gvs.state)}</div>
-    `;
-  }
-
   function renderHumanHand(el, gvs, humanId) {
     const human = gvs.players.find((p) => p.id === humanId);
     if (!gvs.state) {
@@ -190,5 +164,5 @@ const TableUIWildInYourHand = (function () {
     };
   }
 
-  return { renderSeats, renderBoard, renderHumanHand, renderActionPanel, wireActions };
+  return { renderSeats, renderHumanHand, renderActionPanel, wireActions };
 })();
