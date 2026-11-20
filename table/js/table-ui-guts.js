@@ -107,12 +107,15 @@ const TableUIGuts = (function () {
     if (gvs.state.status === "complete") {
       const winner = gvs.state.winnerId ? GutsRules.getPlayer(gvs.state, gvs.state.winnerId) : null;
       const canDeal = orchestrator.canDealNextHand();
+      const winnerHandDesc = winner ? HandEvaluator.describe(GutsRules.evaluateHand(gvs.state, winner)) : null;
+      const dummyHandDesc =
+        gvs.state.dummyBeatEveryone && gvs.state.dummyHand ? HandEvaluator.describe(GutsRules.evaluateHand(gvs.state, gvs.state.dummyHand)) : null;
       const resultLine = winner
-        ? `${winner.name} wins the ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))} pot.`
+        ? `${winner.name} wins the ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))} pot with ${winnerHandDesc}.`
         : gvs.state.noContest
         ? "Nobody stayed in — the pot carries forward."
         : gvs.state.dummyBeatEveryone
-        ? "The dummy hand beats everyone who stayed in — no winner this round."
+        ? `The dummy hand${dummyHandDesc ? ` (${dummyHandDesc})` : ""} beats everyone who stayed in — no winner this round.`
         : "Round over.";
       const cycleLine = gvs.state.cycleComplete ? "" : "<div>The pot escalates — deal the next hand to keep the cycle going.</div>";
       el.actionPanel.innerHTML = `

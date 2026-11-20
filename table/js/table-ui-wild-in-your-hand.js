@@ -98,9 +98,15 @@ const TableUIWildInYourHand = (function () {
     }
     if (gvs.state.status === "complete") {
       const winners = gvs.state.winnerIds.map((id) => WildInYourHandRules.getPlayer(gvs.state, id).name);
+      // Every winnerId here tied on the exact same hand (that's the only
+      // way there's more than one) -- describing the first is describing
+      // all of them.
+      const winnerHandDesc = gvs.state.winnerIds.length
+        ? HandEvaluator.describe(WildInYourHandRules.evaluateHand(gvs.state, WildInYourHandRules.getPlayer(gvs.state, gvs.state.winnerIds[0])))
+        : null;
       const canDeal = orchestrator.canDealNextHand();
       const resultLine = winners.length
-        ? `${winners.join(", ")} ${winners.length > 1 ? "win" : "wins"} the ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))} pot.`
+        ? `${winners.join(", ")} ${winners.length > 1 ? "win" : "wins"} the ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))} pot with ${winnerHandDesc}.`
         : gvs.state.noContest
         ? "Everybody folded — the pot carries forward."
         : "Round over.";
