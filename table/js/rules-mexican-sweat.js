@@ -27,38 +27,39 @@ const MexicanSweatRules = (function () {
     return playerCount >= 8 ? 6 : 7;
   }
 
-  function isCardWild(state, card) {
-    return state.wildRank != null && card.rank === state.wildRank;
-  }
-
   function faceUpCards(state, player) {
-    return player.hand.filter((c) => c.faceUp).map((c) => ({ rank: c.rank, suit: c.suit, isWild: isCardWild(state, c) }));
+    return player.hand.filter((c) => c.faceUp).map((c) => ({ rank: c.rank, suit: c.suit }));
   }
 
   function allCards(state, player) {
-    return player.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: isCardWild(state, c) }));
+    return player.hand.map((c) => ({ rank: c.rank, suit: c.suit }));
   }
 
-  // gameConfig: { id, name, flipWildcard: bool } -- games.md leaves the
-  // wildcard choice as "dealer's choice, or reveal 1 flip-up wildcard";
-  // this engine implements the flip-up-wildcard option as the concrete
-  // default (a fixed dealer's-choice-per-hand isn't a rule the engine can
-  // encode on its own), revealed once at the start of the hand and fixed
-  // for its duration.
+  // gameConfig: { id, name, killCard: bool } -- changed 2026-11-20 from an
+  // optional flip-up WILDCARD to a flip-up KILL CARD, per the user's
+  // explicit request after checking published "Mexican Sweat"/"No Peek"
+  // rules (denexa.com, pokerhouserules.com, pagat.com): none of the three
+  // actually describe a wildcard here at all -- the center reference
+  // card's rank is a dead-card eliminator ("must immediately fold" if you
+  // flip one), not a rank that substitutes for other cards. games.md's own
+  // "Variants" note already flagged this dead-card rule as "not currently
+  // part of our version"; it now is. Still revealed once at the start of
+  // the hand and fixed for its duration -- same timing every published
+  // source uses, only the MECHANIC changed (kill, not wild).
   function createHandState(players, dealerIndex, settings, handNumber, gameConfig) {
     const deck = Deck.shuffle(Deck.buildDeck());
     const cardsPerPlayer = cardsPerPlayerFor(players.length);
     let cursor = 0;
     for (const p of players) {
-      p.hand = deck.slice(cursor, cursor + cardsPerPlayer).map((c) => ({ rank: c.rank, suit: c.suit, faceUp: false, isWild: false }));
+      p.hand = deck.slice(cursor, cursor + cardsPerPlayer).map((c) => ({ rank: c.rank, suit: c.suit, faceUp: false }));
       cursor += cardsPerPlayer;
       p.folded = false;
       p.busted = false; // shared cross-game hygiene: only 5.5-21/7-27 ever set this true, but it's a plain field on the persistent player object -- without resetting it here too, a bust from an earlier game in the same sitting would leak into every later game's UI (e.g. table-fx.js's mood badge).
     }
 
-    let wildRank = null;
-    if (gameConfig.flipWildcard) {
-      wildRank = deck[cursor].rank;
+    let killRank = null;
+    if (gameConfig.killCard) {
+      killRank = deck[cursor].rank;
       cursor += 1;
     }
 
@@ -72,7 +73,7 @@ const MexicanSweatRules = (function () {
       gameConfig,
       deck: deck.slice(cursor),
       discardPile: [],
-      wildRank,
+      killRank,
       pot: 0,
       cardsPerPlayer,
       roundIndex: 0,
@@ -88,7 +89,7 @@ const MexicanSweatRules = (function () {
     };
     state.pot += BettingEngine.collectAntes(players, settings.anteDollars);
     state.log.push(`Ante: $${settings.anteDollars.toFixed(2)} each from ${players.length} players — pot starts at $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)}.`);
-    if (wildRank) state.log.push(`${wildRank}s are wild this hand — flipped as the wildcard.`);
+    if (killRank) state.log.push(`${killRank}s are the kill card this hand — flip one and you're out.`);
     return state;
   }
 
@@ -119,7 +120,14 @@ const MexicanSweatRules = (function () {
     state.revealCursor += 1;
     if (!card) return { playerId, card: null, ranOut: true };
     card.faceUp = true;
-    return { playerId, card, ranOut: false };
+    let killed = false;
+    if (state.killRank && card.rank === state.killRank) {
+      killed = true;
+      foldPlayer(state, playerId);
+      state.log.push(`${player.name} flips ${Deck.cardLabel(card)} — matches the kill card and is eliminated!`);
+      checkForInstantWin(state);
+    }
+    return { playerId, card, ranOut: false, killed };
   }
 
   function isRevealingDone(state) {

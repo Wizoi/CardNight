@@ -156,10 +156,10 @@ const GameRegistry = (function () {
       uiFamily: "mexicanSweat",
       variantOptions: [
         {
-          key: "flipWildcard",
-          label: "Wildcard",
+          key: "killCard",
+          label: "Kill card (dead card)",
           choices: [
-            { value: true, label: "Flip a wildcard rank for the hand" },
+            { value: true, label: "Flip a kill-card rank for the hand — flip one, you're out" },
             { value: false, label: "None (dealer's choice off)" },
           ],
           default: true,

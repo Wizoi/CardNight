@@ -152,7 +152,10 @@ const SessionMexicanSweat = (function () {
           }
 
           await sleep(FLIP_DELAY_MS);
-          MexicanSweatRules.revealNextCard(state);
+          const revealResult = MexicanSweatRules.revealNextCard(state);
+          if (revealResult && revealResult.killed) {
+            maybeQuip(MexicanSweatRules.getPlayer(state, revealResult.playerId), "fold");
+          }
           notify();
         }
       } finally {

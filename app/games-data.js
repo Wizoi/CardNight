@@ -111,7 +111,7 @@ const GAMES = [
     ],
     betting: `Ante 25¢ — half the usual 50¢ house default. 25¢ raise increment, $2 max bet per person otherwise standard. A round right after the initial deal (down + up), then another after each round where everyone gets to take another card or stand — ending after just ONE round of nobody taking a card (not two, unlike 5.5-21). You can fold anytime, even though nobody can bust here.`,
     setup: `Deal 1 card down, then 1 card up to each player.`,
-    gameplay: `A betting round right after the deal. Then each round, optionally take another card, followed by another betting round. Face cards are worth 0.5, Aces are worth 1 or 11 free of charge. A 10 counts as 10 by default — pay $1 and it becomes flexible, worth 0 or 10, your choice. Players may buy back ("down the river") their up-card to hide it again — escalating cost, up to 3 total: $1, then $2, then $3 later — "use it or lose it," must decide the moment it's offered. Going over is allowed and doesn't bust you.`,
+    gameplay: `A betting round right after the deal. Then each round, optionally take another card, followed by another betting round. Face cards are worth 0.5, Aces are worth 1 or 11 free of charge. A 10 counts as 10 by default — pay $1 and it becomes flexible, worth 0 or 10, your choice. Players may buy back ("down the river") their up-card to hide it again — escalating cost, up to 3 total: $1, then $2 can chain right after on the SAME turn, but that's the limit for one turn even with a third buy-back still available; the third and final one only comes up on a later, separate turn, at $3 regardless — "use it or lose it," must decide the moment it's offered. Going over is allowed and doesn't bust you.`,
     win: `Closest to 7 wins the low half of the pot, closest to 27 wins the high half — regardless of how many cards a player holds. Ties split evenly. If Kitchen Sink is on: a hand reading exactly 7 for low and exactly 27 for high at the same time can't be beaten or tied out of either half — it wins the entire pot outright instead of splitting it. Unlike 3-33's "Ultima" (an instant win off the deal alone), a Kitchen Sink is normally something you build toward during the hand — hitting, and paying for buy-backs and the flexible-10 option to land on the exact combination — and it's only checked at showdown, not at deal time. More than one Kitchen Sink at the table splits the pot between them.`,
     keyDecisions: [
       "Buy back your up-card or keep it — decide immediately, no thinking it over",
@@ -126,7 +126,7 @@ const GAMES = [
       "If Kitchen Sink is on, announce it — an exact 7-and-27 hand takes the whole pot, no split",
       "Just ONE round of nobody taking a card ends the hand here — 5.5-21 needs two",
     ],
-    script: `One card down, one up, then we bet. You can buy your up-card back to hide it again — a dollar the first time, two the second, three later for a third, and you have to decide right when it's offered. Each round you can take another card or stand, then we bet again — one round where nobody takes a card and we're done. Face cards are half a point, aces are 1 or 11 for free — but a ten's stuck at 10 unless you pay a dollar to make it 0-or-10 flexible. Going over doesn't bust you here, but you can still fold if your hand's hopeless. Closest to 7 and closest to 27 split the pot — unless we're playing Kitchen Sink, where a hand that's exactly 7 and exactly 27 at the same time wins the whole thing outright.`,
+    script: `One card down, one up, then we bet. You can buy your up-card back to hide it again — a dollar the first time, two the second, and those two can happen right in a row on the same turn — but that's your limit for that turn. The third and last one has to wait for a later turn, and it's three dollars no matter what, and you have to decide right when it's offered. Each round you can take another card or stand, then we bet again — one round where nobody takes a card and we're done. Face cards are half a point, aces are 1 or 11 for free — but a ten's stuck at 10 unless you pay a dollar to make it 0-or-10 flexible. Going over doesn't bust you here, but you can still fold if your hand's hopeless. Closest to 7 and closest to 27 split the pot — unless we're playing Kitchen Sink, where a hand that's exactly 7 and exactly 27 at the same time wins the whole thing outright.`,
   },
   {
     id: "acey-ducey",
@@ -460,24 +460,25 @@ const GAMES = [
     icon: "😅",
     players: { min: 5, max: 8 },
     before: [
-      "Decide wildcards: dealer's choice, or reveal 1 flip-up wildcard",
+      "Decide the kill card: dealer's choice, or reveal 1 flip-up kill-card rank",
     ],
     resolvePlayers(n) {
       const cards = Math.min(7, Math.floor(52 / n));
       return `With ${n} players: deal ${cards} cards each${cards < 7 ? " (trimmed down from the usual 7 so the deal fits one deck)" : ""}.`;
     },
     betting: `Ante 50¢, 25¢ raise increment, $2 max bet per person (house default).`,
-    setup: `Deal cards face down to each player — count adjusts to tonight's player count (see above), 7 each at typical table sizes. No looking at your own hand!`,
-    gameplay: `Each round, everyone simultaneously flips 1 card from their hand face up, then a betting round follows. This simultaneous reveal is a deliberate house choice — it keeps this game distinct from Midnight Baseball's sequential "beat the card" structure.`,
-    win: `Best hand at showdown (once the whole hand is eventually revealed) wins.`,
+    setup: `Deal cards face down to each player — count adjusts to tonight's player count (see above), 7 each at typical table sizes. No looking at your own hand! If the kill card is in play, one more card is flipped face up in the center right away — its rank is the kill card for the whole hand.`,
+    gameplay: `Each round, everyone simultaneously flips 1 card from their hand face up, then a betting round follows. This simultaneous reveal is a deliberate house choice — it keeps this game distinct from Midnight Baseball's sequential "beat the card" structure. If the kill card is in play, flipping a card matching its rank eliminates you instantly — not a wildcard, a dead card.`,
+    win: `Best hand at showdown (once the whole hand is eventually revealed) wins — among players who weren't eliminated by the kill card.`,
     keyDecisions: [
       "Betting decisions only — the flip order isn't a player choice since you can't see your own hand",
     ],
     repeats: [
       "No peeking at your own hand, ever",
       "The reveal is simultaneous, one card per round, for everyone at once",
+      "If the kill card is in play, flipping one of that rank eliminates you on the spot",
     ],
-    script: `Seven cards face down — and no peeking, not even at your own hand. Each round, everybody flips one more card face up at the same time, then we bet. By the last round your whole hand is showing. Best hand wins.`,
+    script: `Seven cards face down — and no peeking, not even at your own hand. If we're playing with a kill card, I'll flip one reference card now — that rank is dead for the whole hand; flip one of those later and you're out. Each round, everybody flips one more card face up at the same time, then we bet. By the last round your whole hand is showing. Best hand wins.`,
   },
   {
     id: "midnight-baseball",

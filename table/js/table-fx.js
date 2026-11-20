@@ -911,7 +911,7 @@ const TableFX = (function () {
       boardEl.innerHTML = `
         <div class="concept3-board board-stud-special">
           <div class="c3-board-top-row">
-            <span class="c3-wild-pill">🌶️ ${state.wildRank ? `Flipped Wild: ${state.wildRank}s` : "Simultaneous No-Peek Flip"}</span>
+            <span class="c3-wild-pill">🌶️ ${state.killRank ? `Kill Card: ${state.killRank}s — Flip One, You're Out` : "Simultaneous No-Peek Flip"}</span>
             <span class="c3-leader-pill">👑 Best Showing: <strong>${holder ? `${HandEvaluator.describe(best.hand)} (${holder.name})` : "None yet"}</strong> &middot; ${roundsLeft} Flip(s) Left</span>
           </div>
         </div>
@@ -1566,7 +1566,7 @@ const TableFX = (function () {
     followTheQueen: { shelf: "stud", cards: "7-Card Stud (3d/4u)", wilds: 4, wildTxt: "Queens + Following Card", vol: 2, volTxt: "Shifting Wilds" },
     sevenAndWhatMakesIt: { shelf: "stud", cards: "7-Card Stud (3d/4u)", wilds: 5, wildTxt: "7s + Sum-to-7 Combos", vol: 3, volTxt: "Wild Alchemy" },
     goodBadUgly: { shelf: "stud", cards: "7 Stud + 3 Table Cards", wilds: 4, wildTxt: "Good=Wild / Bad=Strip / Ugly=Fold", vol: 3, volTxt: "Sudden Elimination" },
-    mexicanSweat: { shelf: "stud", cards: "7 No-Peek Simultaneous", wilds: 3, wildTxt: "Optional Flipped Wild", vol: 2, volTxt: "7 Street Bets" },
+    mexicanSweat: { shelf: "stud", cards: "7 No-Peek Simultaneous", wilds: 3, wildTxt: "Optional Kill Card", vol: 2, volTxt: "7 Street Bets" },
     cincinnati: { shelf: "holdem", cards: "5 Hole + 5 Board", wilds: 2, wildTxt: "Optional Last Card Wild", vol: 2, volTxt: "Deep 10-Card Pool" },
     crissCross: { shelf: "holdem", cards: "4–5 Hole + 5 Iron Cross", wilds: 3, wildTxt: "Optional Center Wild", vol: 3, volTxt: "Single-Bar Lock" },
     deepOrDoubleScrew: { shelf: "guts", cards: "3–5 Cards (In/Out)", wilds: 4, wildTxt: "Lowest Hole Card Wild", vol: 3, volTxt: "Losers Match Pot!" },
