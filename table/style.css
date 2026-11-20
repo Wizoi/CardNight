@@ -2467,7 +2467,16 @@ fieldset {
   box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.65), 0 6px 18px rgba(0, 0, 0, 0.45);
 }
 
-/* Engraved Brass Horizontal & Vertical Crossbars Behind the 5 Cards */
+/* Engraved Brass Horizontal & Vertical Crossbars Behind the 5 Cards.
+   z-index raised to 2 (above .cross-row's 1) -- the VERTICAL/HORIZONTAL
+   BAR label text lives inside this same element, so at the old z-index:0
+   it could never paint above the actual cards no matter what z-index the
+   label span itself got (a child can't out-rank a sibling stacking
+   context from inside a lower one). Reported directly: the label read as
+   "behind the cards... not clear." The bar's own background is a
+   near-invisible 8%-opacity dashed outline, so letting it paint over a
+   card's edge is a non-issue -- the label is the part that actually
+   needs to win. */
 .c3-cross-axis-v {
   position: absolute;
   top: 10px;
@@ -2479,7 +2488,7 @@ fieldset {
   background: rgba(212, 175, 55, 0.08);
   border: 1px dashed rgba(212, 175, 55, 0.42);
   pointer-events: none;
-  z-index: 0;
+  z-index: 2;
 }
 
 .c3-cross-axis-h {
@@ -2493,7 +2502,7 @@ fieldset {
   background: rgba(212, 175, 55, 0.08);
   border: 1px dashed rgba(212, 175, 55, 0.42);
   pointer-events: none;
-  z-index: 0;
+  z-index: 2;
 }
 
 .c3-axis-tag {
@@ -2569,12 +2578,20 @@ fieldset {
 }
 
 /* ---- G. ACEY DUCEY GOALPOSTS ---- */
+/* flex-wrap stays off on purpose -- the long badge/warning text inside
+   .acey-mid-turf used to force this whole row past the board's width,
+   which wrapped the RIGHT post down onto its own line underneath (every
+   other child still fit, so it alone looked broken/orphaned). The two
+   posts keep their natural size (flex-shrink: 0); only the middle
+   column -- the one actually carrying the long text -- shrinks and lets
+   its own text wrap onto 2 lines instead of pushing the row wider than
+   the board. */
 .acey-goalposts-stage {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .acey-post {
@@ -2586,6 +2603,7 @@ fieldset {
   background: rgba(0, 0, 0, 0.42);
   border: 2px solid #d4af37;
   border-radius: 12px;
+  flex-shrink: 0;
 }
 
 .acey-post-label {
@@ -2601,18 +2619,23 @@ fieldset {
   gap: 0.35rem;
   padding: 0.45rem 0.85rem;
   border-bottom: 3px solid #d4af37;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 180px;
 }
 
 .acey-spread-badge {
   font-size: 0.76rem;
   font-weight: 800;
   color: #ffe066;
+  text-align: center;
 }
 
 .acey-post-warn {
   font-size: 0.66rem;
   font-weight: 700;
   color: #ffa8a8;
+  text-align: center;
 }
 
 /* ---- H. GAME OF LIFE LANES ---- */

@@ -150,7 +150,17 @@ const AceyDuceyRules = (function () {
       }
     }
     state.lastResult = { playerId, betDollars, outcome };
-    if (state.status !== "complete") advanceTurn(state);
+    // A real bet (not a pass) pauses here with the drawn 3rd card still on
+    // the table instead of immediately clearing it -- advanceTurn used to
+    // run right inside resolveBet, wiping shownCards/thirdCard before the
+    // caller even got a chance to render a frame showing what was drawn.
+    // Reported directly: "after I get a card... should be on table and I
+    // can click to proceed, otherwise moves too fast to know what
+    // happened." The caller now explicitly calls advanceTurn once it's
+    // actually time to move on (immediately for a pass, which never drew
+    // a 3rd card worth pausing on; after a real human confirm or a short
+    // AI-paced delay otherwise).
+    if (state.status !== "complete") state.status = "awaitingContinue";
   }
 
   // Recycles this round's shown/third cards into discardPile before
@@ -167,5 +177,5 @@ const AceyDuceyRules = (function () {
     state.status = "awaitingDeal";
   }
 
-  return { rankValue, createHandState, currentActivePlayerId, dealShownCards, gapInfo, resolveBet, getPlayer };
+  return { rankValue, createHandState, currentActivePlayerId, dealShownCards, gapInfo, resolveBet, advanceTurn, getPlayer };
 })();

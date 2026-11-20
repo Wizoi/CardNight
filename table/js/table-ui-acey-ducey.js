@@ -57,6 +57,16 @@ const TableUIAceyDucey = (function () {
       `;
       return;
     }
+    if (gvs.pending && gvs.pending.kind === "continue") {
+      const result = gvs.state.lastResult;
+      const player = result ? AceyDuceyRules.getPlayer(gvs.state, result.playerId) : null;
+      const thirdCardLabel = gvs.state.thirdCard ? Deck.cardLabel(gvs.state.thirdCard) : "";
+      el.actionPanel.innerHTML = `
+        <div>${player ? player.name : "Someone"} drew ${thirdCardLabel} — ${result ? describeOutcome(result) : ""}.</div>
+        <button data-acey-continue>Continue &rarr;</button>
+      `;
+      return;
+    }
     if (gvs.pending && gvs.pending.kind === "bet" && gvs.pending.playerId === humanId) {
       const info = AceyDuceyRules.gapInfo(gvs.state.shownCards);
       const potDollars = ChipEconomy.chipsToDollars(gvs.state.pot);
@@ -77,6 +87,7 @@ const TableUIAceyDucey = (function () {
     el.actionPanel.onclick = (e) => {
       if (e.target.id === "deal-first-hand-btn") return orchestrator.startFirstHand();
       if (e.target.id === "deal-next-hand-btn") return orchestrator.dealNextHand();
+      if (e.target.hasAttribute("data-acey-continue")) return orchestrator.humanContinue();
       if (e.target.hasAttribute("data-bet-pass")) return orchestrator.humanBet(0);
       if (e.target.hasAttribute("data-bet-submit")) {
         const input = el.actionPanel.querySelector("#acey-bet-input");

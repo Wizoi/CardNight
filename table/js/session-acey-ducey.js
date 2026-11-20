@@ -7,6 +7,11 @@ const SessionAceyDucey = (function () {
   function create(config) {
     const DEAL_DELAY_MS = 500;
     const BET_DELAY_MS = 500;
+    // How long an AI's own drawn 3rd card/result stays on the table before
+    // auto-advancing -- the human's own result instead waits for an
+    // explicit "Continue" click (see humanContinue), since that's the one
+    // the user actually needs time to read.
+    const AI_RESULT_DISPLAY_MS = 1600;
 
     const players = config.players;
     const settings = config.settings;
@@ -88,6 +93,19 @@ const SessionAceyDucey = (function () {
       running = true;
       try {
         while (state && state.status !== "complete") {
+          if (state.status === "awaitingContinue") {
+            const result = state.lastResult;
+            const resultPlayer = result ? AceyDuceyRules.getPlayer(state, result.playerId) : null;
+            if (resultPlayer && resultPlayer.isHuman) {
+              pending = { kind: "continue" };
+              notify();
+              return;
+            }
+            await sleep(AI_RESULT_DISPLAY_MS);
+            AceyDuceyRules.advanceTurn(state);
+            notify();
+            continue;
+          }
           if (state.status === "awaitingDeal") {
             await sleep(DEAL_DELAY_MS);
             AceyDuceyRules.dealShownCards(state);
@@ -127,6 +145,17 @@ const SessionAceyDucey = (function () {
       processLoop();
     }
 
+    // Advances past the human's own just-resolved bet (shown 3rd card,
+    // win/lose/post outcome) once they've actually seen it, instead of the
+    // old behavior of wiping it the instant the bet resolved.
+    function humanContinue() {
+      if (!pending || pending.kind !== "continue") return;
+      pending = null;
+      AceyDuceyRules.advanceTurn(state);
+      notify();
+      processLoop();
+    }
+
     function getViewState() {
       return { gameId: "aceyDucey", players, dealerIndex, handNumber, state, pending, lastQuip: null };
     }
@@ -136,6 +165,7 @@ const SessionAceyDucey = (function () {
       dealNextHand,
       canDealNextHand,
       humanBet,
+      humanContinue,
       getViewState,
       snapshot,
     };
