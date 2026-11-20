@@ -303,22 +303,27 @@ const RulesAnaconda = (function () {
         winnerIds.push(p.id);
       }
     }
-    completeHand(state, winnerIds);
+    completeHand(state, winnerIds, bestHand);
   }
 
-  function completeHand(state, winnerIds) {
+  // bestHand is only passed by resolveShowdown's real comparison above -- a
+  // fold-out win via checkForInstantWin (if this family ever grows one)
+  // would have nothing genuine to describe here.
+  function completeHand(state, winnerIds, bestHand) {
     state.status = "complete";
     state.bettingRound = null;
     state.winnerIds = winnerIds;
     state.winnerId = winnerIds[0] || null;
     state.potAtShowdown = state.pot;
+    state.bestHighDescribed = bestHand ? HandEvaluator.describe(bestHand) : null;
     if (winnerIds.length) {
       const share = Math.floor(state.pot / winnerIds.length);
       const remainder = state.pot - share * winnerIds.length;
       winnerIds.forEach((id, i) => {
         ChipEconomy.award(getPlayer(state, id).wallet, share + (i < remainder ? 1 : 0));
       });
-      state.log.push(`${winnerIds.map((id) => getPlayer(state, id).name).join(", ")} win${winnerIds.length > 1 ? "" : "s"} the $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)} pot.`);
+      const handSuffix = state.bestHighDescribed ? ` with ${state.bestHighDescribed}` : "";
+      state.log.push(`${winnerIds.map((id) => getPlayer(state, id).name).join(", ")} win${winnerIds.length > 1 ? "" : "s"} the $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)} pot${handSuffix}.`);
       state.pot = 0;
     }
   }
@@ -356,6 +361,8 @@ const RulesAnaconda = (function () {
     state.lowWinnerIds = lowWinnerIds;
     state.winnerIds = highWinnerIds; // back-compat: the board's "showing hand" highlight only knows about the high side
     state.winnerId = highWinnerIds[0] || null;
+    state.bestHighDescribed = HandEvaluator.describe(bestHigh);
+    state.bestLowDescribed = bestLow ? HandEvaluator.describeLow(bestLow) : null;
 
     const potChips = state.pot;
     state.pot = 0;

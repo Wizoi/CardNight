@@ -214,18 +214,24 @@ const MexicanSweatRules = (function () {
     if (state.status === "complete") return;
     if (nonFoldedCount(state) <= 1) {
       const winner = state.players.find((p) => !p.folded);
-      completeHand(state, winner ? winner.id : null);
+      completeHand(state, winner ? winner.id : null, null);
     }
   }
 
-  function completeHand(state, winnerId) {
+  // bestHand is only passed by resolveShowdown's real multi-player
+  // comparison below -- a fold-out win via checkForInstantWin never
+  // compared hands at all, so there's nothing genuine to describe there
+  // (the plain "wins the pot" text already implies that outcome).
+  function completeHand(state, winnerId, bestHand) {
     state.status = "complete";
     state.winnerId = winnerId;
     state.bettingRound = null;
+    state.bestHandDescribed = bestHand ? HandEvaluator.describe(bestHand) : null;
     if (winnerId) {
       const winner = getPlayer(state, winnerId);
       ChipEconomy.award(winner.wallet, state.pot);
-      state.log.push(`${winner.name} wins the $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)} pot.`);
+      const handSuffix = bestHand ? ` with ${state.bestHandDescribed}` : "";
+      state.log.push(`${winner.name} wins the $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)} pot${handSuffix}.`);
     }
   }
 
@@ -249,7 +255,7 @@ const MexicanSweatRules = (function () {
         winnerId = p.id;
       }
     }
-    completeHand(state, winnerId);
+    completeHand(state, winnerId, bestHand);
   }
 
   return {

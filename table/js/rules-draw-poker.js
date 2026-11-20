@@ -214,22 +214,28 @@ const RulesDrawPoker = (function () {
         tiedIds.push(p.id);
       }
     }
-    completeHand(state, tiedIds);
+    completeHand(state, tiedIds, bestHand);
   }
 
-  function completeHand(state, winnerIds) {
+  // Every id in winnerIds ties on the exact same bestHand by construction
+  // (that's the only way there's more than one) -- describing it once
+  // describes all of them.
+  function completeHand(state, winnerIds, bestHand) {
     state.status = "complete";
     state.bettingRound = null;
     state.winnerIds = winnerIds;
     state.winnerId = winnerIds[0] || null;
     state.potAtShowdown = state.pot;
+    state.bestHandDescribed = bestHand ? HandEvaluator.describe(bestHand) : null;
     if (winnerIds.length) {
       const share = Math.floor(state.pot / winnerIds.length);
       const remainder = state.pot - share * winnerIds.length;
       winnerIds.forEach((id, i) => {
         ChipEconomy.award(getPlayer(state, id).wallet, share + (i < remainder ? 1 : 0));
       });
-      state.log.push(`${winnerIds.map((id) => getPlayer(state, id).name).join(", ")} win${winnerIds.length > 1 ? "" : "s"} the $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)} pot.`);
+      state.log.push(
+        `${winnerIds.map((id) => getPlayer(state, id).name).join(", ")} win${winnerIds.length > 1 ? "" : "s"} the $${ChipEconomy.chipsToDollars(state.pot).toFixed(2)} pot with ${state.bestHandDescribed}.`
+      );
       state.pot = 0;
     } else {
       state.log.push("Nobody reached Trips or better — the pot carries forward.");

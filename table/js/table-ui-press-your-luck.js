@@ -90,15 +90,34 @@ const TableUIPressYourLuck = (function () {
       el.actionPanel.innerHTML = `<button id="deal-first-hand-btn">Deal first hand</button>`;
       return;
     }
+    const cfg = gvs.state.gameConfig;
     if (gvs.state.status === "complete") {
       const canDeal = orchestrator.canDealNextHand();
+      let resultLine = "Hand over.";
+      if (gvs.state.outrightWinnerIds && gvs.state.outrightWinnerIds.length) {
+        const names = gvs.state.outrightWinnerIds.map((id) => PressYourLuckRules.getPlayer(gvs.state, id).name).join(", ");
+        resultLine = `${names} win${gvs.state.outrightWinnerIds.length > 1 ? "" : "s"} the pot outright.`;
+      } else if (gvs.state.results && gvs.state.results.kitchenSink) {
+        const names = gvs.state.results.winnerIds.map((id) => PressYourLuckRules.getPlayer(gvs.state, id).name).join(", ");
+        resultLine = `${names} ${gvs.state.results.winnerIds.length > 1 ? "hit" : "hits"} Kitchen Sink and takes the whole pot!`;
+      } else if (gvs.state.results) {
+        const { lowWinners, highWinners, lowResults, highResults } = gvs.state.results;
+        const lowVal = lowResults.find((r) => r.id === lowWinners[0]);
+        const highVal = highResults.find((r) => r.id === highWinners[0]);
+        const lowTxt = lowWinners.length
+          ? `${lowWinners.map((id) => PressYourLuckRules.getPlayer(gvs.state, id).name).join(", ")} win${lowWinners.length > 1 ? "" : "s"} low with ${lowVal.result.value}`
+          : "Nobody qualified for low";
+        const highTxt = highWinners.length
+          ? `${highWinners.map((id) => PressYourLuckRules.getPlayer(gvs.state, id).name).join(", ")} win${highWinners.length > 1 ? "" : "s"} high with ${highVal.result.value}`
+          : "Nobody qualified for high";
+        resultLine = `${lowTxt}. ${highTxt}.`;
+      }
       el.actionPanel.innerHTML = `
-        <div>Hand over.</div>
+        <div>${resultLine}</div>
         ${canDeal ? `<button id="deal-next-hand-btn">Deal next hand</button>` : `<div>You're out of chips for this hand. Buy more chips or cash out to continue.</div>`}
       `;
       return;
     }
-    const cfg = gvs.state.gameConfig;
     if (gvs.pending && gvs.pending.kind === "bet" && gvs.pending.playerId === humanId) {
       const br = gvs.state.bettingRound;
       const toCallDollars = ChipEconomy.chipsToDollars(br.currentBetChips - br.committed[human.id]);

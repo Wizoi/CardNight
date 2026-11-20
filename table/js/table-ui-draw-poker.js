@@ -88,8 +88,12 @@ const TableUIDrawPoker = (function () {
     if (gvs.state.status === "complete" && !gvs.state.noOpener) {
       const canDeal = orchestrator.canDealNextHand();
       const names = (gvs.state.winnerIds || []).map((id) => RulesDrawPoker.getPlayer(gvs.state, id).name);
+      // bestHandDescribed is only set by a real showdown comparison -- a
+      // sole survivor who won because everyone else folded never had their
+      // hand checked against the Trips-or-better bar at all.
+      const handSuffix = gvs.state.bestHandDescribed ? ` with ${gvs.state.bestHandDescribed}` : "";
       const resultLine = names.length
-        ? `${names.join(", ")} win${names.length > 1 ? "" : "s"} the ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))} pot with Trips or better.`
+        ? `${names.join(", ")} win${names.length > 1 ? "" : "s"} the ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))} pot${handSuffix}.`
         : "Nobody reached Trips or better — the pot carries forward.";
       el.actionPanel.innerHTML = `
         <div>${resultLine}</div>

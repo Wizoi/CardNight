@@ -103,11 +103,16 @@ const TableUIAnaconda = (function () {
       const canDeal = orchestrator.canDealNextHand();
       const names = (gvs.state.winnerIds || []).map((id) => RulesAnaconda.getPlayer(gvs.state, id).name);
       const lowNames = (gvs.state.lowWinnerIds || []).map((id) => RulesAnaconda.getPlayer(gvs.state, id).name);
+      // bestHighDescribed/bestLowDescribed are only set by a real showdown
+      // comparison -- a fold-out win never evaluated anyone's hand at all.
       let resultLine = "Hand over.";
       if (lowNames.length) {
-        resultLine = `High: ${names.join(", ")}. Low: ${lowNames.join(", ")}. Pot: ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))}.`;
+        resultLine = `High: ${names.join(", ")} with ${gvs.state.bestHighDescribed}. Low: ${lowNames.join(", ")} with ${gvs.state.bestLowDescribed}. Pot: ${money(
+          ChipEconomy.chipsToDollars(gvs.state.potAtShowdown)
+        )}.`;
       } else if (names.length) {
-        resultLine = `${names.join(", ")} win${names.length > 1 ? "" : "s"} the ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))} pot.`;
+        const handSuffix = gvs.state.bestHighDescribed ? ` with ${gvs.state.bestHighDescribed}` : "";
+        resultLine = `${names.join(", ")} win${names.length > 1 ? "" : "s"} the ${money(ChipEconomy.chipsToDollars(gvs.state.potAtShowdown))} pot${handSuffix}.`;
       }
       el.actionPanel.innerHTML = `
         <div>${resultLine}</div>

@@ -767,9 +767,18 @@ const TableFX = (function () {
       if (state.outrightWinnerIds) {
         resultHtml = `<div class="c3-showdown-banner">🏆 Outright Winner: <strong>${state.outrightWinnerIds.map((id) => Rules333.getPlayer(state, id).name).join(", ")}</strong> (${money(ChipEconomy.chipsToDollars(potDisplay))})</div>`;
       } else if (state.results) {
+        // state.results.lowResults/highResults carry every contender's own
+        // {id, result:{value, distance}} -- look up the actual winning sum
+        // rather than just naming who won, the same gap the Guts family's
+        // showdown text had (named a winner, never stated what they won
+        // with).
+        const lowWinVal = state.results.lowResults.find((r) => r.id === state.results.lowWinners[0]);
+        const highWinVal = state.results.highResults.find((r) => r.id === state.results.highWinners[0]);
         const lowNames = state.results.lowWinners.map((id) => Rules333.getPlayer(state, id).name).join(", ") || "Carries";
         const highNames = state.results.highWinners.map((id) => Rules333.getPlayer(state, id).name).join(", ") || "Carries";
-        resultHtml = `<div class="c3-showdown-banner">⚖️ Low (3): <strong>${lowNames}</strong> &middot; High (33): <strong>${highNames}</strong></div>`;
+        const lowValTxt = lowWinVal ? ` (${lowWinVal.result.value})` : "";
+        const highValTxt = highWinVal ? ` (${highWinVal.result.value})` : "";
+        resultHtml = `<div class="c3-showdown-banner">⚖️ Low (3): <strong>${lowNames}${lowValTxt}</strong> &middot; High (33): <strong>${highNames}${highValTxt}</strong></div>`;
       }
 
       boardEl.innerHTML = `

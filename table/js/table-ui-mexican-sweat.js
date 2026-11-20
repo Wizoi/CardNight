@@ -83,7 +83,8 @@ const TableUIMexicanSweat = (function () {
     if (gvs.state.status === "complete") {
       const winner = gvs.state.winnerId ? MexicanSweatRules.getPlayer(gvs.state, gvs.state.winnerId) : null;
       const canDeal = orchestrator.canDealNextHand();
-      const resultLine = winner ? `${winner.name} won the hand.` : "Hand over.";
+      const handSuffix = gvs.state.bestHandDescribed ? ` with ${gvs.state.bestHandDescribed}` : "";
+      const resultLine = winner ? `${winner.name} won the hand${handSuffix}.` : "Hand over.";
       el.actionPanel.innerHTML = `
         <div>${resultLine}</div>
         ${canDeal ? `<button id="deal-next-hand-btn">Deal next hand</button>` : `<div>You're out of chips for this hand. Buy more chips or cash out to continue.</div>`}

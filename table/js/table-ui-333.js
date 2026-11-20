@@ -35,6 +35,16 @@ const TableUI333 = (function () {
           const high = Rules333.handSumResult(gvs.state, p, Rules333.HIGH_TARGET);
           debugLine = `<div class="seat-debug">AI's actual hand: low ${low.value}, high ${high.value} (${p.hand.length} card(s) left)</div>`;
         }
+        // At showdown every contender's actual low/high value is worth
+        // showing regardless of debug mode -- reported directly: cards are
+        // shown face up but nothing ever states what they actually summed
+        // to, so there's no way to verify a stated win/split.
+        let valueLine = "";
+        if (revealed && !p.folded && p.hand.length > 0) {
+          const low = Rules333.handSumResult(gvs.state, p, Rules333.LOW_TARGET);
+          const high = Rules333.handSumResult(gvs.state, p, Rules333.HIGH_TARGET);
+          valueLine = `<div class="seat-debug">Low: ${low.value} (Δ${low.distance}) &middot; High: ${high.value} (Δ${high.distance})</div>`;
+        }
         const cards = gvs.state && !p.folded ? p.hand.map((c) => cardMarkup(c, !revealed)).join("") : "";
         const outright = gvs.state && gvs.state.outrightWinnerIds && gvs.state.outrightWinnerIds.includes(p.id);
         return `
@@ -45,6 +55,7 @@ const TableUI333 = (function () {
             <div class="seat-chips">${money(ChipEconomy.chipsToDollars(p.wallet.chips))}</div>
             <div class="seat-cards">${cards}</div>
             ${debugLine}
+            ${valueLine}
             ${p.folded ? '<div class="seat-status">Folded</div>' : gvs.state && p.hand.length === 0 && gvs.state.status !== "complete" ? '<div class="seat-status">Emptied hand!</div>' : ""}
             ${outright ? '<div class="seat-status">Outright winner!</div>' : ""}
           </div>
@@ -71,8 +82,24 @@ const TableUI333 = (function () {
     }
     if (gvs.state.status === "complete") {
       const canDeal = orchestrator.canDealNextHand();
+      let resultLine = "Hand over.";
+      if (gvs.state.outrightWinnerIds) {
+        const names = gvs.state.outrightWinnerIds.map((id) => Rules333.getPlayer(gvs.state, id).name).join(", ");
+        resultLine = `${names} win${gvs.state.outrightWinnerIds.length > 1 ? "" : "s"} the pot outright (Ultima!).`;
+      } else if (gvs.state.results) {
+        const { lowWinners, highWinners, lowResults, highResults } = gvs.state.results;
+        const lowVal = lowResults.find((r) => r.id === lowWinners[0]);
+        const highVal = highResults.find((r) => r.id === highWinners[0]);
+        const lowTxt = lowWinners.length
+          ? `${lowWinners.map((id) => Rules333.getPlayer(gvs.state, id).name).join(", ")} win${lowWinners.length > 1 ? "" : "s"} low with ${lowVal.result.value}`
+          : "Nobody qualified for low";
+        const highTxt = highWinners.length
+          ? `${highWinners.map((id) => Rules333.getPlayer(gvs.state, id).name).join(", ")} win${highWinners.length > 1 ? "" : "s"} high with ${highVal.result.value}`
+          : "Nobody qualified for high";
+        resultLine = `${lowTxt}. ${highTxt}.`;
+      }
       el.actionPanel.innerHTML = `
-        <div>Hand over.</div>
+        <div>${resultLine}</div>
         ${canDeal ? `<button id="deal-next-hand-btn">Deal next hand</button>` : `<div>You're out of chips for this hand. Buy more chips or cash out to continue.</div>`}
       `;
       return;

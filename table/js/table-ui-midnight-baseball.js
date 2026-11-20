@@ -101,7 +101,19 @@ const TableUIMidnightBaseball = (function () {
       const winnerIds = gvs.state.winnerIds || (gvs.state.winnerId ? [gvs.state.winnerId] : []);
       const winnerNames = winnerIds.map((id) => MidnightBaseball.getPlayer(gvs.state, id).name);
       const canDeal = orchestrator.canDealNextHand();
-      const resultLine = winnerNames.length > 1 ? `${winnerNames.join(", ")} tie for the board and split the pot.` : winnerNames.length ? `${winnerNames[0]} won the hand.` : "Hand over.";
+      // bestShowingHand is only ever set by actually beating the board
+      // (stopTurn's "beat" reason) -- a sole survivor who won because
+      // everyone else folded or ran out never beat the board at all, so
+      // there's no hand to describe there; the plain "won the hand" text
+      // already implies that outcome.
+      const firstWinnerHand = winnerIds.length ? MidnightBaseball.getPlayer(gvs.state, winnerIds[0]).bestShowingHand : null;
+      const handSuffix = firstWinnerHand ? ` with ${HandEvaluator.describe(firstWinnerHand)}` : "";
+      const resultLine =
+        winnerNames.length > 1
+          ? `${winnerNames.join(", ")} tie for the board${handSuffix} and split the pot.`
+          : winnerNames.length
+          ? `${winnerNames[0]} won the hand${handSuffix}.`
+          : "Hand over.";
       el.actionPanel.innerHTML = `
         <div>${resultLine}</div>
         ${canDeal ? `<button id="deal-next-hand-btn">Deal next hand</button>` : `<div>You're out of chips for this hand. Buy more chips or cash out to continue.</div>`}
