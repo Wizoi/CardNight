@@ -574,15 +574,37 @@
     el.changeGameBtn.disabled = !canSwitchGames;
   }
 
-  function renderLog(gvs) {
+  // state.log itself resets every single hand (each createHandState/
+  // createRoundState starts a fresh array), so there's no durable place in
+  // it to remember what the dealer actually chose for this game -- the
+  // in-game info box already shows that (renderGameScriptVariants), but
+  // it's collapsed by default and easy to miss. Reusing the exact same
+  // describeVariantChoice/activeVariantValue lookup here, computed fresh
+  // every render rather than ever written into state.log, means these
+  // lines can't go stale across a redeal the way a one-time logged line
+  // would.
+  function renderDealerChoiceLogLines(vs, gvs) {
+    const entry = GameRegistry.get(vs.activeGameId);
+    if (!entry || !entry.variantOptions || !entry.variantOptions.length) return "";
+    return entry.variantOptions
+      .map(
+        (opt) =>
+          `<div class="log-line log-line-dealer-choice"><strong>Dealer's choice — ${opt.label}:</strong> ${describeVariantChoice(opt, activeVariantValue(gvs, opt.key))}</div>`
+      )
+      .join("");
+  }
+
+  function renderLog(vs, gvs) {
     if (!gvs || !gvs.state) {
       el.logFeed.innerHTML = "";
       return;
     }
-    el.logFeed.innerHTML = gvs.state.log
-      .slice(-30)
-      .map((line) => `<div class="log-line">${line}</div>`)
-      .join("");
+    el.logFeed.innerHTML =
+      renderDealerChoiceLogLines(vs, gvs) +
+      gvs.state.log
+        .slice(-30)
+        .map((line) => `<div class="log-line">${line}</div>`)
+        .join("");
     el.logFeed.scrollTop = el.logFeed.scrollHeight;
   }
 
@@ -1172,7 +1194,7 @@
       // single source of truth for #board-hand).
       familyModule.renderHumanHand(el, gvs, vs.humanId);
       familyModule.renderActionPanel(el, gvs, vs.humanId, TableNight.orchestrator, vs.settings);
-      renderLog(gvs);
+      renderLog(vs, gvs);
       maybeSwapForNextDealerPick(el, vs);
       enforceAffordabilityInActionPanel(el, vs);
     }

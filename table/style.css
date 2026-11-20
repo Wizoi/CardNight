@@ -2910,6 +2910,11 @@ fieldset {
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
+.log-line-dealer-choice {
+  color: var(--gold-soft);
+  border-bottom: 1px solid rgba(255, 215, 128, 0.25);
+}
+
 #debug-toggle-label {
   display: inline-flex;
   align-items: center;

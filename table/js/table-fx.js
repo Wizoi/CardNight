@@ -1574,10 +1574,10 @@ const TableFX = (function () {
     fourTwoTwo: { shelf: "guts", cards: "4 Cards (+2 Bonus)", wilds: 4, wildTxt: "All 2s Wild", vol: 3, volTxt: "Losers Match Pot!" },
     threeFiveSeven: { shelf: "guts", cards: "3 → 5 → 7 Escalation", wilds: 5, wildTxt: "3s → 5s → 7s Wild", vol: 3, volTxt: "3-Stage Match Pot" },
     wildInYourHand: { shelf: "guts", cards: "5 Hole + 6 Pyramid", wilds: 5, wildTxt: "Lowest Hole + Board Wilds", vol: 3, volTxt: "Row Challenges" },
-    omaha: { shelf: "holdem", cards: "4 Hole + 5 Board", wilds: 1, wildTxt: "Pure 2+3 Hold'em", vol: 2, volTxt: "Hi-Lo Split Option" },
-    seattle: { shelf: "holdem", cards: "4 Hole + 5 Board", wilds: 1, wildTxt: "Pure 3+2 Hold'em", vol: 2, volTxt: "Hi-Lo Split Option" },
-    boise: { shelf: "holdem", cards: "5 Hole + 5 Board", wilds: 1, wildTxt: "Flex 2+3 or 3+2", vol: 2, volTxt: "Big Hand Combos" },
-    jerseyHoldem: { shelf: "holdem", cards: "5 Hole + 5 Board", wilds: 1, wildTxt: "Flex 2+3 or 3+2", vol: 2, volTxt: "Hi-Lo Split Option" },
+    omaha: { shelf: "holdem", cards: "4 Hole + 5 Board", wilds: 0, wildTxt: "Pure 2+3 Hold'em", vol: 2, volTxt: "Hi-Lo Split Option" },
+    seattle: { shelf: "holdem", cards: "4 Hole + 5 Board", wilds: 0, wildTxt: "Pure 3+2 Hold'em", vol: 2, volTxt: "Hi-Lo Split Option" },
+    boise: { shelf: "holdem", cards: "5 Hole + 5 Board", wilds: 0, wildTxt: "Flex 2+3 or 3+2", vol: 2, volTxt: "Big Hand Combos" },
+    jerseyHoldem: { shelf: "holdem", cards: "5 Hole + 5 Board", wilds: 0, wildTxt: "Flex 2+3 or 3+2", vol: 2, volTxt: "Hi-Lo Split Option" },
     fiveFiveTwentyOne: { shelf: "target", cards: "Press-Your-Luck Hit/Stand", wilds: 1, wildTxt: "Face=0.5 · Ace=1 or 11", vol: 2, volTxt: "5.5 Low / 21 High" },
     sevenTwentySeven: { shelf: "target", cards: "Press-Your-Luck Hit/Stand", wilds: 1, wildTxt: "Face=0.5 · Ace=1 or 11", vol: 2, volTxt: "7 Low / 27 High" },
     threeThirtyThree: { shelf: "target", cards: "5 Hole + 5 Community", wilds: 1, wildTxt: "Face=0.5 · Ace=1 or 11", vol: 2, volTxt: "3 Low / 33 High" },
@@ -1587,6 +1587,15 @@ const TableFX = (function () {
     pairOfJacksTripsToWin: { shelf: "specials", cards: "5-Card Draw (Up to 3)", wilds: 2, wildTxt: "Optional Jokers", vol: 2, volTxt: "JJ+ Open / Trips Win" },
     anaconda: { shelf: "specials", cards: "7 Dealt → Pass 3 →Trash 2", wilds: 2, wildTxt: "Optional Jokers", vol: 2, volTxt: "4 Betting Streets" },
   };
+
+  // A game with wilds: 0 (the hold'em family) has no wildcard mechanic at
+  // all -- showing a literal star next to its "Pure 2+3 Hold'em"-style
+  // descriptor read as "this has a wild card" when it doesn't. Every spot
+  // that renders telem.wildTxt uses this so a no-wildcard game gets a
+  // neutral icon instead of the star.
+  function wildFactorIcon(telem) {
+    return telem && telem.wilds > 0 ? "★" : "🚫";
+  }
 
   function renderMiniBoardDiagram(gameId) {
     if (gameId === "freeEnterprise") {
@@ -1760,7 +1769,7 @@ const TableFX = (function () {
                 <h3 class="confirm-game-title">${entry.name}</h3>
                 <div class="confirm-telem-strip">
                   <span class="pv-stat-pill">🃏 ${telem.cards}</span>
-                  <span class="pv-stat-pill">★ ${telem.wildTxt}</span>
+                  <span class="pv-stat-pill">${wildFactorIcon(telem)} ${telem.wildTxt}</span>
                   <span class="pv-stat-pill">${telem.volTxt}</span>
                 </div>
               </div>
@@ -1918,7 +1927,7 @@ const TableFX = (function () {
               </div>
               <div class="pv-telem-box">
                 <span class="pv-telem-lbl">WILD FACTOR (${stars})</span>
-                <strong class="pv-telem-val">★ ${telem.wildTxt}</strong>
+                <strong class="pv-telem-val">${wildFactorIcon(telem)} ${telem.wildTxt}</strong>
               </div>
               <div class="pv-telem-box">
                 <span class="pv-telem-lbl">POT VOLATILITY</span>
@@ -1971,7 +1980,7 @@ const TableFX = (function () {
               ${renderMiniBoardDiagram(id)}
               <div class="pv-draft-stats">
                 <span>🃏 ${telem.cards}</span>
-                <span>★ ${telem.wildTxt}</span>
+                <span>${wildFactorIcon(telem)} ${telem.wildTxt}</span>
                 <span>${telem.volTxt}</span>
               </div>
               ${renderInlineVariantPills(entry)}
@@ -2032,7 +2041,7 @@ const TableFX = (function () {
                   <p>${GAME_SIGNATURES[entry.id] || ""}</p>
                   <div class="confirm-telem-strip">
                     <span class="pv-stat-pill">🃏 ${telem.cards}</span>
-                    <span class="pv-stat-pill">★ ${telem.wildTxt}</span>
+                    <span class="pv-stat-pill">${wildFactorIcon(telem)} ${telem.wildTxt}</span>
                     <span class="pv-stat-pill">${telem.volTxt}</span>
                   </div>
                 </div>
