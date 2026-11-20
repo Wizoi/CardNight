@@ -871,9 +871,18 @@ const TableFX = (function () {
           </div>
         `;
       } else if (gameId === "followTheQueen") {
+        // state.followWildRank is set the moment the card right after the
+        // most-recently-exposed queen turns up (rules-stud.js), and stays
+        // set (a later queen just reassigns it) until showdown -- shown
+        // here so the table actually sees what's currently wild beyond
+        // queens, not just the static base rule. Reported directly: "it
+        // doesn't show the current card that is functioning as a wild."
+        const followLine = state.followWildRank
+          ? ` &middot; 🂮 <strong>${state.followWildRank}s are ALSO wild right now</strong> (following the last queen)`
+          : "";
         pedestalsHtml = `
           <div class="c3-special-plaque">
-            👑 <strong>All Queens are WILD</strong> + Card Immediately Following the Last Exposed Queen${state.gameConfig.lowChicago ? " &middot; 🂡 <strong>Low Chicago (Down Spade Splits Pot)</strong>" : ""}
+            👑 <strong>All Queens are WILD</strong> + Card Immediately Following the Last Exposed Queen${followLine}${state.gameConfig.lowChicago ? " &middot; 🂡 <strong>Low Chicago (Down Spade Splits Pot)</strong>" : ""}
           </div>
         `;
       } else if (gameId === "sevenAndWhatMakesIt") {
