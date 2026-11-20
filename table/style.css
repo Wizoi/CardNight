@@ -1642,7 +1642,12 @@ fieldset {
   transform: scaleX(0.8);
 }
 
-.card-suit-mini {
+/* The small suit glyph next to a corner's rank letter ("JKR" + ★, or
+   rank + suit) -- renamed from .card-suit-mini, which nothing ever
+   referenced after the V2 card redesign (deck.js's cardFaceHtmlV2 emits
+   .card-corner-suit), leaving every corner's suit/star glyph completely
+   unstyled (full inherited size instead of this scaled-down one). */
+.card-corner-suit {
   font-size: 0.72em;
 }
 
@@ -1663,6 +1668,21 @@ fieldset {
 .card-suit {
   font-size: 1.55em;
   line-height: 1;
+}
+
+/* A Joker's center art: the 🃏 emoji (already sized via .card-suit above)
+   plus a "JOKER" wordmark -- unstyled before this, so the word rendered
+   at the card's full base font-size/weight and badly overflowed the
+   46x64px card. */
+.card-joker-star {
+  font-size: 1.3em;
+}
+
+.card-joker-label {
+  font-size: 0.32em;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin-top: 1px;
 }
 
 /* Compact seat cards hide bottom-right corner to stay ultra-crisp at 30x42px */
