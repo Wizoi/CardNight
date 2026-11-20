@@ -552,7 +552,18 @@ const TableFX = (function () {
   // family markup -- deliberately preferred over a second, independently
   // drifting rendering path for the same area.
   function renderCustomGameBoard(boardEl, vs, gvs) {
-    if (!boardEl || !gvs || !gvs.state) return false;
+    if (!boardEl) return false;
+    if (!gvs || !gvs.state) {
+      // No hand dealt yet (just switched games, waiting on "Deal first
+      // hand") -- every removed family renderBoard used to clear this on
+      // its own `if (!gvs.state)` branch; this function's own early
+      // return never did, so the PREVIOUS game's board markup silently
+      // lingered on screen until a new hand actually got dealt. Reported
+      // directly: "heading and people look reset, but card section is
+      // not" right after picking a new game.
+      boardEl.innerHTML = "";
+      return false;
+    }
     const gameId = vs.activeGameId;
     const state = gvs.state;
     const stadium = document.getElementById("poker-table-stadium");
