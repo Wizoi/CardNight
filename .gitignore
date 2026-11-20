@@ -1,1 +1,28 @@
-CLAUDE.md
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+*.iml
+.vscode/settings.json
+
+# Local scratch/debug output, never committed
+scratch/
+
+# Android/Gradle (pre-emptive, for the planned Android port — none of this
+# exists yet, but keeping secrets and build output out of git from day one
+# matters more than adding these patterns when they're first needed)
+.gradle/
+build/
+*/build/
+.kotlin/
+.cxx/
+.externalNativeBuild/
+captures/
+local.properties
+*.keystore
+*.jks
+play-service-account.json
+*.apk
+*.aab
