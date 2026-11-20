@@ -492,6 +492,24 @@ const TableNight = (function () {
     // picked again later without ever completing a hand in between.
     const carriedPotChips = carriedPotByGameId[gameId] || 0;
     carriedPotByGameId[gameId] = 0;
+    // Reset every per-hand transient status flag on the shared roster the
+    // moment a new game is picked, not just whenever its own
+    // createHandState eventually runs (every family already resets these
+    // itself once dealt -- this just closes the gap in between). Reported
+    // directly, twice: a stale BUSTED badge and a stale "I folded" status
+    // both carried over from the end of a PREVIOUS game's last hand into a
+    // freshly picked, not-yet-dealt game, because most table-ui-<family>.js
+    // seat renderers read player.folded/.busted unconditionally rather than
+    // gating on gvs.state existing (table-ui-press-your-luck.js is the one
+    // family that already got every one of these guards right -- the others
+    // didn't, repeatedly, which is exactly why this is fixed centrally here
+    // instead of chasing each missed guard one at a time).
+    for (const p of players) {
+      p.folded = false;
+      p.busted = false;
+      p.standing = false;
+      p.bestShowingHand = null;
+    }
     activeOrchestrator = entry.createOrchestrator({
       players,
       settings,
