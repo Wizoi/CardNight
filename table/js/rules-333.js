@@ -48,6 +48,20 @@ const Rules333 = (function () {
     });
   }
 
+  // Same per-winner split payEvenSplit actually pays out (first `remainder`
+  // winners in list order get one extra chip), rendered as "Name ($X.XX)"
+  // per winner instead of just a lump total for the whole half. Reported
+  // directly: when a side splits between 2+ players, the log only ever
+  // stated the half's total share, never what each individual winner
+  // actually walked away with.
+  function namesWithShares(state, winnerIds, totalChips) {
+    const share = Math.floor(totalChips / winnerIds.length);
+    const remainder = totalChips - share * winnerIds.length;
+    return winnerIds
+      .map((id, i) => `${getPlayer(state, id).name} ($${ChipEconomy.chipsToDollars(share + (i < remainder ? 1 : 0)).toFixed(2)})`)
+      .join(", ");
+  }
+
   function createHandState(players, dealerIndex, settings, carriedPotChips) {
     const deck = Deck.shuffle(Deck.buildDeck());
     for (const p of players) {
@@ -268,15 +282,17 @@ const Rules333 = (function () {
     const highShareChips = state.pot - lowShareChips;
     let carried = 0;
     if (lowWinners.length) {
+      const sharesText = namesWithShares(state, lowWinners, lowShareChips);
       payEvenSplit(state, lowWinners, lowShareChips);
-      state.log.push(`${lowWinners.map((id) => getPlayer(state, id).name).join(", ")} win the $${ChipEconomy.chipsToDollars(lowShareChips).toFixed(2)} low half (closest to ${LOW_TARGET}).`);
+      state.log.push(`${sharesText} win${lowWinners.length > 1 ? "" : "s"} the $${ChipEconomy.chipsToDollars(lowShareChips).toFixed(2)} low half (closest to ${LOW_TARGET}).`);
     } else {
       carried += lowShareChips;
       state.log.push(`Nobody qualified for the $${ChipEconomy.chipsToDollars(lowShareChips).toFixed(2)} low half — that share carries forward.`);
     }
     if (highWinners.length) {
+      const sharesText = namesWithShares(state, highWinners, highShareChips);
       payEvenSplit(state, highWinners, highShareChips);
-      state.log.push(`${highWinners.map((id) => getPlayer(state, id).name).join(", ")} win the $${ChipEconomy.chipsToDollars(highShareChips).toFixed(2)} high half (closest to ${HIGH_TARGET}).`);
+      state.log.push(`${sharesText} win${highWinners.length > 1 ? "" : "s"} the $${ChipEconomy.chipsToDollars(highShareChips).toFixed(2)} high half (closest to ${HIGH_TARGET}).`);
     } else {
       carried += highShareChips;
       state.log.push(`Nobody qualified for the $${ChipEconomy.chipsToDollars(highShareChips).toFixed(2)} high half — that share carries forward.`);
@@ -302,5 +318,6 @@ const Rules333 = (function () {
     isRevealDone,
     revealNextCommunityCard,
     handSumResult,
+    resolveShowdown,
   };
 })();
