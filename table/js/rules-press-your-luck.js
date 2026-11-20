@@ -57,6 +57,7 @@ const PressYourLuckRules = (function () {
       p.standing = false;
       p.busted = false; // set true only under bustRule 'bust', once a hand clears both targets -- see checkAutoStandIfBusted
       p.buyBacksUsed = 0;
+      p.buyBacksThisTurn = 0;
       p.folded = false; // only actually usable when gameConfig.bettingEnabled -- ante-only games never fold
     }
 
@@ -146,12 +147,29 @@ const PressYourLuckRules = (function () {
     else state.log.push(`${getPlayer(state, playerId).name} keeps the card.`);
   }
 
+  // games.md's "down the river": $1 for a first replacement, $2 for a
+  // second -- "both can happen within the same turn" -- then later, on a
+  // genuinely separate turn, $3 for a third and final one. "Both can
+  // happen within the same turn" is a cap, not just a permission: it means
+  // a chain can only ever reach 2 buy-backs before the player's current
+  // turn has to move on, even with a lifetime allowance (maxBuys) of 3
+  // still available. Reported directly (2026-11-20) after the group
+  // noticed a player chain all 3 buy-backs back to back in one turn --
+  // this per-turn cap wasn't enforced at all before, only the lifetime
+  // one (MAX_BUYBACKS_PER_TURN below), so a 3rd buy-back was always
+  // offered immediately instead of being held back for a later turn.
+  const MAX_BUYBACKS_PER_TURN = 2;
   function canBuyBackNow(state, playerId) {
     const cfg = state.gameConfig;
     if (!cfg.buyBack) return false;
     const player = getPlayer(state, playerId);
     const card = player.hand[player.hand.length - 1];
-    return !!card && card.faceUp && player.buyBacksUsed < cfg.buyBack.maxBuys;
+    return (
+      !!card &&
+      card.faceUp &&
+      player.buyBacksUsed < cfg.buyBack.maxBuys &&
+      (player.buyBacksThisTurn || 0) < MAX_BUYBACKS_PER_TURN
+    );
   }
 
   // games.md's "$1 buys a specific 10 the flexible 0-or-10 choice" -- a
@@ -203,6 +221,7 @@ const PressYourLuckRules = (function () {
     const { paid } = ChipEconomy.pay(player.wallet, neededChips);
     state.pot += paid;
     player.buyBacksUsed += 1;
+    player.buyBacksThisTurn = (player.buyBacksThisTurn || 0) + 1;
     const oldCard = player.hand[player.hand.length - 1];
     state.discardPile.push({ rank: oldCard.rank, suit: oldCard.suit });
     const replacement = drawCard(state);
@@ -396,12 +415,23 @@ const PressYourLuckRules = (function () {
     player.hand.push(card);
     state.lapHitCount += 1;
     state.log.push(`${player.name} takes a card.`);
-    const canBuyBack = canBuyBackNow(state, playerId);
-    if (!canBuyBack) {
+    // A fresh turn's own buy-back chain always starts back at 0, even if
+    // the player already used some of their LIFETIME allowance on an
+    // earlier turn -- canBuyBackNow's per-turn cap is about how many can
+    // chain on ONE turn, not how many remain overall.
+    player.buyBacksThisTurn = 0;
+    // Real bug, reported directly: "just got a 10. But was not asked if I
+    // wanted to make it 10 or 0." This used to only check canBuyBackNow --
+    // once a player's lifetime buy-backs were exhausted (or any other
+    // reason canBuyBackNow was false), a freshly-dealt, never-paid-for 10
+    // silently skipped the flex-ten offer entirely instead of still
+    // pausing for that separate decision.
+    const needsDecision = canBuyBackNow(state, playerId) || canPayFlexTen(state, playerId);
+    if (!needsDecision) {
       checkAutoStandIfBusted(state, player);
       advanceCursor(state);
     }
-    return { dealtCard: card, needsBuyBack: canBuyBack };
+    return { dealtCard: card, needsBuyBack: needsDecision };
   }
 
   // choice: "buyBack" | "payFlex" | "keep" -- see resolveInitialBuyback for
