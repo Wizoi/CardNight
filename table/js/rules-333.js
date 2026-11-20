@@ -67,6 +67,7 @@ const Rules333 = (function () {
     for (const p of players) {
       p.hand = [];
       p.folded = false;
+      p.busted = false; // shared cross-game hygiene: only 5.5-21/7-27 ever set this true, but it's a plain field on the persistent player object -- without resetting it here too, a bust from an earlier game in the same sitting would leak into every later game's UI (e.g. table-fx.js's mood badge).
     }
     let cursor = 0;
     for (const p of players) {

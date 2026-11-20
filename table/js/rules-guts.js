@@ -79,6 +79,7 @@ const GutsRules = (function () {
       p.hand = deck.slice(cursor, cursor + dealSize).map((c) => ({ rank: c.rank, suit: c.suit }));
       cursor += dealSize;
       p.folded = false;
+      p.busted = false; // shared cross-game hygiene: only 5.5-21/7-27 ever set this true, but it's a plain field on the persistent player object -- without resetting it here too, a bust from an earlier game in the same sitting would leak into every later game's UI (e.g. table-fx.js's mood badge).
     }
 
     // A game WITH a passing step reveals its optional flip-up wildcard(s)
