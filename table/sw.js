@@ -15,8 +15,8 @@
 // hand-maintained duplicate list here -- this project adds a new game (and
 // its own script tag) fairly often, and a parallel list here would
 // silently go stale the same way a manually-bumped cache version would.
-const CACHE_NAME = "luck-of-the-deal-v3-18";
-const CORE_URLS = ["./", "./index.html", "./style.css", "./manifest.webmanifest", "./icon.svg", "../app/games-data.js"];
+const CACHE_NAME = "luck-of-the-deal-v3-19";
+const CORE_URLS = ["./", "./index.html", "./style.css", "./manifest.webmanifest", "./icon.svg", "./icon-maskable.svg", "../app/games-data.js"];
 
 async function discoverAssetUrls() {
   const urls = new Set(CORE_URLS);
