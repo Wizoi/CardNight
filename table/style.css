@@ -568,7 +568,7 @@ input::placeholder {
 }
 
 .seat-box-archetype {
-  font-size: 0.6rem;
+  font-size: 0.68rem;
   font-weight: 900;
   letter-spacing: 0.06em;
   color: var(--gold-soft);
@@ -589,16 +589,25 @@ input::placeholder {
 }
 
 .seat-box-remove {
+  /* Was 1.35rem (21.6px), sitting in the corner of a card whose whole
+     body is a DIFFERENT, much lower-stakes tap target ("swap this
+     regular") -- a mis-tap that lands on the card instead of this button
+     is harmless, but a mis-tap that lands on this tiny button while
+     meaning to tap the card removes a configured seat. Raised to 2rem
+     (32px) -- a real improvement without a solid red circle dominating a
+     ~120-150px setup card visually; judgment call over a full 44px, given
+     this is a lower-frequency setup-screen control, not a per-hand
+     action. Found in the step-4 mobile-UX survey (2026-11-20). */
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: 3px;
+  right: 3px;
   min-height: 0;
-  width: 1.35rem;
-  height: 1.35rem;
+  width: 2rem;
+  height: 2rem;
   line-height: 1;
   padding: 0;
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 1rem;
   border-radius: 999px;
   background: rgba(214, 54, 41, 0.9);
   color: #ffffff;
@@ -631,7 +640,7 @@ input::placeholder {
 }
 
 .seat-box-seatnum {
-  font-size: 0.58rem;
+  font-size: 0.66rem;
   font-weight: 900;
   letter-spacing: 0.08em;
   color: rgba(241, 215, 126, 0.72);
@@ -925,9 +934,14 @@ fieldset {
 }
 
 #game-script-toggle-btn {
+  /* Was 1.85rem (29.6px) -- under the 44px touch-target guideline for a
+     control shown on every game's header. Raised on both desktop and
+     mobile (not just bumped at one breakpoint) since a round icon button
+     at a consistent size is simpler than two different ones. Found in
+     the step-4 mobile-UX survey (2026-11-20). */
   flex: none;
-  width: 1.85rem;
-  height: 1.85rem;
+  width: 2.75rem;
+  height: 2.75rem;
   min-height: 0;
   padding: 0;
   margin: 0;
@@ -986,7 +1000,10 @@ fieldset {
 }
 
 .fx-speed-btn {
-  min-height: 0;
+  /* min-height was 0 (no floor at all) -- a real tap target even though
+     this is a one-time-per-session setting, not a per-hand action. Found
+     in the step-4 mobile-UX survey (2026-11-20). */
+  min-height: 44px;
   margin: 0;
   padding: 0.24rem 0.45rem;
   font-size: 0.68rem;
@@ -1004,7 +1021,9 @@ fieldset {
 }
 
 .fx-icon-btn {
-  min-height: 0;
+  /* min-height was 0 (no floor at all). Found in the step-4 mobile-UX
+     survey (2026-11-20). */
+  min-height: 44px;
   margin: 0;
   padding: 0.24rem 0.45rem;
   font-size: 0.82rem;
@@ -1059,7 +1078,7 @@ fieldset {
 }
 
 #pot-hero-label {
-  font-size: 0.58rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--gold-soft);
@@ -1089,8 +1108,10 @@ fieldset {
 }
 
 #more-menu-btn {
-  width: 2.2rem;
-  height: 2.2rem;
+  /* Was 2.2rem (35.2px) -- under the 44px guideline, shown on every
+     game's header. Found in the step-4 mobile-UX survey (2026-11-20). */
+  width: 2.75rem;
+  height: 2.75rem;
   min-height: 0;
   padding: 0;
   display: flex;
@@ -1963,6 +1984,18 @@ fieldset {
   font-size: 0.62rem;
   font-weight: 900;
   letter-spacing: 0.03em;
+  z-index: 3;
+}
+
+.fe-stall-afford-note {
+  margin-top: 0.3rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(214, 54, 41, 0.85);
+  color: #ffffff;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   z-index: 3;
 }
 
@@ -3102,12 +3135,13 @@ fieldset {
 }
 
 .pv-icon-btn {
+  /* min-height was 36px. Found in the step-4 mobile-UX survey (2026-11-20). */
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.38rem;
   margin: 0;
-  min-height: 36px;
+  min-height: 44px;
   padding: 0.36rem 0.85rem;
   border-radius: 999px;
   background: transparent;
@@ -3178,11 +3212,14 @@ fieldset {
 .pv-sidebar-filter-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
+  gap: 0.45rem;
 }
 
 .pv-cat-chip {
-  min-height: 0;
+  /* min-height was 0 (~20px effective tap height) with only a 0.3rem gap
+     between chips -- this screen is seen before every single hand of
+     every game. Found in the step-4 mobile-UX survey (2026-11-20). */
+  min-height: 44px;
   margin: 0;
   padding: 0.24rem 0.55rem;
   border-radius: 999px;
@@ -4290,13 +4327,23 @@ fieldset {
   box-shadow: var(--shadow);
 }
 
+/* A 5-6 column table had no mobile handling at all -- it would just
+   squeeze its columns illegibly on a narrow phone instead of scrolling.
+   Found in the step-4 mobile-UX survey (2026-11-20). */
+.table-scroll-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+}
+
 #history-view table {
   width: 100%;
+  min-width: 480px;
   border-collapse: collapse;
   background: rgba(0, 0, 0, 0.28);
   border-radius: 10px;
   overflow: hidden;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 
 #history-view th, #history-view td {
@@ -4982,18 +5029,18 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
     font-size: 0.88rem;
   }
 
-  #game-script-toggle-btn {
-    width: 1.55rem;
-    height: 1.55rem;
-  }
-
-  #game-bar-stats {
-    gap: 0.35rem;
-  }
+  /* #game-script-toggle-btn's own width/height shrink was removed here
+     (2026-11-20, step-4 mobile-UX survey) -- it kept the desktop 1.85rem
+     icon button, already a touch target, shrinking FURTHER on the
+     narrower/touch-primary screens that need it least. Likewise
+     #game-bar-stats's gap no longer shrinks below desktop's 0.55rem --
+     these are separate controls (menu/script-toggle/speed/sound), and a
+     tighter gap between them is a mis-tap risk, not a space saver, now
+     that each is a real 44px target. */
 
   .fx-speed-btn {
     padding: 0.18rem 0.32rem;
-    font-size: 0.6rem;
+    font-size: 0.68rem;
   }
 
   .fx-icon-btn {
@@ -5017,17 +5064,16 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
   }
 
   #pot-hero-label {
-    font-size: 0.5rem;
+    font-size: 0.62rem;
   }
 
   #pot-display {
     font-size: 0.96rem;
   }
 
-  #more-menu-btn {
-    width: 1.85rem;
-    height: 1.85rem;
-  }
+  /* #more-menu-btn no longer shrinks on mobile (was 1.85rem/29.6px) --
+     same pattern as the game-bar fixes above. Found in the step-4
+     mobile-UX survey (2026-11-20). */
 
   /* 2. Compact Table Stadium, Seats & Center Board */
   #poker-table-stadium {
@@ -5058,7 +5104,7 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
   }
 
   .c4-archetype-title {
-    font-size: 0.48rem;
+    font-size: 0.6rem;
   }
 
   .c4-person-name,
@@ -5073,7 +5119,7 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
   .seat-cards .card {
     width: 22px;
     height: 32px;
-    font-size: 0.58rem;
+    font-size: 0.68rem;
   }
 
   .seat-cards .card + .card {
@@ -5119,7 +5165,10 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
   }
 
   #action-panel button {
-    min-height: 36px;
+    /* Was 36px -- Android's own touch-target guideline is 44px, and this
+       is the single most-tapped control (fold/call/raise) in every game.
+       Found in the step-4 mobile-UX survey (2026-11-20). */
+    min-height: 44px;
     padding: 0.34rem 0.68rem;
     font-size: 0.82rem;
     margin: 0.14rem;
@@ -5201,7 +5250,8 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
   }
 
   .pv-icon-btn {
-    min-height: 32px;
+    /* min-height no longer shrinks below the 44px baseline on mobile
+       (was 32px). Found in the step-4 mobile-UX survey (2026-11-20). */
     padding: 0.26rem 0.65rem;
     font-size: 0.74rem;
   }
@@ -5377,9 +5427,17 @@ html[data-ui-scale="1.45"] .seat-cards .card + .card {
   }
 
   #human-hand .card {
-    width: calc(48px * var(--ui-scale, 1));
-    height: calc(68px * var(--ui-scale, 1));
-    font-size: calc(0.96rem * var(--ui-scale, 1));
+    /* Was 48x68 -- at the user's own minimum "− Size" setting
+       (--ui-scale: 0.85) that computed to ~40.8x57.8px, under Android's
+       44px touch-target guideline, for the card that gets repeatedly
+       tapped in Anaconda's discard/arrange, the Guts family's exchange/
+       pass, Draw Poker's discard, and Wild in Your Hand's pass. Bumped so
+       even the minimum scale clears 44px on both axes (52*0.85=44.2,
+       74*0.85=62.9). Found in the step-4 mobile-UX survey (2026-11-20).
+    */
+    width: calc(52px * var(--ui-scale, 1));
+    height: calc(74px * var(--ui-scale, 1));
+    font-size: calc(1.04rem * var(--ui-scale, 1));
   }
 
   #board-hand .card,
@@ -5392,7 +5450,7 @@ html[data-ui-scale="1.45"] .seat-cards .card + .card {
   .seat-cards .card {
     width: calc(24px * var(--ui-scale, 1));
     height: calc(34px * var(--ui-scale, 1));
-    font-size: calc(0.62rem * var(--ui-scale, 1));
+    font-size: calc(0.72rem * var(--ui-scale, 1));
   }
 
   .seat .avatar-portrait-wrap {

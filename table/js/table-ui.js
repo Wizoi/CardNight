@@ -614,6 +614,7 @@
       return;
     }
     el.historyList.innerHTML = `
+      <div class="table-scroll-wrap">
       <table>
         <thead><tr><th>Date</th><th>Bought in</th><th>Cash out / current</th><th>Net</th><th>Hands</th></tr></thead>
         <tbody>
@@ -627,6 +628,7 @@
             .join("")}
         </tbody>
       </table>
+      </div>
     `;
   }
 
@@ -637,6 +639,7 @@
       return;
     }
     el.regularsList.innerHTML = `
+      <div class="table-scroll-wrap">
       <table>
         <thead><tr><th>Name</th><th>Archetype</th><th>Sessions</th><th>Hands won</th><th>Net</th><th>Last played</th></tr></thead>
         <tbody>
@@ -648,6 +651,7 @@
             .join("")}
         </tbody>
       </table>
+      </div>
     `;
   }
 

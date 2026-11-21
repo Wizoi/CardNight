@@ -591,10 +591,17 @@ const TableFX = (function () {
           const canAffordSlot = humanChips >= ChipEconomy.dollarsToChips(priceDollars);
           const slotInteractive = canBuyNow && card && canAffordSlot;
           const cardHtml = card ? fxCardHtml(card, false) : fxCardHtml(null, true);
+          // The title tooltip's "(need more chips)" qualifier never
+          // reaches a touch user (no hover) -- the price itself was
+          // already always-visible via .fe-stall-price, so the only real
+          // gap was this specific case. Shown as a visible pill instead
+          // of hidden in the title. Found in the step-4 mobile-UX survey
+          // (2026-11-20).
+          const cantAffordNote = canBuyNow && card && !canAffordSlot ? `<span class="fe-stall-afford-note">Need more chips</span>` : "";
           return `
             <button type="button" class="fe-market-stall ${slotInteractive ? "fe-stall-interactive" : ""}"
               ${slotInteractive ? `data-fx-enterprise-buy="${slotIdx}"` : "disabled"}
-              title="${slotInteractive ? `Click to buy ${Deck.cardLabel(card)} for ${money(priceDollars)}` : `Slot ${slotIdx + 1}: ${money(priceDollars)}${canBuyNow && !canAffordSlot ? " (need more chips)" : ""}`}">
+              title="${slotInteractive ? `Buy ${Deck.cardLabel(card)} for ${money(priceDollars)}` : `Slot ${slotIdx + 1}: ${money(priceDollars)}`}">
               <div class="fe-stall-awning">
                 <span></span><span></span><span></span><span></span><span></span>
               </div>
@@ -602,6 +609,7 @@ const TableFX = (function () {
                 <div class="fe-stall-fan-bg" aria-hidden="true"></div>
                 <div class="fe-stall-card-wrap">${cardHtml}</div>
                 ${slotInteractive ? `<span class="fe-stall-buy-pill">BUY ${Deck.cardLabel(card)}</span>` : ""}
+                ${cantAffordNote}
               </div>
               <div class="fe-stall-counter">
                 <span class="fe-stall-price">${money(priceDollars)} SLOT</span>
