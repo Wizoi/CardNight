@@ -1,0 +1,15 @@
+{
+  "name": "cardnight-native",
+  "private": true,
+  "description": "Native app wrapper tooling only (Capacitor) -- table/ itself stays dependency-free, no build step, loaded directly as <script> tags. See android/README.md.",
+  "scripts": {
+    "sync": "node tools/build-table.js && npx cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/core": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0"
+  }
+}

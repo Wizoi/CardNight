@@ -1,68 +1,84 @@
-# android/ -- the TWA wrapper (Android roadmap step 6)
+# android/ -- the Capacitor-wrapped native app (Android roadmap step 6)
 
-Generated 2026-11-20 via Bubblewrap's programmatic API (`@bubblewrap/core`'s
-`TwaManifest`/`TwaGenerator`), not the interactive CLI wizard -- the wizard
-prompts for values and for signing-key generation, and this session's shell
-runs non-interactively, so the wizard itself can't run here. Driving the
-library directly let project generation happen without touching signing at
-all, which was deliberate: generating the project (regenerable any time via
-`twa-manifest.json`, see below) is reversible; generating an upload signing
-key is not, and that's the user's call to make directly, not something to
-script around.
+**Switched from a Bubblewrap/TWA wrapper to Capacitor on 2026-11-21**, at the
+user's explicit request: a TWA doesn't bundle the web app at all -- it's a
+thin native shell that launches Chrome pointed at the live
+`https://wizoi.github.io/CardNight/table/` URL (see `git log` for the
+superseded TWA version of this directory, fully recoverable). The user
+asked specifically to bake the web assets into the package instead of
+depending on that live URL, understanding the real tradeoff that comes with
+it: **content updates now need a new build + reinstall (or store update),
+not just a `git push`.**
 
-**No signing key exists in this project.** `twa-manifest.json`'s
-`signingKey.path` names where one would go (`./android.keystore`), but no
-such file exists yet, and `.gitignore` already blocks `*.keystore`/`*.jks`
-from ever being committed if one is created here.
+## How the source stays untouched and independently testable
 
-## What's here
+This was a specific design goal, not an afterthought: `table/js/*.js`,
+`table/index.html`, `table/style.css` are completely unmodified by any of
+this. The pipeline is:
 
-- A full Gradle/Android Studio project (`app/`, `build.gradle`, `gradlew`,
-  etc.) targeting the live PWA at `https://wizoi.github.io/CardNight/table/`.
-- `twa-manifest.json` -- the source of truth Bubblewrap itself reads for
-  `bubblewrap build`/`bubblewrap update`. Package id `com.luckofthedeal.app`
-  (matching the `com.<app>.app` pattern this account's other Android
-  projects, SmugView/AegidaSafe, already use).
-- Real launcher icons (`app/src/main/res/mipmap-*/ic_launcher.png` and
-  `ic_maskable.png`) rasterized by Bubblewrap directly from this repo's
-  `table/icon.svg`/`icon-maskable.svg` -- confirmed by viewing the actual
-  generated PNGs, not just trusting the generator ran without error.
-- `assetlinks-template.json` -- see the real blocker below before using it.
+1. **Source** (`table/`) -- same files, same dev workflow, same
+   `table/tests/run-all.js` validation as always, nothing Capacitor-related
+   touches these.
+2. **`tools/build-table.js`** (Android roadmap step 2) -- the "mapper": reads
+   the source and produces `table/dist/`, a single bundled file plus
+   assets. Concatenation only, no semantic transform.
+3. **Capacitor** (`capacitor.config.json`'s `webDir: "table/dist"`) --
+   copies that already-bundled output into
+   `android/app/src/main/assets/public/`. Confirmed directly: `bundle.js`
+   (1.28MB, the folded-together 78 source files + `../app/games-data.js`),
+   `people-images/`, `style.css`, `manifest.webmanifest`, `sw.js`, and
+   `icon.svg`/`icon-maskable.svg` are all physically present as real files
+   there, not a URL reference anywhere.
 
-## Real blocker found, not yet resolved: Digital Asset Links needs a domain root this repo doesn't control
+`npm run sync` (root `package.json`) runs both steps 2 and 3 together:
+rebuild `table/dist/`, then `npx cap sync android` to refresh the copy
+inside the native project.
 
-A TWA only runs "trusted" (no visible browser address bar) once Android can
-verify, via `https://<host>/.well-known/assetlinks.json`, that the app and
-the website are controlled by the same party. `<host>` here is
-`wizoi.github.io` -- the whole domain, not `wizoi.github.io/CardNight/`.
+## No signing key for a RELEASE build -- still an open, user-owned decision
 
-Checked directly: `https://wizoi.github.io/` and
-`https://wizoi.github.io/.well-known/assetlinks.json` both 404 right now.
-There's no `Wizoi/wizoi.github.io` repo in this account's GitHub org (only
-project-page repos like `CardNight`) -- GitHub Pages only serves a domain's
-*root* `.well-known/` path from a repo named exactly `<account>.github.io`,
-which doesn't exist here. A project-page repo has no way to place a file at
-the domain root.
+Same boundary as before, unchanged by the TWA->Capacitor switch: generating
+a release signing keystore is this app's permanent upload identity once
+ever used, so it's the user's own call to make directly, not something
+scripted around. `.gitignore` already blocks `*.keystore`/`*.jks`.
 
-**This needs a decision, not more automated work:**
-1. Create a `Wizoi/wizoi.github.io` repo (even a minimal one) whose own
-   Pages deployment serves `.well-known/assetlinks.json` at the domain
-   root. The real fix, if a TWA with a hidden address bar matters.
-2. Skip verification for now and accept the TWA running as an unverified
-   Custom Tab (the address bar stays visible at the top) -- the app still
-   works, just doesn't look fully native.
-3. Revisit once there's a real signing key anyway, since the fingerprint
-   can't be filled in before then regardless.
+**A local DEBUG build is a different story and was attempted directly**:
+Android's debug build uses an auto-generated, universal debug keystore
+every Android dev machine has (`~/.android/debug.keystore`, Android
+tooling's own long-standing convention) -- it's never used for anything
+users-facing, carries no consequence, and isn't the signing decision this
+project is careful about.
 
-Not decided yet -- flagged here and in the roadmap doc rather than guessed
-at.
+**Verified, 2026-11-21: `./gradlew.bat assembleDebug` succeeds and produces
+a real, working APK** (`android/app/build/outputs/apk/debug/app-debug.apk`,
+~5.8MB) -- confirmed its contents directly (`unzip -l`), not just that the
+build exited 0: `assets/public/bundle.js`, `index.html`, and all 30 avatar
+`.jfif` photos are genuinely packed inside the APK itself.
 
-## Regenerating this project
+One real gotcha hit getting there, worth remembering: `android/local.properties`'s
+`sdk.dir` failed Android Gradle Plugin's path validation (`Invalid file
+path`) when written with escaped backslashes
+(`C:\\Users\\kidzi\\...`) -- `.properties` files treat `\` as an escape
+character, and sequences like `\A`/`\U` aren't valid Java escapes, so the
+path silently came out corrupted. Forward slashes
+(`sdk.dir=C:/Users/kidzi/AppData/Local/Android/Sdk`) sidestep the whole
+class of bug and are accepted fine by both Gradle and Windows.
+
+## What's no longer needed from the TWA approach
+
+- **Digital Asset Links / `assetlinks.json`**: gone, along with the real
+  blocker it had (no `wizoi.github.io` domain-root repo to serve it from --
+  see earlier commits for that writeup). There's no live URL to verify
+  ownership of anymore, so this whole mechanism doesn't apply.
+- **`tools/generate-twa-project.js`**: superseded, left in git history, not
+  carried forward -- Capacitor's own `cap add android` does the equivalent
+  job for this architecture, and re-running it is just `npx cap sync
+  android` (see `npm run sync` above), no custom script needed.
+
+## Regenerating this project from scratch
 
 ```
-npx @bubblewrap/core --version   # one-time: makes @bubblewrap/core resolvable
-node tools/generate-twa-project.js
+npm install
+npx cap init "Luck of the Deal" "com.luckofthedeal.app" --web-dir table/dist
+node tools/build-table.js
+npx cap add android
 ```
-
-`tools/generate-twa-project.js` never touches signing -- see the top of
-that file for why.
