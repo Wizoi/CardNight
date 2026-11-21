@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.luckofthedeal.app",
+      "sha256_cert_fingerprints": [
+        "PLACEHOLDER -- fill in once a real signing key exists. Get it with:\n          keytool -list -v -keystore <path-to-your-keystore> -alias <alias>\n        (the SHA256 line in that output, colons and all, as one string)."
+      ]
+    }
+  }
+]
