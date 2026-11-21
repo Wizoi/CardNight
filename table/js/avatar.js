@@ -1,13 +1,53 @@
 "use strict";
 
 // Renders a "table person" avatar spec (see personas/players/table/*.md for the
-// source content these specs come from). Each spec's `svg` field holds a
-// pre-fetched DiceBear "micah" illustration (generated once offline from the
-// spec's skinTone/hairStyle/hairColor/facialHair/accessory/expression/accentColor
-// and embedded as a static string in table-people-data.js — no runtime network
-// call), which render() resizes and returns as-is. Specs without an `svg` field
-// fall back to the original hand-built flat-color icon below.
+// source content these specs come from). The primary rendering path is a real
+// people-images/<id>.jfif photo; a DiceBear "micah" illustration (generated
+// once offline from the spec's skinTone/hairStyle/hairColor/facialHair/
+// accessory/expression/accentColor) is the fallback for that photo's onerror.
+//
+// Split out of table-people-data.js and lazy-fetched (2026-11-20, Android
+// roadmap step 3): those 30 DiceBear SVGs were ~194KB of the ~520KB that file
+// used to be, embedded and loaded synchronously with every other script even
+// though the photo files they fall back for are local static assets that, in
+// ordinary use, essentially never fail to load. avatar-fallback-svgs.json is
+// now only fetched the first time an onerror actually fires, via
+// loadFallbackSvgMap()/handleImageError() below -- and even then, the plain
+// flat-color icon in renderFallbackSvg() (used whenever a spec has no DiceBear
+// art at all, unchanged from before) shows INSTANTLY as the immediate
+// fallback, so there's never a blank/broken state: only a brief in-place
+// upgrade from that generic icon to the real per-person art, once the fetch
+// resolves, in the rare case a photo ever actually fails.
 const Avatar = (function () {
+  let fallbackSvgMapPromise = null;
+  function loadFallbackSvgMap() {
+    if (!fallbackSvgMapPromise) {
+      fallbackSvgMapPromise = fetch("js/avatar-fallback-svgs.json")
+        .then((res) => (res.ok ? res.json() : {}))
+        .catch(() => ({}));
+    }
+    return fallbackSvgMapPromise;
+  }
+
+  // Called from the <img>'s onerror once the generic flat-color fallback is
+  // already visible (that swap happens inline, synchronously, same as
+  // before) -- this only upgrades it to the real per-person DiceBear art,
+  // asynchronously, if/when the fetch resolves and that person actually has
+  // one.
+  function handleImageError(imgEl, size) {
+    const fallbackEl = imgEl.nextElementSibling;
+    const wrap = imgEl.closest("[data-person-id]");
+    const personId = wrap && wrap.getAttribute("data-person-id");
+    if (!personId || !fallbackEl) return;
+    loadFallbackSvgMap().then((map) => {
+      const svg = map[personId];
+      if (!svg || !fallbackEl.isConnected) return;
+      const replacement = document.createElement("template");
+      replacement.innerHTML = injectSize(svg, size, "");
+      fallbackEl.replaceWith(replacement.content.firstElementChild);
+    });
+  }
+
   const SKIN_TONES = {
     porcelain: "#F7DCC6",
     light: "#F0C8A0",
@@ -209,10 +249,10 @@ const Avatar = (function () {
     if (meta.personId) {
       const imgSrc = `people-images/${meta.personId}.jfif`;
       const fallbackSvg = renderFallbackSvg(spec, displaySize, true);
-      return `<div class="avatar-portrait-wrap avatar-frame-${temperament}" style="--avatar-px:${displaySize}px" data-person-id="${meta.personId}" data-archetype="${meta.archetypeId || ""}"><span class="avatar-thinking-ring" aria-hidden="true"></span><div class="avatar-inner-bevel"><img src="${imgSrc}" width="${displaySize}" height="${displaySize}" alt="${meta.personName}" class="avatar-portrait-img" loading="lazy" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='block';" />${fallbackSvg}<span class="avatar-vignette" aria-hidden="true"></span></div><span class="avatar-mood-badge" hidden></span></div>`;
+      return `<div class="avatar-portrait-wrap avatar-frame-${temperament}" style="--avatar-px:${displaySize}px" data-person-id="${meta.personId}" data-archetype="${meta.archetypeId || ""}"><span class="avatar-thinking-ring" aria-hidden="true"></span><div class="avatar-inner-bevel"><img src="${imgSrc}" width="${displaySize}" height="${displaySize}" alt="${meta.personName}" class="avatar-portrait-img" loading="lazy" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='block';Avatar.handleImageError(this, ${displaySize});" />${fallbackSvg}<span class="avatar-vignette" aria-hidden="true"></span></div><span class="avatar-mood-badge" hidden></span></div>`;
     }
     return `<div class="avatar-portrait-wrap avatar-frame-${temperament}" style="--avatar-px:${displaySize}px"><div class="avatar-inner-bevel">${renderFallbackSvg(spec, displaySize, false)}<span class="avatar-vignette" aria-hidden="true"></span></div><span class="avatar-mood-badge" hidden></span></div>`;
   }
 
-  return { render, SKIN_TONES, HAIR_COLORS };
+  return { render, handleImageError, SKIN_TONES, HAIR_COLORS };
 })();

@@ -52,6 +52,15 @@ function copyFile(name) {
   fs.copyFileSync(path.join(TABLE_DIR, name), path.join(DIST_DIR, name));
 }
 
+// Not a <script src> tag, so the loop above never picks it up -- avatar.js
+// fetches it at "js/<name>", relative to index.html, so dist/ keeps that
+// same js/ subpath even though every actual .js file got folded into
+// bundle.js at dist's root.
+function copyJsAsset(name) {
+  fs.mkdirSync(path.join(DIST_DIR, "js"), { recursive: true });
+  fs.copyFileSync(path.join(TABLE_DIR, "js", name), path.join(DIST_DIR, "js", name));
+}
+
 function copyDirRecursive(srcDir, destDir) {
   fs.mkdirSync(destDir, { recursive: true });
   for (const entry of fs.readdirSync(srcDir, { withFileTypes: true })) {
@@ -96,6 +105,7 @@ function build() {
   copyFile("manifest.webmanifest");
   copyFile("icon.svg");
   copyFile("sw.js");
+  copyJsAsset("avatar-fallback-svgs.json");
   copyDirRecursive(path.join(TABLE_DIR, "people-images"), path.join(DIST_DIR, "people-images"));
 
   const bundleKb = (Buffer.byteLength(bundle, "utf8") / 1024).toFixed(0);
