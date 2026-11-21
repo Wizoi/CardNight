@@ -74,6 +74,34 @@ class of bug and are accepted fine by both Gradle and Windows.
   job for this architecture, and re-running it is just `npx cap sync
   android` (see `npm run sync` above), no custom script needed.
 
+## Real icons, not Capacitor's generic default
+
+`npx cap add android` scaffolds with Capacitor's own generic placeholder
+icon (a blue "X" logo) -- it does NOT pull icons from the web app at all.
+Confirmed directly by viewing the generated
+`mipmap-xxxhdpi/ic_launcher_foreground.png` right after `cap add android`
+before this fix: genuinely the wrong, generic icon, not an assumption.
+
+Real icons come from `@capacitor/assets` (a separate tool), Easy Mode:
+
+```
+npx @capacitor/assets generate --android \
+  --iconBackgroundColor '#082a20' --iconBackgroundColorDark '#082a20' \
+  --splashBackgroundColor '#082a20' --splashBackgroundColorDark '#082a20'
+```
+
+This reads `assets/icon.png` (committed here -- a transparent-background,
+foreground-only 1024x1024 render of the fan-of-cards art, rasterized from
+`table/store-assets/icon-foreground.svg`, same source family as every
+other icon asset in this repo) and generates real adaptive-icon
+foreground/background layers plus splash screens at every density, using
+the app's actual felt-green brand color as the background instead of
+transparent/white. Verified by viewing the generated launcher icon and
+splash screen directly, not just trusting the generator's exit code.
+
+Re-run this any time `assets/icon.png` changes; `npx cap sync android`
+alone does NOT regenerate icons, only the web asset copy.
+
 ## Regenerating this project from scratch
 
 ```
@@ -81,4 +109,5 @@ npm install
 npx cap init "Luck of the Deal" "com.luckofthedeal.app" --web-dir table/dist
 node tools/build-table.js
 npx cap add android
+npx @capacitor/assets generate --android --iconBackgroundColor '#082a20' --iconBackgroundColorDark '#082a20' --splashBackgroundColor '#082a20' --splashBackgroundColorDark '#082a20'
 ```
