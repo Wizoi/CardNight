@@ -77,18 +77,21 @@ const GameRegistry = (function () {
   const games = {
     midnightBaseball: {
       id: "midnightBaseball",
+      premium: false,
       name: "Midnight Baseball",
       uiFamily: "midnightBaseball",
       createOrchestrator: (config) => SessionMidnightBaseball.create(config),
     },
     daytimeBaseball: {
       id: "daytimeBaseball",
+      premium: false,
       name: "Daytime Baseball",
       uiFamily: "stud",
       createOrchestrator: (config) => SessionStud.create({ ...config, gameConfig: DAYTIME_BASEBALL_CONFIG }),
     },
     rainyDayBaseball: {
       id: "rainyDayBaseball",
+      premium: false,
       name: "Rainy Day Baseball",
       uiFamily: "stud",
       variantOptions: [
@@ -106,6 +109,7 @@ const GameRegistry = (function () {
     },
     freeEnterprise: {
       id: "freeEnterprise",
+      premium: false,
       name: "Free Enterprise",
       uiFamily: "stud",
       variantOptions: [
@@ -123,6 +127,7 @@ const GameRegistry = (function () {
     },
     followTheQueen: {
       id: "followTheQueen",
+      premium: false,
       name: "Follow the Queen",
       uiFamily: "stud",
       variantOptions: [
@@ -140,18 +145,21 @@ const GameRegistry = (function () {
     },
     sevenAndWhatMakesIt: {
       id: "sevenAndWhatMakesIt",
+      premium: false,
       name: "Seven and What Makes It",
       uiFamily: "stud",
       createOrchestrator: (config) => SessionStud.create({ ...config, gameConfig: SEVEN_AND_WHAT_MAKES_IT_CONFIG }),
     },
     goodBadUgly: {
       id: "goodBadUgly",
+      premium: false,
       name: "The Good, the Bad and the Ugly",
       uiFamily: "stud",
       createOrchestrator: (config) => SessionStud.create({ ...config, gameConfig: GOOD_BAD_UGLY_CONFIG }),
     },
     mexicanSweat: {
       id: "mexicanSweat",
+      premium: false,
       name: "Mexican Sweat",
       uiFamily: "mexicanSweat",
       variantOptions: [
@@ -169,6 +177,7 @@ const GameRegistry = (function () {
     },
     cincinnati: {
       id: "cincinnati",
+      premium: false,
       name: "Cincinnati",
       uiFamily: "communityStud",
       variantOptions: [
@@ -187,6 +196,7 @@ const GameRegistry = (function () {
     },
     crissCross: {
       id: "crissCross",
+      premium: false,
       name: "Criss Cross (Iron Cross)",
       uiFamily: "communityStud",
       variantOptions: [
@@ -214,6 +224,7 @@ const GameRegistry = (function () {
     },
     deepOrDoubleScrew: {
       id: "deepOrDoubleScrew",
+      premium: false,
       name: "Deep or Double Screw",
       uiFamily: "guts",
       variantOptions: [
@@ -241,6 +252,7 @@ const GameRegistry = (function () {
     },
     threeBuyFive: {
       id: "threeBuyFive",
+      premium: false,
       name: "3 Buy 5 / 5 Buy 5",
       uiFamily: "guts",
       variantOptions: [
@@ -267,6 +279,7 @@ const GameRegistry = (function () {
     },
     fourTwoTwo: {
       id: "fourTwoTwo",
+      premium: false,
       name: "Four-Two-Two",
       uiFamily: "guts",
       variantOptions: [
@@ -284,6 +297,7 @@ const GameRegistry = (function () {
     },
     threeFiveSeven: {
       id: "threeFiveSeven",
+      premium: false,
       name: "3-5-7 Guts",
       uiFamily: "guts",
       variantOptions: [
@@ -311,42 +325,49 @@ const GameRegistry = (function () {
     },
     wildInYourHand: {
       id: "wildInYourHand",
+      premium: false,
       name: "Wild in Your Hand",
       uiFamily: "wildInYourHand",
       createOrchestrator: (config) => SessionWildInYourHand.create({ ...config, gameConfig: WILD_IN_YOUR_HAND_CONFIG }),
     },
     omaha: {
       id: "omaha",
+      premium: false,
       name: "Omaha",
       uiFamily: "holdem",
       createOrchestrator: (config) => SessionHoldem.create({ ...config, gameConfig: OMAHA_CONFIG }),
     },
     seattle: {
       id: "seattle",
+      premium: false,
       name: "Seattle",
       uiFamily: "holdem",
       createOrchestrator: (config) => SessionHoldem.create({ ...config, gameConfig: SEATTLE_CONFIG }),
     },
     boise: {
       id: "boise",
+      premium: false,
       name: "Boise",
       uiFamily: "holdem",
       createOrchestrator: (config) => SessionHoldem.create({ ...config, gameConfig: BOISE_CONFIG }),
     },
     jerseyHoldem: {
       id: "jerseyHoldem",
+      premium: false,
       name: "Jersey Hold'em",
       uiFamily: "holdem",
       createOrchestrator: (config) => SessionHoldem.create({ ...config, gameConfig: JERSEY_HOLDEM_CONFIG }),
     },
     fiveFiveTwentyOne: {
       id: "fiveFiveTwentyOne",
+      premium: false,
       name: "5.5-21",
       uiFamily: "pressYourLuck",
       createOrchestrator: (config) => SessionPressYourLuck.create({ ...config, gameConfig: FIVE_FIVE_TWENTYONE_CONFIG }),
     },
     sevenTwentySeven: {
       id: "sevenTwentySeven",
+      premium: false,
       name: "7-27",
       uiFamily: "pressYourLuck",
       variantOptions: [
@@ -364,24 +385,28 @@ const GameRegistry = (function () {
     },
     threeThirtyThree: {
       id: "threeThirtyThree",
+      premium: false,
       name: "3-33",
       uiFamily: "threeThirtyThree",
       createOrchestrator: (config) => Session333.create(config),
     },
     aceyDucey: {
       id: "aceyDucey",
+      premium: false,
       name: "Acey Ducey",
       uiFamily: "aceyDucey",
       createOrchestrator: (config) => SessionAceyDucey.create(config),
     },
     blindMansBluff: {
       id: "blindMansBluff",
+      premium: false,
       name: "Blind Man's Bluff",
       uiFamily: "blindMansBluff",
       createOrchestrator: (config) => SessionBlindMansBluff.create(config),
     },
     gameOfLife: {
       id: "gameOfLife",
+      premium: false,
       name: "Game of Life",
       uiFamily: "gameOfLife",
       variantOptions: [JOKER_COUNT_VARIANT_OPTION],
@@ -389,6 +414,7 @@ const GameRegistry = (function () {
     },
     pairOfJacksTripsToWin: {
       id: "pairOfJacksTripsToWin",
+      premium: false,
       name: "Pair of Jacks, Trips to Win",
       uiFamily: "drawPoker",
       variantOptions: [JOKER_COUNT_VARIANT_OPTION],
@@ -396,6 +422,7 @@ const GameRegistry = (function () {
     },
     anaconda: {
       id: "anaconda",
+      premium: false,
       name: "Anaconda (Pass the Trash)",
       uiFamily: "anaconda",
       variantOptions: [
@@ -414,8 +441,18 @@ const GameRegistry = (function () {
     },
   };
 
-  function list() {
-    return Object.values(games);
+  // Monetization groundwork (2026-11-21), purely additive: every entry now
+  // carries a `premium: false` field (nothing reads it as locked yet, so
+  // this changes no current behavior at all). `list()` takes an optional
+  // filter predicate so a future free/paid split has exactly ONE place to
+  // change -- today's two independent call sites (table-night.js's
+  // getViewState() for the human picker, and its autoPickForAI, which
+  // calls list() separately) would both just pass the same predicate in,
+  // instead of each needing its own entitlement-aware filtering logic.
+  // Default (no predicate) is today's exact "return everything" behavior.
+  function list(filterFn) {
+    const all = Object.values(games);
+    return filterFn ? all.filter(filterFn) : all;
   }
 
   function get(id) {

@@ -20,11 +20,14 @@ const TableFX = (function () {
   const SIZE_KEY = "cardnight.table.uiScale.v1";
   const UI_SCALES = [0.85, 1, 1.15, 1.3, 1.45];
 
+  // premium: false added 2026-11-21, monetization groundwork -- nothing
+  // reads it yet (zero behavior change today), but a future cosmetic-IAP
+  // gate on theme selection now has one obvious place to check.
   const THEMES = [
-    { id: "basement", label: "Basement Rec Room", icon: "🍺" },
-    { id: "classic", label: "Casino Emerald", icon: "♠️" },
-    { id: "speakeasy", label: "Smoky Speakeasy", icon: "🥃" },
-    { id: "balatro", label: "Arcade CRT Neon", icon: "✨" },
+    { id: "basement", label: "Basement Rec Room", icon: "🍺", premium: false },
+    { id: "classic", label: "Casino Emerald", icon: "♠️", premium: false },
+    { id: "speakeasy", label: "Smoky Speakeasy", icon: "🥃", premium: false },
+    { id: "balatro", label: "Arcade CRT Neon", icon: "✨", premium: false },
   ];
 
   const LAYOUT_MODES = [

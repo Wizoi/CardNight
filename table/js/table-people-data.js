@@ -23,6 +23,7 @@
 const TABLE_PEOPLE = [
   {
     id: "diplomat--he-him",
+    premium: false,
     archetypeId: "diplomat",
     archetypeLabel: "The Diplomat",
     name: "Nico Salvaggio",
@@ -162,6 +163,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "diplomat--she-her",
+    premium: false,
     archetypeId: "diplomat",
     archetypeLabel: "The Diplomat",
     name: "Priya Anand",
@@ -299,6 +301,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "diplomat--they-them",
+    premium: false,
     archetypeId: "diplomat",
     archetypeLabel: "The Diplomat",
     name: "Ezra Reyes",
@@ -437,6 +440,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "fortress--he-him",
+    premium: false,
     archetypeId: "fortress",
     archetypeLabel: "The Fortress",
     name: "Desmond Achebe",
@@ -575,6 +579,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "fortress--she-her",
+    premium: false,
     archetypeId: "fortress",
     archetypeLabel: "The Fortress",
     name: "Ingrid Solberg",
@@ -712,6 +717,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "fortress--they-them",
+    premium: false,
     archetypeId: "fortress",
     archetypeLabel: "The Fortress",
     name: "Kai Osei-Larsen",
@@ -849,6 +855,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "live-wire--he-him",
+    premium: false,
     archetypeId: "live-wire",
     archetypeLabel: "The Live Wire",
     name: "Marcus \"Sparks\" Okafor",
@@ -983,6 +990,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "live-wire--she-her",
+    premium: false,
     archetypeId: "live-wire",
     archetypeLabel: "The Live Wire",
     name: "Marisol \"Mari\" Domingo",
@@ -1117,6 +1125,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "live-wire--they-them",
+    premium: false,
     archetypeId: "live-wire",
     archetypeLabel: "The Live Wire",
     name: "Kai Lindqvist",
@@ -1249,6 +1258,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "statistician--he-him",
+    premium: false,
     archetypeId: "statistician",
     archetypeLabel: "The Statistician",
     name: "Kwabena \"Bena\" Osei-Mensah",
@@ -1383,6 +1393,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "statistician--she-her",
+    premium: false,
     archetypeId: "statistician",
     archetypeLabel: "The Statistician",
     name: "Ananya Ramanathan",
@@ -1516,6 +1527,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "statistician--they-them",
+    premium: false,
     archetypeId: "statistician",
     archetypeLabel: "The Statistician",
     name: "Jules Bautista",
@@ -1649,6 +1661,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "steady-hand--he-him",
+    premium: false,
     archetypeId: "steady-hand",
     archetypeLabel: "The Steady Hand",
     name: "Chidi Eze",
@@ -1782,6 +1795,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "steady-hand--she-her",
+    premium: false,
     archetypeId: "steady-hand",
     archetypeLabel: "The Steady Hand",
     name: "Linh Pham",
@@ -1915,6 +1929,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "steady-hand--they-them",
+    premium: false,
     archetypeId: "steady-hand",
     archetypeLabel: "The Steady Hand",
     name: "Robin Kaminsky",
@@ -2047,6 +2062,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "storm--he-him",
+    premium: false,
     archetypeId: "storm",
     archetypeLabel: "The Storm",
     name: "Trey Boudreaux",
@@ -2183,6 +2199,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "storm--she-her",
+    premium: false,
     archetypeId: "storm",
     archetypeLabel: "The Storm",
     name: "Camila Vega",
@@ -2319,6 +2336,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "storm--they-them",
+    premium: false,
     archetypeId: "storm",
     archetypeLabel: "The Storm",
     name: "Rowan Desai",
@@ -2455,6 +2473,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "streak-chaser--he-him",
+    premium: false,
     archetypeId: "streak-chaser",
     archetypeLabel: "The Streak Chaser",
     name: "Kofi Boateng",
@@ -2592,6 +2611,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "streak-chaser--she-her",
+    premium: false,
     archetypeId: "streak-chaser",
     archetypeLabel: "The Streak Chaser",
     name: "Mai Nguyen",
@@ -2727,6 +2747,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "streak-chaser--they-them",
+    premium: false,
     archetypeId: "streak-chaser",
     archetypeLabel: "The Streak Chaser",
     name: "Sasha Lindqvist",
@@ -2862,6 +2883,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "subversive--he-him",
+    premium: false,
     archetypeId: "subversive",
     archetypeLabel: "The Subversive",
     name: "Julien Baptiste",
@@ -2994,6 +3016,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "subversive--she-her",
+    premium: false,
     archetypeId: "subversive",
     archetypeLabel: "The Subversive",
     name: "Renata Quintana",
@@ -3127,6 +3150,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "subversive--they-them",
+    premium: false,
     archetypeId: "subversive",
     archetypeLabel: "The Subversive",
     name: "Remy Adeyemi-Karlsson",
@@ -3260,6 +3284,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "the-calculator--he-him",
+    premium: false,
     archetypeId: "the-calculator",
     archetypeLabel: "The Calculator",
     name: "Femi Adeyemi",
@@ -3399,6 +3424,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "the-calculator--she-her",
+    premium: false,
     archetypeId: "the-calculator",
     archetypeLabel: "The Calculator",
     name: "Meera Raman",
@@ -3537,6 +3563,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "the-calculator--they-them",
+    premium: false,
     archetypeId: "the-calculator",
     archetypeLabel: "The Calculator",
     name: "Wren Berglund",
@@ -3674,6 +3701,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "wall--he-him",
+    premium: false,
     archetypeId: "wall",
     archetypeLabel: "The Wall",
     name: "Emeka Nwosu",
@@ -3812,6 +3840,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "wall--she-her",
+    premium: false,
     archetypeId: "wall",
     archetypeLabel: "The Wall",
     name: "Divya Raghunathan",
@@ -3949,6 +3978,7 @@ const TABLE_PEOPLE = [
   },
   {
     id: "wall--they-them",
+    premium: false,
     archetypeId: "wall",
     archetypeLabel: "The Wall",
     name: "Kit Marchetti",
