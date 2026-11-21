@@ -21,6 +21,8 @@ Keeping that boundary intact means a future Capacitor/native port only ever need
 
 ## Adding a new test
 
+If an assertion depends on an exact count or shape of real data (an array length, a field's presence), check it directly (`node -e '...'`) before writing the check — don't guess and let the test tell you later. (Caught in the retro after `bundle-smoke.test.js` first shipped with `GAMES.length >= 27` when the real count is 24.)
+
 1. `const { load } = require("./harness");` to load whichever `table/js/*.js` files the code under test needs, in dependency order (same order their `<script>` tags appear in `table/index.html`).
 2. `const { makeChecker } = require("./check");` for `check(desc, cond)`.
 3. Export `{ run }` where `run()` returns the failure count, and keep the `if (require.main === module) process.exit(run());` tail so the file is still runnable standalone.
