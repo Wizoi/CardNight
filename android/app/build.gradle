@@ -1,5 +1,17 @@
 apply plugin: 'com.android.application'
 
+// Release signing -- loaded from android/keystore.properties, a local,
+// gitignored file (never committed; see android/README.md's "Release
+// signing key" section). The release build simply has no signingConfig at
+// all when this file is absent, e.g. a fresh clone that hasn't generated
+// a keystore yet, rather than failing the build.
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+def hasReleaseSigning = keystorePropertiesFile.exists()
+if (hasReleaseSigning) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.luckofthedeal.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +19,8 @@ android {
         applicationId "com.luckofthedeal.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "0.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,11 +28,42 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile rootProject.file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
+    }
+}
+
+// Automated Play Console uploads (Android roadmap step 9). Credentials come
+// from android/play-service-account.json -- a local, gitignored Google
+// Cloud service-account key (see android/README.md). This block only wires
+// up configuration; it does not upload anything on its own. Run
+// `./gradlew.bat publishBundle` (or `publishReleaseBundle`) to actually
+// upload the current versionCode to the configured track -- a real,
+// user-facing action the user should trigger explicitly, not something
+// run automatically as part of an ordinary build.
+if (rootProject.file("play-service-account.json").exists()) {
+    apply plugin: 'com.github.triplet.play'
+
+    play {
+        serviceAccountCredentials.set(rootProject.file("play-service-account.json"))
+        track.set("internal")
+        defaultToAppBundles.set(true)
     }
 }
 

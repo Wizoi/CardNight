@@ -32,6 +32,8 @@ captures/
 local.properties
 *.keystore
 *.jks
+android/keystore/
+android/keystore.properties
 play-service-account.json
 *.apk
 *.aab

@@ -34,12 +34,39 @@ this. The pipeline is:
 rebuild `table/dist/`, then `npx cap sync android` to refresh the copy
 inside the native project.
 
-## No signing key for a RELEASE build -- still an open, user-owned decision
+## Release signing key -- generated 2026-11-24, at the user's explicit go-ahead
 
-Same boundary as before, unchanged by the TWA->Capacitor switch: generating
-a release signing keystore is this app's permanent upload identity once
-ever used, so it's the user's own call to make directly, not something
-scripted around. `.gitignore` already blocks `*.keystore`/`*.jks`.
+Generating a release signing keystore is this app's permanent upload
+identity once ever used -- the password can never be recovered or reset if
+lost, and losing it means losing the ability to ever update the app again
+under that identity. This stayed the user's own call, and was only
+generated after they explicitly said go (see this session's own
+AskUserQuestion exchange).
+
+**How it was generated, so the mechanism is auditable without exposing the
+secret**: a single bash invocation generated a random password with
+`openssl rand`, used it immediately within that same script to run
+`keytool -genkeypair` (via the Android Studio JBR's own `keytool.exe`), then
+wrote the password into a local credentials file -- the password was never
+echoed to this session's own output at any point, only "DONE" plus a file
+listing.
+
+- `android/keystore/release.keystore` -- the actual keystore, alias
+  `cardnight-release`, RSA 2048, valid 30 years (10950 days).
+- `android/keystore/release-credentials.txt` -- the alias + both passwords
+  (store and key password are the same value), plus a warning not to lose
+  it. **This is a plain `.txt` file, not a `.keystore`/`.jks` file** -- the
+  original `.gitignore` patterns didn't cover it at all, a real gap caught
+  and fixed the same session by adding `android/keystore/` itself as its
+  own gitignore line (now covers both files by directory, not just by
+  extension).
+
+**Backed up outside this repo, 2026-11-24**: the user copied both files to
+their own OneDrive-synced folder (a "Family Specific/.../App Keys" area
+already used for other apps' signing material) -- confirmed present there
+at the same byte sizes as the originals. This project still has no
+automated backup step; the OneDrive copy is the only backup, made by the
+user directly.
 
 **A local DEBUG build is a different story and was attempted directly**:
 Android's debug build uses an auto-generated, universal debug keystore
@@ -111,3 +138,34 @@ node tools/build-table.js
 npx cap add android
 npx @capacitor/assets generate --android --iconBackgroundColor '#082a20' --iconBackgroundColorDark '#082a20' --splashBackgroundColor '#082a20' --splashBackgroundColorDark '#082a20'
 ```
+
+## Automated Play Console publishing (Android roadmap step 9, wired up 2026-11-24)
+
+The `com.github.triplet.play` ("Gradle Play Publisher") plugin is configured
+in `app/build.gradle`, gated on `android/play-service-account.json`
+existing (a local, gitignored Google Cloud service-account key -- see the
+Play Console "API access" / "Users and permissions" screens for how to
+generate one; the exact menu path has moved around in recent Play Console
+versions). It targets the `internal` testing track and defaults to app
+bundles.
+
+**`./gradlew.bat publishReleaseBundle`** builds (if needed) and uploads the
+current `versionCode` to that track -- a real, user-facing action, not run
+automatically as part of an ordinary build. First successful upload:
+2026-11-24, versionCode 1. A 403 Forbidden on the first attempt was just a
+permissions-propagation issue (the service account's Play Console access
+grant hadn't taken effect yet) -- retried clean once access was confirmed.
+
+**Version numbering**: `versionCode` (the hidden integer Play orders
+uploads by) and `versionName` (the user-visible label) are independent --
+Play never parses `versionName`, so it can read however makes sense for
+where the app actually is. Bumped to `versionName "0.1"` / `versionCode 2`
+the same day, to honestly reflect "still in internal testing," not a
+finished `1.0`. `versionCode` still has to strictly increase on every
+upload regardless of what `versionName` says.
+
+**Still manual, not automatable through this plugin**: adding testers to
+the internal track. That's a Play Console UI action (Testing -> Internal
+testing -> Testers tab -> create an email list -> add tester emails ->
+share the generated opt-in link) with no equivalent exposed here -- done
+directly by the user, not scripted.

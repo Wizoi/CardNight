@@ -15,6 +15,16 @@ buildscript {
     }
 }
 
+// Automated Play Console uploads (Android roadmap step 9) -- see
+// app/build.gradle's `play { ... }` block and android/README.md. Declared
+// via the plugins{} block (not buildscript classpath) because this plugin
+// is only published as a Gradle Plugin Portal marker artifact, which that
+// block resolves correctly; `apply false` here since it's actually applied
+// per-module, inside app/build.gradle.
+plugins {
+    id 'com.github.triplet.play' version '3.13.0' apply false
+}
+
 apply from: "variables.gradle"
 
 allprojects {
