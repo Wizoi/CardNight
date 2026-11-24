@@ -20,15 +20,20 @@ const Session333 = (function () {
     let carriedPotChips = config.carriedPotChips || 0;
     let state = null;
     let running = false;
+    let lastQuip = null;
+    let quipSeq = 0;
+    const QUIP_CHANCE = 0.35;
 
     // Full mid-hand resume (2026-08-29) -- see the identical note in
-    // session-stud.js. No `pending` and no quips here; calling
-    // processLoop() unconditionally is safe even mid-reveal (its own while
-    // condition is `state.status === "betting"`, a no-op otherwise).
+    // session-stud.js. No `pending` here; calling processLoop()
+    // unconditionally is safe even mid-reveal (its own while condition is
+    // `state.status === "betting"`, a no-op otherwise).
     if (config.resumeFrom) {
       state = config.resumeFrom.state;
       handNumber = config.resumeFrom.extra.handNumber;
       carriedPotChips = config.resumeFrom.extra.carriedPotChips;
+      lastQuip = config.resumeFrom.extra.lastQuip;
+      quipSeq = config.resumeFrom.extra.quipSeq;
       if (state) {
         state.opponentStats = opponentStats;
         if (state.status !== "complete") processLoop();
@@ -36,7 +41,19 @@ const Session333 = (function () {
     }
 
     function snapshot() {
-      return { state, pending: null, extra: { handNumber, carriedPotChips } };
+      return { state, pending: null, extra: { handNumber, carriedPotChips, lastQuip, quipSeq } };
+    }
+
+    // 2026-11-23: this game previously had no quip wiring at all (the
+    // design review's finding #2 -- "3-33... none at all"), even though it
+    // has a full fold/call/raise betting round after every one of its 5
+    // reveals. Same shared selection logic as every other family now.
+    function maybeQuip(player, moment) {
+      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE);
+      if (!picked) return;
+      quipSeq += 1;
+      lastQuip = { id: quipSeq, playerId: player.id, text: picked.text };
+      if (state) state.log.push(`${picked.personName}: "${picked.text}"`);
     }
 
     function sleep(ms) {
@@ -111,6 +128,8 @@ const Session333 = (function () {
           const decision = Rules333AIProfiles.decideBet(bettor, state, profile);
           Rules333.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
           onBettingAction(bettorId, decision.action);
+          if (decision.action === "raise") maybeQuip(bettor, "raise");
+          else if (decision.action === "fold") maybeQuip(bettor, "fold");
           notify();
         }
       } finally {
@@ -142,11 +161,12 @@ const Session333 = (function () {
     }
 
     function finalizeComplete() {
+      if (state.winnerId) maybeQuip(Rules333.getPlayer(state, state.winnerId), "win");
       onHandComplete({ winnerId: state.winnerId, rainedOut: false, potChips: 0 });
     }
 
     function getViewState() {
-      return { gameId: "threeThirtyThree", players, dealerIndex, handNumber, state, pending: null, lastQuip: null };
+      return { gameId: "threeThirtyThree", players, dealerIndex, handNumber, state, pending: null, lastQuip };
     }
 
     return {

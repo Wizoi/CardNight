@@ -22,7 +22,7 @@ const { makeChecker } = require("./check");
 
 const JS_DIR = path.join(__dirname, "..", "js");
 
-const LOGIC_LAYER_PREFIXES = ["rules-", "session-", "ai-"];
+const LOGIC_LAYER_PREFIXES = ["rules-", "session-", "ai-", "table-quips"];
 
 function stripComments(src) {
   return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");

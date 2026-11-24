@@ -71,8 +71,23 @@ function run() {
     ];
     const state = Rules333.createHandState(players, 0, settings, 0);
     // Deliberately avoid Ultima/matching-rank edge cases so every reveal
-    // just opens a fresh betting round as expected.
+    // just opens a fresh betting round as expected. Real bug this test
+    // itself used to have (flaky, not caught until a later session):
+    // giving all 3 players the IDENTICAL K/Q/J hand meant any of those 3
+    // ranks showing up as a REAL random community reveal emptied all 3
+    // hands simultaneously, ending the hand outright before reveal 5 --
+    // intermittently, since the deal's own real shuffle decided whether
+    // that happened. Fixed by also forcing the deck's next 5 cards to
+    // ranks none of the 3 hands hold at all, making every reveal
+    // deterministic instead of leaving it to chance.
     players.forEach((p) => (p.hand = [{ rank: "K", suit: "S" }, { rank: "Q", suit: "H" }, { rank: "J", suit: "D" }]));
+    state.deck.unshift(
+      { rank: "2", suit: "C" },
+      { rank: "3", suit: "C" },
+      { rank: "4", suit: "C" },
+      { rank: "5", suit: "C" },
+      { rank: "6", suit: "C" }
+    );
 
     function closeBettingRound() {
       check("a betting round is open", state.status === "betting" && !!state.bettingRound);

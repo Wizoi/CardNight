@@ -44,7 +44,7 @@ function buildSandbox() {
     "rules-holdem.js", "game-configs-holdem.js",
     "rules-press-your-luck.js", "game-configs-press-your-luck.js",
     "rules-acey-ducey.js", "ai-acey-ducey-profiles.js",
-    "game-registry.js", "history-store.js", "table-people-data.js", "table-people.js",
+    "game-registry.js", "history-store.js", "table-people-data.js", "table-people.js", "table-quips.js",
   ]);
   // session-holdem.js/session-acey-ducey.js are the two real game loops
   // this test actually drives (a hold'em hand leaking into a game with

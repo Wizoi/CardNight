@@ -46,19 +46,16 @@ const SessionGameOfLife = (function () {
       return { state, pending, extra: { handNumber, carriedPotChips, lastQuip, quipSeq } };
     }
 
+    // Selection logic lives in table-quips.js (2026-11-23, shared across
+    // every session file instead of copy-pasted -- see its own header
+    // comment). This wrapper just owns this session's own resumable
+    // quipSeq/lastQuip/state.log bookkeeping.
     function maybeQuip(player, moment) {
-      if (player.isHuman || !player.tablePersonId) return;
-      if (Math.random() > QUIP_CHANCE) return;
-      const person = TablePeople.getById(player.tablePersonId);
-      if (!person || !person.phrasesByMoment) return;
-      const pool = person.phrasesByMoment[moment];
-      const fallback = person.phrasesByMoment.general;
-      const source = pool && pool.length ? pool : fallback;
-      if (!source || !source.length) return;
+      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE);
+      if (!picked) return;
       quipSeq += 1;
-      const text = source[Math.floor(Math.random() * source.length)];
-      lastQuip = { id: quipSeq, playerId: player.id, text };
-      if (state) state.log.push(`${person.name}: "${text}"`);
+      lastQuip = { id: quipSeq, playerId: player.id, text: picked.text };
+      if (state) state.log.push(`${picked.personName}: "${picked.text}"`);
     }
 
     function sleep(ms) {
@@ -153,6 +150,8 @@ const SessionGameOfLife = (function () {
           const decision = GameOfLifeAIProfiles.decideBet(bettor, state, profile);
           RulesGameOfLife.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
           onBettingAction(bettorId, decision.action);
+          if (decision.action === "raise") maybeQuip(bettor, "raise");
+          else if (decision.action === "fold") maybeQuip(bettor, "fold");
           notify();
         }
       } finally {
