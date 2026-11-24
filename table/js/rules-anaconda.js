@@ -4,8 +4,10 @@
 // down cards up front to everyone at once; discard 3 (passed as a set to
 // the left neighbor) and bet; discard 2 more (down to 5, no passing) and
 // bet; then "roll your own" -- reveal all 5 remaining cards, simultaneously
-// across the table, one round at a time with a bet after each, until
-// showdown.
+// across the table, one round at a time, with a bet after each of the
+// first 4 (corrected 2026-11-23, see resolveRevealRound: betting after the
+// 5th reveal has nothing left to bet on, since by then every hand at the
+// table is already fully face up) -- then straight to showdown.
 //
 // Judgment calls:
 // - This game needs the full 7 cards up front and doesn't scale down by
@@ -251,11 +253,10 @@ const RulesAnaconda = (function () {
     } else if (state.status === "betting2") {
       state.status = "revealing";
     } else if (state.status === "revealingBet") {
-      if (state.revealsDone >= 5) {
-        resolveShowdown(state);
-      } else {
-        state.status = "revealing";
-      }
+      // Never reached after the 5th reveal anymore -- resolveRevealRound
+      // now routes straight to resolveShowdown at that point instead of
+      // ever opening a 5th betting round. See the comment there.
+      state.status = "revealing";
     }
   }
 
@@ -270,6 +271,20 @@ const RulesAnaconda = (function () {
     }
     state.revealsDone += 1;
     state.log.push(`Round ${state.revealsDone}: everyone reveals their next card.`);
+    // Real design gap, raised directly by the user (2026-11-23): a betting
+    // round after the 5th reveal has nothing left to bet ON -- unlike
+    // regular stud, "roll your own" reveals a player's OWN entire hand
+    // card by card, so once all 5 are face up every hand at the table is
+    // fully known to everyone (and this engine's hi-lo split is fully
+    // automatic, with no secret declare that could still be hidden at that
+    // point either). Every earlier reveal still opens a real betting round
+    // (genuine hidden information: nobody yet knows the rest of anyone's
+    // hand) -- only the 5th, after which nothing remains hidden, skips
+    // straight to showdown instead.
+    if (state.revealsDone >= 5) {
+      resolveShowdown(state);
+      return;
+    }
     state.status = "revealingBet";
     startBettingRound(state);
   }

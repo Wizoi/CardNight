@@ -163,7 +163,7 @@ const GAMES = [
     ],
     betting: `Ante 50¢, 25¢ raise increment, $2 max bet per person (house default).`,
     setup: `Deal 7 cards face down to each player — the full 7 up front, before any discarding.`,
-    gameplay: `Round 1: discard 3 unwanted cards face down, pass the set to the next active player on your left; bet. Round 2: discard 2 more from what you're now holding, then arrange your remaining 5 in whatever order you want, face down; bet. Then turn over the top card of your stack one at a time — a betting round after each — until all 5 are face up.`,
+    gameplay: `Round 1: discard 3 unwanted cards face down, pass the set to the next active player on your left; bet. Round 2: discard 2 more from what you're now holding, then arrange your remaining 5 in whatever order you want, face down; bet. Then turn over the top card of your stack one at a time — a betting round after each of the first 4 — until all 5 are face up. No bet after the 5th/last card: by then every hand is already fully revealed, so there's nothing left hidden to bet on.`,
     win: `Best 5-card hand wins at showdown. If hi-lo is on, best qualifying low splits the pot with the best high hand instead.`,
     keyDecisions: [
       "Which 3 cards to discard and pass first, then which 2 more to discard",
@@ -174,7 +174,7 @@ const GAMES = [
       "You're building your hand from cards passed TO you, not just cards you keep — check what you're handed each round",
       "Your reveal order is locked in once you stack your 5 cards face down — no changing it later",
     ],
-    script: `Seven cards to start. First round, ditch 3 you don't want and pass them to your left — everyone does this at once. Bet. Second round, ditch 2 more from what you're holding, then stack your last 5 in whatever order you want, face down. Bet. Now flip your stack one card at a time, betting after each, until all 5 are up. Best hand wins.`,
+    script: `Seven cards to start. First round, ditch 3 you don't want and pass them to your left — everyone does this at once. Bet. Second round, ditch 2 more from what you're holding, then stack your last 5 in whatever order you want, face down. Bet. Now flip your stack one card at a time, betting after each of the first 4 — once the 5th and last card is up, everyone's whole hand is already shown, so it's straight to showdown instead. Best hand wins.`,
   },
   {
     id: "blind-mans-bluff",

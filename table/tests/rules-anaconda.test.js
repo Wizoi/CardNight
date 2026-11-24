@@ -59,6 +59,28 @@ function run() {
   check("the high-side log line includes the real description", state.log[state.log.length - 1].includes(state.bestHighDescribed));
   check("the high-side log line also includes the low description", state.log[state.log.length - 1].includes(state.bestLowDescribed));
 
+  // Real design gap, raised directly by the user (2026-11-23): a betting
+  // round after the 5th/last "roll your own" reveal has nothing left to
+  // bet on, since every hand at the table is already fully face up by
+  // then (and this engine's hi-lo split is fully automatic, with no
+  // secret declare that could still be hidden). Reveals 1-4 still each
+  // open a real betting round; only the 5th skips straight to showdown.
+  {
+    const revealState = RulesAnaconda.createHandState(players, 0, settings, 0, 0, false);
+    revealState.status = "revealing";
+    for (let round = 1; round <= 3; round++) {
+      RulesAnaconda.resolveRevealRound(revealState);
+      check(`reveal ${round}/5 opens a betting round`, revealState.status === "revealingBet" && !!revealState.bettingRound);
+      revealState.status = "revealing"; // simulate the round closing (skip the actual bet calls, not the point of this check)
+    }
+    RulesAnaconda.resolveRevealRound(revealState); // reveal 4/5
+    check("reveal 4/5 still opens a betting round", revealState.status === "revealingBet" && !!revealState.bettingRound);
+    revealState.status = "revealing";
+    RulesAnaconda.resolveRevealRound(revealState); // reveal 5/5
+    check("reveal 5/5 (the last) skips betting and goes straight to showdown", revealState.status === "complete" && revealState.bettingRound === null);
+    check("reveal 5/5 actually resolved a real winner, not a no-op", Array.isArray(revealState.winnerIds) && revealState.winnerIds.length > 0);
+  }
+
   return summary("rules-anaconda");
 }
 
