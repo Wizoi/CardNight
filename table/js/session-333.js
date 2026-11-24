@@ -14,6 +14,7 @@ const Session333 = (function () {
     const onHandComplete = config.onHandComplete || (() => {});
     const onBettingAction = config.onBettingAction || (() => {});
     const opponentStats = config.opponentStats || null;
+    const recentResults = config.recentResults || null;
 
     const dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
@@ -36,6 +37,7 @@ const Session333 = (function () {
       quipSeq = config.resumeFrom.extra.quipSeq;
       if (state) {
         state.opponentStats = opponentStats;
+        state.recentResults = recentResults;
         if (state.status !== "complete") processLoop();
       }
     }
@@ -98,6 +100,7 @@ const Session333 = (function () {
       handNumber += 1;
       state = Rules333.createHandState(players, dealerIndex, settings, carriedPotChips);
       state.opponentStats = opponentStats;
+      state.recentResults = recentResults;
       carriedPotChips = 0;
       notify();
       if (state.status === "complete") {
@@ -124,7 +127,7 @@ const Session333 = (function () {
             return;
           }
           await sleep(BET_DELAY_MS);
-          const profile = AIProfiles.profileFor(bettor.profileName);
+          const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
           const decision = Rules333AIProfiles.decideBet(bettor, state, profile);
           Rules333.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
           onBettingAction(bettorId, decision.action);

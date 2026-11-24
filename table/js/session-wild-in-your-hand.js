@@ -16,6 +16,7 @@ const SessionWildInYourHand = (function () {
     const gameConfig = config.gameConfig;
     const onUpdate = config.onUpdate || (() => {});
     const onHandComplete = config.onHandComplete || (() => {});
+    const recentResults = config.recentResults || null;
 
     const dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
@@ -43,6 +44,7 @@ const SessionWildInYourHand = (function () {
       // JSON.stringify -- re-attaching the real, never-serialized config
       // object here is cheap insurance against that regardless.
       if (state) state.gameConfig = gameConfig;
+      if (state) state.recentResults = recentResults;
       if (state && state.status !== "complete" && !pending) {
         if (state.status === "passing") processPassingLoop();
         else if (state.status === "rowBetting") processRowBettingLoop();
@@ -108,6 +110,7 @@ const SessionWildInYourHand = (function () {
       topUpAIWalletsIfNeeded();
       handNumber += 1;
       state = WildInYourHandRules.createRoundState(players, settings, gameConfig, carriedPotChips);
+      state.recentResults = recentResults;
       carriedPotChips = 0;
       pending = null;
       passSelectionSoFar = null;
@@ -212,7 +215,7 @@ const SessionWildInYourHand = (function () {
           return;
         }
         await sleep(DECIDE_DELAY_MS);
-        const profile = AIProfiles.profileFor(player.profileName);
+        const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
         const payingIn = WildInYourHandAIProfiles.decideRowBet(player, state, profile);
         if (!payingIn) maybeQuip(player, "fold");
         WildInYourHandRules.submitRowDecision(state, playerId, payingIn);
@@ -256,7 +259,7 @@ const SessionWildInYourHand = (function () {
           return;
         }
         await sleep(DECIDE_DELAY_MS);
-        const profile = AIProfiles.profileFor(p.profileName);
+        const profile = AIProfiles.profileForState(p.profileName, state.recentResults && state.recentResults[p.id]);
         const stayingIn = WildInYourHandAIProfiles.decideDeclare(p, state, profile);
         WildInYourHandRules.submitStayDecision(state, p.id, stayingIn);
         notify();

@@ -29,6 +29,7 @@ const SessionStud = (function () {
     const onHandComplete = config.onHandComplete || (() => {});
     const onBettingAction = config.onBettingAction || (() => {});
     const opponentStats = config.opponentStats || null;
+    const recentResults = config.recentResults || null;
 
     let dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
@@ -65,6 +66,7 @@ const SessionStud = (function () {
       quipSeq = config.resumeFrom.extra.quipSeq;
       if (state) {
         state.opponentStats = opponentStats;
+        state.recentResults = recentResults;
         state.gameConfig = gameConfig;
         if (state.status !== "complete" && !pending) processTurnLoop();
       }
@@ -132,6 +134,7 @@ const SessionStud = (function () {
       handNumber += 1;
       state = StudRules.createHandState(players, dealerIndex, settings, handNumber, gameConfig, gameMemory, carriedPotChips);
       state.opponentStats = opponentStats;
+      state.recentResults = recentResults;
       carriedPotChips = 0;
       pending = null;
       notify();
@@ -187,7 +190,7 @@ const SessionStud = (function () {
               break;
             }
             await sleep(BET_DELAY_MS);
-            const profile = AIProfiles.profileFor(bettor.profileName);
+            const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = StudAIProfiles.decideBet(bettor, state, profile);
             StudRules.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
             onBettingAction(bettorId, decision.action);
@@ -228,7 +231,7 @@ const SessionStud = (function () {
               notify();
               break;
             }
-            const profile = AIProfiles.profileFor(player.profileName);
+            const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
             await sleep(DECISION_DELAY_MS);
             const decision = StudAIProfiles.decideEnterpriseChoice(player, state, profile);
             resolveEnterpriseDecision(dealt.playerId, decision.action, decision.position);
@@ -246,7 +249,7 @@ const SessionStud = (function () {
               notify();
               break;
             }
-            const profile = AIProfiles.profileFor(player.profileName);
+            const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
             const willBuy = StudAIProfiles.decideBuyOnDeal(player, dealt.card, profile);
             await sleep(DECISION_DELAY_MS);
             resolveBuyDecision(dealt.needsDecision, dealt.playerId, willBuy);

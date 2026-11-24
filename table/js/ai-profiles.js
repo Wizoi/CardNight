@@ -23,17 +23,16 @@
 // archetype's numbers are pulled toward its OVERVIEW.md psychological sketch
 // (e.g. The Fortress's loss-aversion means the tightest gutsMinCategoryToStay
 // and pressYourLuckStandThreshold in the roster) using the same knobs the
-// original three already established the range for. Two archetypes are
-// explicitly approximated rather than fully modeled: The Storm's tilt spiral
-// and The Streak Chaser's hot-hand/gambler's-fallacy swings are genuinely
-// STATE-DEPENDENT (they change behavior after a win/loss streak within a
-// sitting) -- modeling that for real would mean threading recent-result
-// tracking through every session-*.js, a materially bigger feature than a
-// static profile tuning pass. Both get a fixed baseline approximating their
-// average tendency instead (Storm: confident/sharp; Streak Chaser: loosely
-// aggressive, since chasing both hot and cold streaks nets out to "plays and
-// bets more than a disciplined player would") -- a known simplification, not
-// a bug, flagged here so it isn't mistaken for the real thing later.
+// original three already established the range for.
+//
+// The Storm's tilt spiral and The Streak Chaser's hot-hand/gambler's-
+// fallacy swings are genuinely STATE-DEPENDENT (they change behavior after
+// a win/loss streak within a sitting) -- PROFILES below still holds each
+// one's plain baseline (Storm: confident/sharp; Streak Chaser: loosely
+// aggressive), but see profileForState() further down, which layers a real,
+// recent-results-driven overlay on top (2026-11-23, design review finding
+// #3) -- table-night.js's recentResultsByPlayerId is what makes this
+// state available everywhere profileFor() already was.
 const AIProfiles = (function () {
   const PROFILES = {
     cautious: {
@@ -200,14 +199,14 @@ const AIProfiles = (function () {
       blindBluffRaiseBelowRankValue: 5,
     },
 
-    // Approximated (see the file-level note above): The Storm's real trait is
-    // a state-dependent tilt spiral after a bad beat, not modeled here.
-    // Baseline is its "even" state -- skilled and confident, a hair sharper
-    // and more willing to press than Balanced, reflecting real skill rather
-    // than recklessness.
+    // Real, state-dependent tilt spiral after a bad beat now modeled via
+    // profileForState() (2026-11-23) -- this is just the baseline/"even"
+    // state the overlay applies on top of: skilled and confident, a hair
+    // sharper and more willing to press than Balanced, reflecting real
+    // skill rather than recklessness.
     storm: {
       name: "storm",
-      label: "Sharp (untilted)",
+      label: "Tilts After Bad Beats",
       // See the-calculator's gameCategoryAffinity comment for the general
       // shape. The Storm (skilled but combustible, spirals after perceived
       // bad luck) gravitates to the most visibly dramatic, swing-heavy
@@ -355,14 +354,15 @@ const AIProfiles = (function () {
       blindBluffRaiseBelowRankValue: 10,
     },
 
-    // Approximated (see the file-level note above): the hot-hand/gambler's-
-    // fallacy swings (bets bigger after wins, chases losses expecting a
-    // correction) are genuinely state-dependent and not modeled here.
-    // Baseline nets those two opposing pulls out to "plays and bets more
-    // than a disciplined player would, most of the time."
+    // Real, state-dependent hot-hand/gambler's-fallacy swings (bets bigger
+    // after wins, chases losses expecting a correction) now modeled via
+    // profileForState() (2026-11-23) -- this baseline is the "neither hot
+    // nor due" state the overlay applies on top of, netting those two
+    // opposing pulls out to "plays and bets more than a disciplined
+    // player would, most of the time."
     "streak-chaser": {
       name: "streak-chaser",
-      label: "Streaky (avg.)",
+      label: "Rides Streaks",
       // See the-calculator's gameCategoryAffinity comment for the general
       // shape. The Streak Chaser (hot-hand/gambler's-fallacy, believes in
       // momentum and rituals) favors games that resolve fast and often, so
@@ -485,6 +485,60 @@ const AIProfiles = (function () {
 
   function profileFor(name) {
     return PROFILES[name] || PROFILES.balanced;
+  }
+
+  // State-dependent profile overlays (2026-11-23, design review finding
+  // #3). The Storm and Streak Chaser were previously fixed baselines
+  // approximating their "average" tendency (see the file-level comment's
+  // history) -- this makes their actual defining trait (oscillating after
+  // bad luck; believing in streaks) genuinely react to how THIS NIGHT has
+  // actually gone, via table-night.js's recentResultsByPlayerId (the last
+  // ~5 hands per player: won / lostAtShowdown / folded, plus net chips).
+  // Returns an ADJUSTED COPY -- the base profile object is never mutated,
+  // same as every other archetype's decision functions already treat the
+  // profile they're handed as plain, read-only data. `recentResults` may
+  // be null/undefined/empty (a player with no history yet, or a family
+  // that hasn't wired this through) and just falls back to the plain
+  // base profile, so this is always safe to call everywhere profileFor
+  // already was.
+  const STORM_TILT_HANDS = 3; // the tilt overlay's own trigger window: how many of the most recent hands count as "recently"
+  const STORM_SIGNIFICANT_LOSS_CHIPS = -4; // -$1.00 at the default 25-cent chip -- a judgment call (games.md doesn't define "significant"), not folding (folding costs little and isn't a bad beat)
+  const STREAK_WINDOW_HANDS = 5;
+  const STREAK_HOT_WIN_COUNT = 2; // 2+ wins in the window reads as "on a heater"
+  const STREAK_DUE_LOSS_COUNT = 3; // 3+ non-wins (folded or lost at showdown) reads as "due for a correction"
+
+  function profileForState(name, recentResults) {
+    const base = profileFor(name);
+    if (!recentResults || !recentResults.length) return base;
+
+    if (name === "storm") {
+      const recentWindow = recentResults.slice(-STORM_TILT_HANDS);
+      const tilted = recentWindow.some((r) => r.result === "lostAtShowdown" && r.netChips <= STORM_SIGNIFICANT_LOSS_CHIPS);
+      if (!tilted) return base;
+      return {
+        ...base,
+        chancePerCard: base.chancePerCard + 0.5,
+        raiseMinCategory: Math.max(HandEvaluator.CATEGORY.HIGH_CARD, base.raiseMinCategory - 1),
+        bluffFrequency: base.bluffFrequency * 2,
+        reRaiseChanceAdjustment: base.reRaiseChanceAdjustment + 0.3,
+        opponentAdaptSensitivity: 0,
+      };
+    }
+
+    if (name === "streak-chaser") {
+      const recentWindow = recentResults.slice(-STREAK_WINDOW_HANDS);
+      const wins = recentWindow.filter((r) => r.result === "won").length;
+      const nonWins = recentWindow.filter((r) => r.result !== "won").length;
+      if (wins >= STREAK_HOT_WIN_COUNT) {
+        return { ...base, raiseWhenLeading: true, bluffFrequency: base.bluffFrequency + 0.1, chancePerCard: base.chancePerCard + 0.3 };
+      }
+      if (nonWins >= STREAK_DUE_LOSS_COUNT) {
+        return { ...base, chancePerCard: base.chancePerCard + 0.3, reRaiseChanceAdjustment: base.reRaiseChanceAdjustment + 0.1 };
+      }
+      return base;
+    }
+
+    return base;
   }
 
   function decideBuy3(player) {
@@ -779,6 +833,7 @@ const AIProfiles = (function () {
     PROFILE_NAMES,
     randomProfileName,
     profileFor,
+    profileForState,
     decideBuy3,
     decideBuy9,
     decideBuy4,

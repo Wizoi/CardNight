@@ -18,6 +18,7 @@ const SessionMexicanSweat = (function () {
     const onHandComplete = config.onHandComplete || (() => {});
     const onBettingAction = config.onBettingAction || (() => {});
     const opponentStats = config.opponentStats || null;
+    const recentResults = config.recentResults || null;
 
     let dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
@@ -40,6 +41,7 @@ const SessionMexicanSweat = (function () {
       quipSeq = config.resumeFrom.extra.quipSeq;
       if (state) {
         state.opponentStats = opponentStats;
+        state.recentResults = recentResults;
         // Real bug, found live (2026-09-14) in a sibling family: JSON.
         // stringify silently drops any FUNCTION-valued gameConfig field
         // across the localStorage round-trip this resume snapshot goes
@@ -110,6 +112,7 @@ const SessionMexicanSweat = (function () {
       handNumber += 1;
       state = MexicanSweatRules.createHandState(players, dealerIndex, settings, handNumber, gameConfig);
       state.opponentStats = opponentStats;
+      state.recentResults = recentResults;
       notify();
       processTurnLoop();
     }
@@ -133,7 +136,7 @@ const SessionMexicanSweat = (function () {
               break;
             }
             await sleep(BET_DELAY_MS);
-            const profile = AIProfiles.profileFor(bettor.profileName);
+            const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = MexicanSweatAIProfiles.decideBet(bettor, state, profile);
             MexicanSweatRules.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
             onBettingAction(bettorId, decision.action);

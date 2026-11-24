@@ -17,6 +17,7 @@ const SessionGuts = (function () {
     const gameConfig = config.gameConfig;
     const onUpdate = config.onUpdate || (() => {});
     const onHandComplete = config.onHandComplete || (() => {});
+    const recentResults = config.recentResults || null;
 
     const dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
@@ -59,6 +60,7 @@ const SessionGuts = (function () {
       // deserialized one, which would crash the next AI/human decision that
       // calls one of those functions.
       if (state) state.gameConfig = gameConfig;
+      if (state) state.recentResults = recentResults;
       if (state && state.status !== "complete" && !pending) {
         if (exchangeQueue.length) processExchangeLoop();
         else if (state.status === "passing") processPassingLoop();
@@ -128,6 +130,7 @@ const SessionGuts = (function () {
       topUpAIWalletsIfNeeded();
       handNumber += 1;
       state = GutsRules.createRoundState(players, settings, gameConfig, carriedPotChips);
+      state.recentResults = recentResults;
       carriedPotChips = 0;
       pending = null;
       exchangeQueue = [];
@@ -253,7 +256,7 @@ const SessionGuts = (function () {
           return;
         }
         await sleep(DECIDE_DELAY_MS);
-        const profile = AIProfiles.profileFor(p.profileName);
+        const profile = AIProfiles.profileForState(p.profileName, state.recentResults && state.recentResults[p.id]);
         const stayingIn = GutsAIProfiles.decideStayIn(p, state, profile);
         GutsRules.submitStayDecision(state, p.id, stayingIn);
         // Guts has no raise and no fold in the usual sense -- "stay in"
@@ -310,7 +313,7 @@ const SessionGuts = (function () {
         }
         exchangeQueue.shift();
         await sleep(DECIDE_DELAY_MS);
-        const profile = AIProfiles.profileFor(player.profileName);
+        const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
         const cardIndex = GutsAIProfiles.decideBuyExchange(player, state, profile);
         if (cardIndex >= 0) GutsRules.buyExchange(state, playerId, cardIndex);
         notify();

@@ -16,6 +16,7 @@ const SessionAnaconda = (function () {
     const onHandComplete = config.onHandComplete || (() => {});
     const onBettingAction = config.onBettingAction || (() => {});
     const opponentStats = config.opponentStats || null;
+    const recentResults = config.recentResults || null;
 
     const dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
@@ -40,6 +41,7 @@ const SessionAnaconda = (function () {
       quipSeq = config.resumeFrom.extra.quipSeq;
       if (state) {
         state.opponentStats = opponentStats;
+        state.recentResults = recentResults;
         if (state.status !== "complete" && !pending) processLoop();
       }
     }
@@ -102,6 +104,7 @@ const SessionAnaconda = (function () {
       handNumber += 1;
       state = RulesAnaconda.createHandState(players, dealerIndex, settings, carriedPotChips, jokerCount, hiLo);
       state.opponentStats = opponentStats;
+      state.recentResults = recentResults;
       carriedPotChips = 0;
       pending = null;
       notify();
@@ -175,7 +178,7 @@ const SessionAnaconda = (function () {
             return;
           }
           await sleep(BET_DELAY_MS);
-          const profile = AIProfiles.profileFor(bettor.profileName);
+          const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
           const decision = AnacondaAIProfiles.decideBet(bettor, state, profile);
           RulesAnaconda.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
           onBettingAction(bettorId, decision.action);

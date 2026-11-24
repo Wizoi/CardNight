@@ -25,6 +25,7 @@ const SessionMidnightBaseball = (function () {
     const onHandComplete = config.onHandComplete || (() => {});
     const onBettingAction = config.onBettingAction || (() => {});
     const opponentStats = config.opponentStats || null;
+    const recentResults = config.recentResults || null;
 
     let dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
@@ -47,6 +48,7 @@ const SessionMidnightBaseball = (function () {
       quipSeq = config.resumeFrom.extra.quipSeq;
       if (state) {
         state.opponentStats = opponentStats;
+        state.recentResults = recentResults;
         if (state.status !== "complete" && !pending) processTurnLoop();
       }
     }
@@ -123,6 +125,7 @@ const SessionMidnightBaseball = (function () {
       handNumber += 1;
       state = MidnightBaseball.createHandState(players, dealerIndex, settings, handNumber);
       state.opponentStats = opponentStats;
+      state.recentResults = recentResults;
       pending = null;
       notify();
       processTurnLoop();
@@ -147,7 +150,7 @@ const SessionMidnightBaseball = (function () {
               break;
             }
             await sleep(BET_DELAY_MS);
-            const profile = AIProfiles.profileFor(bettor.profileName);
+            const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = AIProfiles.decideBet(bettor, state, profile);
             MidnightBaseball.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
             onBettingAction(bettorId, decision.action);
@@ -176,7 +179,7 @@ const SessionMidnightBaseball = (function () {
     }
 
     async function runOneAIRevealStep(player) {
-      const profile = AIProfiles.profileFor(player.profileName);
+      const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
       const cardIndex = AIProfiles.decideNextCardIndex(player);
       const { needsDecision } = MidnightBaseball.flipCard(state, player.id, cardIndex);
       notify();

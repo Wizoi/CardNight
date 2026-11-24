@@ -15,6 +15,7 @@ const SessionGameOfLife = (function () {
     const onHandComplete = config.onHandComplete || (() => {});
     const onBettingAction = config.onBettingAction || (() => {});
     const opponentStats = config.opponentStats || null;
+    const recentResults = config.recentResults || null;
 
     const dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
@@ -38,6 +39,7 @@ const SessionGameOfLife = (function () {
       quipSeq = config.resumeFrom.extra.quipSeq;
       if (state) {
         state.opponentStats = opponentStats;
+        state.recentResults = recentResults;
         if (state.status !== "complete" && !pending) processLoop();
       }
     }
@@ -100,6 +102,7 @@ const SessionGameOfLife = (function () {
       handNumber += 1;
       state = RulesGameOfLife.createHandState(players, dealerIndex, settings, carriedPotChips, jokerCount);
       state.opponentStats = opponentStats;
+      state.recentResults = recentResults;
       carriedPotChips = 0;
       pending = null;
       notify();
@@ -146,7 +149,7 @@ const SessionGameOfLife = (function () {
             return;
           }
           await sleep(BET_DELAY_MS);
-          const profile = AIProfiles.profileFor(bettor.profileName);
+          const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
           const decision = GameOfLifeAIProfiles.decideBet(bettor, state, profile);
           RulesGameOfLife.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
           onBettingAction(bettorId, decision.action);

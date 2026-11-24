@@ -17,6 +17,7 @@ const SessionPressYourLuck = (function () {
     const onHandComplete = config.onHandComplete || (() => {});
     const onBettingAction = config.onBettingAction || (() => {});
     const opponentStats = config.opponentStats || null;
+    const recentResults = config.recentResults || null;
 
     const dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
@@ -40,6 +41,7 @@ const SessionPressYourLuck = (function () {
       quipSeq = config.resumeFrom.extra.quipSeq;
       if (state) {
         state.opponentStats = opponentStats;
+        state.recentResults = recentResults;
         // Real bug, found live (2026-09-14): state.gameConfig's cardValue()
         // is a FUNCTION -- JSON.stringify silently drops it across the
         // localStorage round-trip this resume snapshot goes through, so the
@@ -113,6 +115,7 @@ const SessionPressYourLuck = (function () {
       handNumber += 1;
       state = PressYourLuckRules.createHandState(players, dealerIndex, settings, gameConfig, carriedPotChips);
       state.opponentStats = opponentStats;
+      state.recentResults = recentResults;
       carriedPotChips = 0;
       pending = null;
       notify();
@@ -133,7 +136,7 @@ const SessionPressYourLuck = (function () {
               return;
             }
             await sleep(DECIDE_DELAY_MS);
-            const profile = AIProfiles.profileFor(player.profileName);
+            const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
             const choice = PressYourLuckAIProfiles.decideBuyBack(player, state, profile);
             // resolveInitialBuyback only advances the cursor once this
             // player is genuinely done (declines, or hits maxBuys) --
@@ -160,7 +163,7 @@ const SessionPressYourLuck = (function () {
               return;
             }
             await sleep(DECIDE_DELAY_MS);
-            const profile = AIProfiles.profileFor(bettor.profileName);
+            const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = PressYourLuckAIProfiles.decideBet(bettor, state, profile);
             if (decision.action === "fold") maybeQuip(bettor, "fold");
             else if (decision.action === "raise") maybeQuip(bettor, "raise");
@@ -192,7 +195,7 @@ const SessionPressYourLuck = (function () {
             return;
           }
           await sleep(DECIDE_DELAY_MS);
-          const profile = AIProfiles.profileFor(player.profileName);
+          const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
           const action = PressYourLuckAIProfiles.decideHitOrStand(player, state, profile);
           let { needsBuyBack } = PressYourLuckRules.resolveHitOrStand(state, playerId, action);
           notify();

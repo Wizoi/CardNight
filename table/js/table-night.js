@@ -33,6 +33,27 @@ const TableNight = (function () {
   // WHAT was held -- see ai-profiles.js's opponentLoosenessAdjustment for
   // how this gets turned into an actual behavior nudge.
   let playerBettingStats = {};
+  // Genuine cross-hand RESULT tracking (2026-11-23, design review finding
+  // #3): the last ~5 hands' outcomes per player (won / lostAtShowdown /
+  // folded, plus net chips), across every game this whole night, exactly
+  // the same "live reference, not a snapshot" shape playerBettingStats
+  // already established -- this is what lets the Storm's tilt-after-a-
+  // bad-beat and the Streak Chaser's hot/cold streak belief be genuinely
+  // state-dependent instead of the fixed baselines ai-profiles.js's file
+  // header has documented as a known approximation since 2026-08-28. Read
+  // `player.folded` directly off the shared `players` array the instant
+  // onHandComplete fires -- every rules engine mutates those SAME player
+  // objects in place, so that flag is already correct for this exact hand
+  // without needing any session to report it separately.
+  let recentResultsByPlayerId = {};
+  // Chips as of the end of the PREVIOUS hand this player was dealt into,
+  // so onHandComplete can compute this hand's own net delta. A manual
+  // rebuy between hands shows up as part of the NEXT hand's "net" rather
+  // than its own event -- a known, accepted imprecision (the review's own
+  // framing only needs net chips as a rough magnitude signal for "was
+  // this a significant loss," not an exact ledger).
+  let lastKnownChipsByPlayerId = {};
+  const RECENT_RESULTS_LIMIT = 5;
   // Whoever holds the dealer button for the upcoming game is also the picker
   // for it -- games.md doesn't document a picker mechanic at all (it's an
   // app-only meta-layer), but "the next dealer picks" is the natural fit,
@@ -177,6 +198,8 @@ const TableNight = (function () {
       nightHandsPlayed,
       gamePickCounts,
       playerBettingStats,
+      recentResultsByPlayerId,
+      lastKnownChipsByPlayerId,
       cutForDealState,
       activeGameId,
       activeVariantChoices,
@@ -204,6 +227,8 @@ const TableNight = (function () {
     handsWonByPlayerId = saved.handsWonByPlayerId;
     gamePickCounts = saved.gamePickCounts || {};
     playerBettingStats = saved.playerBettingStats || {};
+    recentResultsByPlayerId = saved.recentResultsByPlayerId || {};
+    lastKnownChipsByPlayerId = saved.lastKnownChipsByPlayerId || {};
     cutForDealState = saved.cutForDealState;
     activeGameId = saved.activeGameId;
     activeVariantChoices = saved.activeVariantChoices;
@@ -237,6 +262,7 @@ const TableNight = (function () {
           onUpdate: () => notify(),
           onHandComplete,
           opponentStats: playerBettingStats,
+          recentResults: recentResultsByPlayerId,
           onBettingAction: recordBettingAction,
         });
       }
@@ -302,6 +328,8 @@ const TableNight = (function () {
     handsWonByPlayerId = {};
     gamePickCounts = {};
     playerBettingStats = {};
+    recentResultsByPlayerId = {};
+    lastKnownChipsByPlayerId = {};
     cutForDealState = null;
     activeGameId = null;
     activeVariantChoices = null;
@@ -431,11 +459,37 @@ const TableNight = (function () {
     playerBettingStats[playerId] = stats;
   }
 
+  // One entry per player for the hand that just ended: "won" (this
+  // player was the reported winner -- a back-compat single-winner field
+  // every family already sets the same way handsWonByPlayerId above
+  // does, so a split-pot hand's OTHER winners are read as
+  // lostAtShowdown here, a known, accepted simplification matching that
+  // same pre-existing convention), "folded" (player.folded is true --
+  // read directly off the shared players array, which every rules engine
+  // already mutates in place, so it's correct for THIS hand without any
+  // session needing to report it separately), or "lostAtShowdown"
+  // (stayed in, wasn't folded, wasn't the winner). netChips is this
+  // hand's own chip delta since the last hand this player was part of.
+  function recordHandOutcomes(winnerId) {
+    for (const p of players) {
+      const prevChips = lastKnownChipsByPlayerId[p.id];
+      const currentChips = p.wallet.chips;
+      const netChips = prevChips == null ? 0 : currentChips - prevChips;
+      const outcome = p.id === winnerId ? "won" : p.folded ? "folded" : "lostAtShowdown";
+      const arr = recentResultsByPlayerId[p.id] || [];
+      arr.push({ result: outcome, netChips });
+      if (arr.length > RECENT_RESULTS_LIMIT) arr.shift();
+      recentResultsByPlayerId[p.id] = arr;
+      lastKnownChipsByPlayerId[p.id] = currentChips;
+    }
+  }
+
   function onHandComplete(result) {
     nightHandsPlayed += 1;
     if (result.winnerId) {
       handsWonByPlayerId[result.winnerId] = (handsWonByPlayerId[result.winnerId] || 0) + 1;
     }
+    recordHandOutcomes(result.winnerId);
     // Mirror the outgoing orchestrator's own "carry to next hand" state
     // against the game it belongs to (see carriedPotByGameId above) -- an
     // overwrite, not an accumulator, so it always reflects "what's currently
@@ -543,6 +597,11 @@ const TableNight = (function () {
       // later one, even in a different game) sees the same always-current
       // object without needing to be re-handed a fresh copy each time.
       opponentStats: playerBettingStats,
+      // Same live-reference shape as opponentStats just above --
+      // recordHandOutcomes mutates recentResultsByPlayerId in place, so
+      // every hand (this one and every later one, even a different game)
+      // sees the always-current last-5-hands history.
+      recentResults: recentResultsByPlayerId,
       onBettingAction: recordBettingAction,
     });
     notify();

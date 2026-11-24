@@ -14,6 +14,7 @@ const SessionBlindMansBluff = (function () {
     const onHandComplete = config.onHandComplete || (() => {});
     const onBettingAction = config.onBettingAction || (() => {});
     const opponentStats = config.opponentStats || null;
+    const recentResults = config.recentResults || null;
 
     const dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
@@ -31,6 +32,7 @@ const SessionBlindMansBluff = (function () {
       carriedPotChips = config.resumeFrom.extra.carriedPotChips;
       if (state) {
         state.opponentStats = opponentStats;
+        state.recentResults = recentResults;
         if (state.status !== "complete") processLoop();
       }
     }
@@ -81,6 +83,7 @@ const SessionBlindMansBluff = (function () {
       handNumber += 1;
       state = BlindMansBluffRules.createHandState(players, dealerIndex, settings, carriedPotChips);
       state.opponentStats = opponentStats;
+      state.recentResults = recentResults;
       carriedPotChips = 0;
       notify();
       processLoop();
@@ -103,7 +106,7 @@ const SessionBlindMansBluff = (function () {
             return;
           }
           await sleep(BET_DELAY_MS);
-          const profile = AIProfiles.profileFor(bettor.profileName);
+          const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
           const decision = BlindMansBluffAIProfiles.decideBet(bettor, state, profile);
           BlindMansBluffRules.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
           onBettingAction(bettorId, decision.action);

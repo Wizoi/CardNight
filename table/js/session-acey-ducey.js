@@ -121,7 +121,7 @@ const SessionAceyDucey = (function () {
             return;
           }
           await sleep(BET_DELAY_MS);
-          const profile = AIProfiles.profileFor(player.profileName);
+          const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
           const betDollars = AceyDuceyAIProfiles.decideBet(player, state, profile);
           AceyDuceyRules.resolveBet(state, playerId, betDollars);
           notify();
