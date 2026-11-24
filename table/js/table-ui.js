@@ -823,7 +823,7 @@
   // screen: the same dealer-script text the in-game info box shows, so a
   // game nobody's played in a while gets a refresher right when it matters
   // instead of only being one click away mid-hand.
-  function renderConfirmScreen(entry, variantChoices, isAi) {
+  function renderConfirmScreen(entry, variantChoices, isAi, quip) {
     const data = gameDataFor(entry.id);
     const useSvgEmblem = typeof TableFX !== "undefined" && typeof TableFX.getGameEmblemSvg === "function";
     const iconMarkup = useSvgEmblem ? TableFX.getGameEmblemSvg(entry.id, 84) : (data ? data.icon : "🎴");
@@ -833,6 +833,7 @@
       <div class="confirm-screen">
         <div class="game-pick-icon confirm-emblem-hero">${iconMarkup}</div>
         <div class="confirm-headline">${isAi ? `The dealer calls <strong>${entry.name}</strong>!` : `You called <strong>${entry.name}</strong>!`}</div>
+        ${quip ? `<div class="confirm-dealer-quip">${quip.personName}: &ldquo;${quip.text}&rdquo;</div>` : ""}
         ${lines.length ? `<ul class="confirm-variant-lines">${lines.map((l) => `<li>${l}</li>`).join("")}</ul>` : ""}
         <div class="confirm-instructions">${scriptHtml(data, entry.id)}</div>
         <div class="confirm-actions">
@@ -875,7 +876,7 @@
     }
 
     if (pendingConfirm) {
-      renderConfirmScreen(pendingConfirm.entry, pendingConfirm.variantChoices, pendingConfirm.isAi);
+      renderConfirmScreen(pendingConfirm.entry, pendingConfirm.variantChoices, pendingConfirm.isAi, pendingConfirm.quip);
       if (typeof TableFX !== "undefined" && typeof TableFX.enhancePickerMenu === "function") TableFX.enhancePickerMenu(el.pickerMenu, false);
       return;
     }
@@ -916,8 +917,8 @@
       // Stays on the picker screen showing the game-selected/instructions
       // screen until the human clicks "Continue" -- see renderPicker's
       // pendingConfirm branch and the data-confirm-continue handler below.
-      const { choice, variantChoices } = TableNight.autoPickForAI();
-      pendingConfirm = { entry: choice, variantChoices, isAi: true };
+      const { choice, variantChoices, quip } = TableNight.autoPickForAI();
+      pendingConfirm = { entry: choice, variantChoices, isAi: true, quip };
       render(TableNight.getViewState());
     }, 900);
   }
@@ -1416,8 +1417,8 @@
 
       const confirmAiRedrawBtn = e.target.closest("[data-confirm-ai-redraw]");
       if (confirmAiRedrawBtn) {
-        const { choice, variantChoices } = TableNight.autoPickForAI();
-        pendingConfirm = { entry: choice, variantChoices, isAi: true };
+        const { choice, variantChoices, quip } = TableNight.autoPickForAI();
+        pendingConfirm = { entry: choice, variantChoices, isAi: true, quip };
         render(TableNight.getViewState());
         return;
       }

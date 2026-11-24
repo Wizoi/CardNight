@@ -176,6 +176,32 @@ function run() {
     check("a picker with no profileName still produces a valid pick", !!result.choice && !!result.choice.id);
   }
 
+  // Small extension to the gameCategoryAffinity work (2026-11-23, design
+  // review suggested-order step 5): autoPickForAI now also returns a
+  // "pickGame" quip in the picker's own voice (or null -- TableQuips
+  // falls back to null for a human picker, missing archetype data, or a
+  // chance roll that simply misses). Across many trials this must never
+  // crash and, whenever it does fire, must be well-formed.
+  {
+    let sawARealQuip = false;
+    for (let i = 0; i < 40; i++) {
+      TableNight.init({ humanName: "Kevin", seatCount: 5, dealMode: "dealersChoice" }, () => {});
+      // Seat 0 (the human) is always dealerIndex 0's picker in a fresh
+      // night, and a human never gets a quip (no tablePersonId at all) --
+      // rotatePickerAfterGameEnds advances table-night's own dealerIndex
+      // past whatever the just-started game's own orchestrator dealer
+      // landed on, which lands on a real AI seat (one with a genuine
+      // tablePersonId) without needing to construct a full hand/game-end
+      // scenario.
+      TableNight.chooseNextGame("aceyDucey", {});
+      TableNight.rotatePickerAfterGameEnds();
+      const result = TableNight.autoPickForAI();
+      check("autoPickForAI's quip field is either null or a well-formed {personName, text} object", result.quip === null || (typeof result.quip.personName === "string" && typeof result.quip.text === "string"));
+      if (result.quip) sawARealQuip = true;
+    }
+    check("at least one of the 40 trials actually produced a real quip (not silently always null)", sawARealQuip);
+  }
+
   return summary("table-night");
 }
 

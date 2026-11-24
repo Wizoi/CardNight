@@ -664,13 +664,22 @@ const TableNight = (function () {
   // option's own default/standard rule) -- table-ui.js is responsible for
   // showing the human what was picked, including any variants, before the
   // table view appears.
+  // Small extension to the in-progress gameCategoryAffinity work
+  // (2026-11-23, design review suggested-order step 5): an AI dealer now
+  // announces its choice in its own voice whenever one fires, via the new
+  // "pickGame" quip moment -- reusing TableQuips.pickQuip exactly the way
+  // every session-*.js's own maybeQuip already does (no lines were ever
+  // classified into this moment specifically, since it's a meta/table-
+  // night event rather than an in-hand one, so it always falls back to
+  // `general`, same as any other moment with nothing bucketed for it).
   function autoPickForAI() {
     const list = GameRegistry.list();
     const pickerPlayer = players.find((p) => p.id === currentPickerSeatId());
     const choice = weightedRandomGame(list, pickerPlayer);
     const variantChoices = GameRegistry.randomVariantChoices(choice);
     chooseNextGame(choice.id, variantChoices);
-    return { choice, variantChoices };
+    const quip = typeof TableQuips !== "undefined" && pickerPlayer ? TableQuips.pickQuip(pickerPlayer, "pickGame") : null;
+    return { choice, variantChoices, quip };
   }
 
   // Called once the "Change game" button is clicked (only enabled between
