@@ -168,7 +168,7 @@ const SessionPressYourLuck = (function () {
             if (decision.action === "fold") maybeQuip(bettor, "fold");
             else if (decision.action === "raise") maybeQuip(bettor, "raise");
             PressYourLuckRules.submitBet(state, bettorId, decision.action, decision.raiseDollars);
-            onBettingAction(bettorId, decision.action);
+            onBettingAction(bettorId, decision.action, state.bettingRound);
             notify();
             continue;
           }
@@ -267,7 +267,7 @@ const SessionPressYourLuck = (function () {
       if (!pending || pending.kind !== "bet") return;
       const { playerId } = pending;
       PressYourLuckRules.submitBet(state, playerId, action, raiseDollars || 0);
-      onBettingAction(playerId, action);
+      onBettingAction(playerId, action, state.bettingRound);
       pending = null;
       notify();
       processLoop();

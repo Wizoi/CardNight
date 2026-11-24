@@ -125,7 +125,7 @@ const SessionBlindMansBluff = (function () {
           const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
           const decision = BlindMansBluffAIProfiles.decideBet(bettor, state, profile);
           BlindMansBluffRules.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
-          onBettingAction(bettorId, decision.action);
+          onBettingAction(bettorId, decision.action, state.bettingRound);
           if (decision.action === "raise") maybeQuip(bettor, "raise");
           else if (decision.action === "fold") maybeQuip(bettor, "fold");
           notify();
@@ -145,7 +145,7 @@ const SessionBlindMansBluff = (function () {
       const human = getHuman();
       if (!state.bettingRound || BlindMansBluffRules.getCurrentBettor(state) !== human.id) return;
       BlindMansBluffRules.submitBet(state, human.id, action, raiseDollars || 0);
-      onBettingAction(human.id, action);
+      onBettingAction(human.id, action, state.bettingRound);
       notify();
       processLoop();
     }

@@ -47,21 +47,87 @@ const AnacondaAIProfiles = (function () {
     return chooseDiscards(player.hand, 3);
   }
 
+  // Generates every k-combination of the indices [0, n) -- small and cheap
+  // at this hand's sizes (C(7,5) = 21).
+  function combinationIndices(n, k) {
+    const result = [];
+    function helper(start, combo) {
+      if (combo.length === k) {
+        result.push(combo.slice());
+        return;
+      }
+      for (let i = start; i < n; i++) {
+        combo.push(i);
+        helper(i + 1, combo);
+        combo.pop();
+      }
+    }
+    helper(0, []);
+    return result;
+  }
+
+  // Real bug, found during the 2026-11-23 archetype design review and
+  // fixed alongside finding #4 (not an archetype tweak -- a correctness
+  // bug any profile could hit): chooseDiscards' heuristic only tracks RANK
+  // groups, so it could discard the two cards that would have completed a
+  // straight or flush, down to a lesser pair -- e.g. 7 cards
+  // 4h 5h 7h 9h Kh 2c 2d discarded 4h/5h for a pair of 2s instead of
+  // keeping the heart flush, even though decideBet's own betting1 read
+  // (evaluatePartial over all 7 cards) had already bet on the flush that
+  // was about to be thrown away. Fixed by actually trying every one of the
+  // C(7,5)=21 keep-sets through HandEvaluator.bestHand (which already
+  // handles a Joker's wild identity correctly) and keeping whichever 5
+  // genuinely score best, rather than a rank-only heuristic.
   function decideDiscard2(player) {
-    return chooseDiscards(player.hand, 2);
+    const hand = player.hand;
+    const n = hand.length;
+    // Always discards exactly 2 (games.md's round-2 rule), keeping n-2 --
+    // the real game always calls this with the full 7-card post-pass
+    // hand (keepCount 5), but this stays well-defined for any n rather
+    // than silently discarding everything (including a Joker) if it's
+    // ever handed fewer cards than that.
+    const keepCount = Math.max(0, n - 2);
+    let bestKeep = null;
+    let bestEval = null;
+    for (const keepIdx of combinationIndices(n, keepCount)) {
+      const cards = keepIdx.map((i) => ({ rank: hand[i].rank, suit: hand[i].suit, isWild: hand[i].rank === "JOKER" }));
+      const evaluated = HandEvaluator.bestHand(cards);
+      if (!bestEval || HandEvaluator.isBetter(evaluated, bestEval)) {
+        bestEval = evaluated;
+        bestKeep = keepIdx;
+      }
+    }
+    const keepSet = new Set(bestKeep);
+    const discardIdx = [];
+    for (let i = 0; i < n; i++) if (!keepSet.has(i)) discardIdx.push(i);
+    return discardIdx;
   }
 
   // Ordering the final 5 kept cards for reveal doesn't change the hand's
   // final VALUE at all -- only the drama/betting-information order of the
-  // 5 reveal rounds. Reveals ungrouped, low-value cards first and holds
-  // groups (pairs/trips/etc.) and any Joker back for the last rounds, so
-  // opponents don't see this hand's real strength until late -- the same
-  // "don't tip a big hand early" instinct chooseDiscards already applies
-  // when deciding what to keep in the first place.
-  function decideArrangeOrder(player) {
+  // 5 reveal rounds, which is exactly where a tell lives: no AI ever reads
+  // another player's revealed cards in decideBet, so this only affects
+  // what the HUMAN can learn from watching an AI's reveal order.
+  //
+  // presentationStyle (design review follow-up, 2026-11-24 -- reuses
+  // profile.bluffSizing, already modeling "how this archetype presents
+  // strength," rather than inventing a new field) picks among 3 orders:
+  // "conceal" (the default/original behavior, every profile except the 2
+  // below) reveals ungrouped, low-value cards first and holds groups and
+  // any Joker back for the last rounds -- the same "don't tip a big hand
+  // early" instinct chooseDiscards already applies. "flaunt" (Live Wire)
+  // reverses that order entirely -- show strength early specifically to
+  // see who flinches. "mask" (the Wall) shuffles the order randomly
+  // instead of reversing it, since a reversed order is itself a readable
+  // pattern once you've seen it a few times -- a genuinely random order
+  // can't be read either way. The Subversive keeps its default conceal
+  // order but occasionally flaunts instead (AIProfiles.breaksPattern,
+  // rate 0.15) -- "deliberately breaking its own established tells
+  // mid-session," per subversive.md.
+  function decideArrangeOrder(player, profile) {
     const rankCounts = {};
     for (const c of player.hand) rankCounts[c.rank] = (rankCounts[c.rank] || 0) + 1;
-    const sorted = player.hand
+    const concealOrder = player.hand
       .map((c, i) => ({ c, i }))
       .sort((a, b) => {
         const aJoker = a.c.rank === "JOKER" ? 1 : 0;
@@ -71,8 +137,24 @@ const AnacondaAIProfiles = (function () {
         const bGrouped = rankCounts[b.c.rank] >= 2 ? 1 : 0;
         if (aGrouped !== bGrouped) return aGrouped - bGrouped; // reveal groups last
         return Deck.RANK_VALUES[a.c.rank] - Deck.RANK_VALUES[b.c.rank];
-      });
-    return sorted.map((x) => x.i);
+      })
+      .map((x) => x.i);
+
+    if (!profile) return concealOrder;
+    const style = AIProfiles.presentationStyle(profile);
+    const wantsFlaunt = style === "flaunt" || (style === "conceal" && AIProfiles.breaksPattern(profile));
+    if (wantsFlaunt) return concealOrder.slice().reverse();
+    if (style === "mask") {
+      const shuffled = concealOrder.slice();
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = shuffled[i];
+        shuffled[i] = shuffled[j];
+        shuffled[j] = tmp;
+      }
+      return shuffled;
+    }
+    return concealOrder;
   }
 
   // The raise bar tightens the more of the 5 reveal rounds are still to

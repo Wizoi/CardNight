@@ -153,7 +153,7 @@ const SessionMidnightBaseball = (function () {
             const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = AIProfiles.decideBet(bettor, state, profile);
             MidnightBaseball.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
-            onBettingAction(bettorId, decision.action);
+            onBettingAction(bettorId, decision.action, state.bettingRound);
             if (decision.action === "raise") maybeQuip(bettor, "raise");
             notify();
             continue;
@@ -283,7 +283,7 @@ const SessionMidnightBaseball = (function () {
       const human = getHuman();
       if (!state.bettingRound || MidnightBaseball.getCurrentBettor(state) !== human.id) return;
       MidnightBaseball.submitBet(state, human.id, action, raiseDollars || 0);
-      onBettingAction(human.id, action);
+      onBettingAction(human.id, action, state.bettingRound);
       notify();
       processTurnLoop();
     }

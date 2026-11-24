@@ -11,7 +11,7 @@ const { makeChecker } = require("./check");
 function run() {
   const { check, summary } = makeChecker();
   const { RulesAnaconda, HandEvaluator, Deck, AnacondaAIProfiles } = load(
-    ["deck.js", "hand-evaluator.js", "chip-economy.js", "betting-engine.js", "rules-anaconda.js", "ai-anaconda-profiles.js"],
+    ["deck.js", "hand-evaluator.js", "chip-economy.js", "betting-engine.js", "ai-profiles.js", "rules-anaconda.js", "ai-anaconda-profiles.js"],
     ["RulesAnaconda", "HandEvaluator", "Deck", "AnacondaAIProfiles"]
   );
   const settings = { anteDollars: 0.5, raiseIncrementDollars: 0.25, maxBetDollars: 2 };
@@ -35,9 +35,80 @@ function run() {
     ];
     const discard1Idx = AnacondaAIProfiles.decideDiscard1({ hand });
     check("round 1's 3 discards never include the Joker", !discard1Idx.map((i) => hand[i].rank).includes("JOKER"));
+    // decideDiscard2 always operates on a full 7-card hand in the real
+    // game (the kept 4 PLUS 3 passed in from the right neighbor after
+    // round 1's pass resolves, per games.md -- round 1 is a pass, not a
+    // net discard, so hand size stays 7 until round 2's real discard).
+    // Pad the kept 4 back up to 7 with plausible low, ungrouped cards
+    // standing in for what a neighbor might pass, so this exercises the
+    // same hand size decideDiscard2 is actually called with.
     const kept = hand.filter((_, i) => !discard1Idx.includes(i));
-    const discard2Idx = AnacondaAIProfiles.decideDiscard2({ hand: kept });
-    check("round 2's 2 discards (from the kept 4) never include the Joker", !discard2Idx.map((i) => kept[i].rank).includes("JOKER"));
+    const afterPass = kept.concat([
+      { rank: "3", suit: "C" },
+      { rank: "5", suit: "S" },
+      { rank: "6", suit: "D" },
+    ]);
+    const discard2Idx = AnacondaAIProfiles.decideDiscard2({ hand: afterPass });
+    check("round 2's 2 discards never include the Joker", !discard2Idx.map((i) => afterPass[i].rank).includes("JOKER"));
+  }
+
+  // Real bug, found during the 2026-11-23 archetype design review's
+  // follow-up pass (not reported live, caught reading the code against
+  // decideBet's own betting1 evaluation): chooseDiscards' rank-only
+  // heuristic could discard the two cards that would have completed a
+  // flush, settling for a lesser pair instead -- even though decideBet
+  // had already bet the round on the flush that was about to be thrown
+  // away. 7 cards 4h 5h 7h 9h Kh 2c 2d: the flush (4h 5h 7h 9h Kh) beats
+  // any pair achievable by keeping the 2s, so a correct decideDiscard2
+  // must discard the 2c/2d, not two of the hearts.
+  {
+    const hand = [
+      { rank: "4", suit: "H" },
+      { rank: "5", suit: "H" },
+      { rank: "7", suit: "H" },
+      { rank: "9", suit: "H" },
+      { rank: "K", suit: "H" },
+      { rank: "2", suit: "C" },
+      { rank: "2", suit: "D" },
+    ];
+    const discard2Idx = AnacondaAIProfiles.decideDiscard2({ hand });
+    const discardedRanks = discard2Idx.map((i) => hand[i].rank).sort();
+    check("decideDiscard2 keeps the flush, discarding the pair of 2s instead of breaking it", discardedRanks.join(",") === "2,2");
+    const kept = hand.filter((_, i) => !discard2Idx.includes(i));
+    const keptEval = HandEvaluator.bestHand(kept.map((c) => ({ rank: c.rank, suit: c.suit, isWild: false })));
+    check("the kept 5 cards actually score as a flush", keptEval.category === HandEvaluator.CATEGORY.FLUSH);
+  }
+
+  // presentationStyle (design review follow-up, 2026-11-24): Live Wire's
+  // "flaunt" reverses the default conceal order; the Wall's "mask"
+  // shuffles it randomly instead; a default profile keeps the original
+  // conceal order unchanged.
+  {
+    const hand = [
+      { rank: "2", suit: "C" },
+      { rank: "7", suit: "D" },
+      { rank: "K", suit: "S" },
+      { rank: "K", suit: "H" },
+      { rank: "JOKER", suit: null },
+    ];
+    const concealOrder = AnacondaAIProfiles.decideArrangeOrder({ hand }, null);
+    check("with no profile, the order is the original conceal order (groups and Joker revealed last)", hand[concealOrder[concealOrder.length - 1]].rank === "JOKER");
+
+    const liveWireProfile = { bluffSizing: "big" };
+    const flauntOrder = AnacondaAIProfiles.decideArrangeOrder({ hand }, liveWireProfile);
+    check("Live Wire's flaunt order is the exact reverse of the conceal order", flauntOrder.join(",") === concealOrder.slice().reverse().join(","));
+    check("Live Wire's flaunt order reveals the Joker FIRST, not last", hand[flauntOrder[0]].rank === "JOKER");
+
+    const wallProfile = { bluffSizing: "mirror" };
+    const maskOrders = new Set();
+    for (let i = 0; i < 40; i++) maskOrders.add(AnacondaAIProfiles.decideArrangeOrder({ hand }, wallProfile).join(","));
+    check("the Wall's mask order produces more than one distinct ordering across trials (genuinely random, not a fixed reversal)", maskOrders.size > 1);
+
+    const defaultProfile = {};
+    check(
+      "a profile with no bluffSizing (default 'small') keeps the original conceal order",
+      AnacondaAIProfiles.decideArrangeOrder({ hand }, defaultProfile).join(",") === concealOrder.join(",")
+    );
   }
 
   const players = [

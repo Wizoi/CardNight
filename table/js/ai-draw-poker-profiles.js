@@ -62,7 +62,20 @@ const DrawPokerAIProfiles = (function () {
   // the single highest card. A simple, standard draw-poker heuristic, not
   // a fully optimal one -- same spirit as every other AI decision in this
   // project.
-  function decideDraw(player) {
+  //
+  // The two-pair break (design review follow-up, 2026-11-24): this game's
+  // own rule requires Trips-or-better to actually WIN at showdown, so a
+  // made two pair can never win outright on its own. Keeping both pairs
+  // and drawing 1 only reaches a full house about 8.5% of the time (4/47);
+  // breaking the lower pair and drawing 3 to the higher one reaches Trips
+  // or better about 12.7% of the time (trips 11.4% + full house 1.0% +
+  // quads 0.3%) -- strictly better odds for everyone, except that holding
+  // onto an already-made hand instead of breaking it for better odds is
+  // exactly the Fortress's loss-averse psychology (the same `lossAversion
+  // >= 2` bar decideBuy4 already uses for "treats even a cheap gamble as
+  // not worth the risk"). `profile` is optional so a caller that hasn't
+  // resolved one yet keeps the old (keep-both-pairs) behavior.
+  function decideDraw(player, profile) {
     const hand = player.hand;
     // A Joker is always wild (games.md's "House rule: playing with
     // Jokers") -- keep it regardless of whether it happens to form a
@@ -73,8 +86,12 @@ const DrawPokerAIProfiles = (function () {
     const rankCounts = {};
     for (const c of nonJokerHand) rankCounts[c.rank] = (rankCounts[c.rank] || 0) + 1;
     const groupRanks = Object.keys(rankCounts).filter((r) => rankCounts[r] >= 2);
+    const isTwoPair = groupRanks.length === 2 && jokerIdx.length === 0 && groupRanks.every((r) => rankCounts[r] === 2);
     let keepIdx;
-    if (groupRanks.length) {
+    if (isTwoPair && profile && !(profile.lossAversion >= 2)) {
+      const higherRank = groupRanks.reduce((a, b) => (Deck.RANK_VALUES[a] >= Deck.RANK_VALUES[b] ? a : b));
+      keepIdx = hand.map((c, i) => (c.rank === higherRank ? i : -1)).filter((i) => i >= 0);
+    } else if (groupRanks.length) {
       keepIdx = hand.map((c, i) => (groupRanks.includes(c.rank) ? i : -1)).filter((i) => i >= 0);
     } else if (nonJokerHand.length === 0) {
       keepIdx = [];

@@ -139,7 +139,7 @@ const SessionMexicanSweat = (function () {
             const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = MexicanSweatAIProfiles.decideBet(bettor, state, profile);
             MexicanSweatRules.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
-            onBettingAction(bettorId, decision.action);
+            onBettingAction(bettorId, decision.action, state.bettingRound);
             if (decision.action === "raise") maybeQuip(bettor, "raise");
             notify();
             continue;
@@ -180,7 +180,7 @@ const SessionMexicanSweat = (function () {
       const human = getHuman();
       if (!state.bettingRound || MexicanSweatRules.getCurrentBettor(state) !== human.id) return;
       MexicanSweatRules.submitBet(state, human.id, action, raiseDollars || 0);
-      onBettingAction(human.id, action);
+      onBettingAction(human.id, action, state.bettingRound);
       notify();
       processTurnLoop();
     }

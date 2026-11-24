@@ -802,6 +802,27 @@ const AIProfiles = (function () {
     return 1;
   }
 
+  // presentationStyle (2026-11-24, closing the archetype design review's
+  // last open item for Anaconda's reveal order): reuses profile.bluffSizing
+  // -- already modeling "how this archetype presents strength" for bet
+  // sizing -- as the same trait for which of a hand's 5 kept cards get
+  // revealed first in Anaconda's "roll your own" rounds. "conceal" (every
+  // profile with the default "small" sizing) is the existing behavior:
+  // reveal weak/ungrouped cards first, hold groups and any Joker back.
+  // "flaunt" (Live Wire's "big") reverses that -- show strength early to
+  // see who flinches, matching live-wire.md's own stated instinct. "mask"
+  // (the Wall's "mirror") shuffles the reveal order randomly instead of
+  // reversing it, since a reversed order is itself a readable pattern --
+  // wall.md explicitly calls for suppressing tells "not by reversing the
+  // signals," so a genuinely random order is the one that can't be read
+  // either way.
+  function presentationStyle(profile) {
+    const sizing = (profile && profile.bluffSizing) || "small";
+    if (sizing === "big") return "flaunt";
+    if (sizing === "mirror") return "mask";
+    return "conceal";
+  }
+
   // profile.tempo (2026-11-23, design review finding #8): a per-archetype
   // multiplier on the delay before an AI acts -- previously every AI
   // paused for the exact same flat delay regardless of archetype, even
@@ -1099,6 +1120,7 @@ const AIProfiles = (function () {
     scaledRaiseDollars,
     shouldBluff,
     bluffRaiseTier,
+    presentationStyle,
     tempoFor,
     breaksPattern,
     shouldSlowPlay,

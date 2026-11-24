@@ -73,6 +73,16 @@ const TableNight = (function () {
   // real bad beat," not two different ones invented for two different
   // features.
   const REACT_BAD_BEAT_THRESHOLD_CHIPS = -4;
+  // "Big raise" is measured in raise INCREMENTS, not dollars, since the
+  // capped families (25-cent increments, $2 max) and hold'em (uncapped, $1
+  // increments) have nothing in common dollar-wise -- 4+ increments is the
+  // same yardstick AIProfiles.scaledRaiseDollars already uses for its own
+  // tier-3 "near-nuts/overbet" sizing, so a "big raise" here means exactly
+  // what the AI itself would call an all-in-style value bet. Only fires
+  // once per hand (bigRaiseReactedHand), the same throttle the hand-end
+  // reactions get for free by only running once per onHandComplete.
+  const BIG_RAISE_MIN_INCREMENTS = 4;
+  let bigRaiseReactedHand = null;
   // Whoever holds the dealer button for the upcoming game is also the picker
   // for it -- games.md doesn't document a picker mechanic at all (it's an
   // app-only meta-layer), but "the next dealer picks" is the natural fit,
@@ -351,6 +361,7 @@ const TableNight = (function () {
     lastKnownChipsByPlayerId = {};
     lastReactionQuip = null;
     reactionQuipSeq = 0;
+    bigRaiseReactedHand = null;
     cutForDealState = null;
     activeGameId = null;
     activeVariantChoices = null;
@@ -471,13 +482,34 @@ const TableNight = (function () {
   // ante-only Guts family and Acey Ducey's single bet-up-to-the-pot
   // decision don't report here at all, matching the same scope boundary
   // the rest of the AI betting-flavor work already drew.
-  function recordBettingAction(playerId, action) {
+  function recordBettingAction(playerId, action, round) {
+    // round.lastSubmit (betting-engine.js) holds the REAL action, after any
+    // raise-capped-to-call or forced-fold downgrade -- prefer it over the
+    // caller's own requested `action` so stats and the big-raise check both
+    // reflect what actually happened, not what was attempted.
+    const last = round && round.lastSubmit && round.lastSubmit.playerId === playerId ? round.lastSubmit : null;
+    const actualAction = last ? last.action : action;
     const stats = playerBettingStats[playerId] || { decisions: 0, folds: 0, calls: 0, raises: 0 };
     stats.decisions += 1;
-    if (action === "fold") stats.folds += 1;
-    else if (action === "raise") stats.raises += 1;
+    if (actualAction === "fold") stats.folds += 1;
+    else if (actualAction === "raise") stats.raises += 1;
     else stats.calls += 1;
     playerBettingStats[playerId] = stats;
+
+    if (
+      actualAction === "raise" &&
+      last &&
+      (last.wentAllIn || (last.incrementChips > 0 && last.raiseChips / last.incrementChips >= BIG_RAISE_MIN_INCREMENTS)) &&
+      bigRaiseReactedHand !== nightHandsPlayed &&
+      typeof TableQuips !== "undefined"
+    ) {
+      const reaction = TableQuips.pickReaction(players, playerId, "reactBigRaise", recentResultsByPlayerId);
+      if (reaction) {
+        bigRaiseReactedHand = nightHandsPlayed;
+        reactionQuipSeq += 1;
+        lastReactionQuip = { id: reactionQuipSeq, ...reaction };
+      }
+    }
   }
 
   // One entry per player for the hand that just ended: "won" (this

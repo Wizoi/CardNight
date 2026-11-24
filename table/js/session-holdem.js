@@ -135,7 +135,7 @@ const SessionHoldem = (function () {
             const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = HoldemAIProfiles.decideBet(bettor, state, profile);
             HoldemRules.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
-            onBettingAction(bettorId, decision.action);
+            onBettingAction(bettorId, decision.action, state.bettingRound);
             if (decision.action === "raise") maybeQuip(bettor, "raise");
             else if (decision.action === "fold") maybeQuip(bettor, "fold");
             notify();
@@ -160,7 +160,7 @@ const SessionHoldem = (function () {
       const human = getHuman();
       if (!state.bettingRound || HoldemRules.getCurrentBettor(state) !== human.id) return;
       HoldemRules.submitBet(state, human.id, action, raiseDollars || 0);
-      onBettingAction(human.id, action);
+      onBettingAction(human.id, action, state.bettingRound);
       notify();
       processTurnLoop();
     }

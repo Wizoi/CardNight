@@ -152,7 +152,8 @@ const SessionAnaconda = (function () {
               return;
             }
             await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(nextPlayer.profileName, state.recentResults && state.recentResults[nextPlayer.id]));
-            const order = AnacondaAIProfiles.decideArrangeOrder(nextPlayer);
+            const arrangeProfile = AIProfiles.profileForState(nextPlayer.profileName, state.recentResults && state.recentResults[nextPlayer.id]);
+            const order = AnacondaAIProfiles.decideArrangeOrder(nextPlayer, arrangeProfile);
             RulesAnaconda.submitArrangeOrder(state, nextPlayer.id, order);
             notify();
             continue;
@@ -181,7 +182,7 @@ const SessionAnaconda = (function () {
           const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
           const decision = AnacondaAIProfiles.decideBet(bettor, state, profile);
           RulesAnaconda.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
-          onBettingAction(bettorId, decision.action);
+          onBettingAction(bettorId, decision.action, state.bettingRound);
           if (decision.action === "raise") maybeQuip(bettor, "raise");
           else if (decision.action === "fold") maybeQuip(bettor, "fold");
           notify();
@@ -219,7 +220,7 @@ const SessionAnaconda = (function () {
       const human = getHuman();
       if (!state.bettingRound || RulesAnaconda.getCurrentBettor(state) !== human.id) return;
       RulesAnaconda.submitBet(state, human.id, action, raiseDollars || 0);
-      onBettingAction(human.id, action);
+      onBettingAction(human.id, action, state.bettingRound);
       notify();
       processLoop();
     }

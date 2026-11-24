@@ -75,13 +75,36 @@ const BettingEngine = (function () {
 
   // Pure chip accounting only — no folding, no logging, no win-checking.
   // player: {id, wallet}. Returns enough for the caller to log/react.
+  //
+  // round.lastSubmit records what actually happened on the most recent
+  // submit (the real post-downgrade action, not whatever the caller asked
+  // for) — e.g. a requested "raise" that got capped down to a plain "call"
+  // is stamped as "call", not "raise". It's overwritten on every single
+  // submit (fold/call/raise alike), never only on raises, so it can't go
+  // stale and misattribute an earlier raise to a later, different submit.
+  // This is what lets a caller (table-night.js's cross-player "big raise"
+  // reaction) detect a genuine raise generically, for any family that
+  // routes through this function, without each family inventing its own
+  // signal.
   function submitBet(round, player, action, raiseDollars, opts) {
     const committed = (round.committed && round.committed[player.id]) || 0;
     const toCallChips = Math.max(0, round.currentBetChips - committed);
 
+    function record(result, raiseChipsForLog) {
+      round.lastSubmit = {
+        playerId: player.id,
+        action: result.action,
+        raiseChips: result.action === "raise" ? raiseChipsForLog || 0 : 0,
+        incrementChips: opts && opts.raiseIncrementDollars ? ChipEconomy.dollarsToChips(opts.raiseIncrementDollars) : 0,
+        newBetChips: round.currentBetChips,
+        wentAllIn: !!(player.wallet && player.wallet.chips === 0),
+      };
+      return result;
+    }
+
     if (action === "fold") {
       round.responded.add(player.id);
-      return { action: "fold", paidChips: 0, toCallChips, newCurrentBetChips: round.currentBetChips };
+      return record({ action: "fold", paidChips: 0, toCallChips, newCurrentBetChips: round.currentBetChips });
     }
 
     if (action === "raise") {
@@ -99,12 +122,12 @@ const BettingEngine = (function () {
         round.currentBetChips = Math.max(round.currentBetChips, round.committed[player.id]);
         round.responded = new Set([player.id]);
         round.raiseCounts[player.id] = (round.raiseCounts[player.id] || 0) + 1;
-        return { action: "raise", paidChips: paid, toCallChips, newCurrentBetChips: round.currentBetChips };
+        return record({ action: "raise", paidChips: paid, toCallChips, newCurrentBetChips: round.currentBetChips }, raiseChips);
       }
       // Cannot raise: if player cannot even cover toCallChips, force fold
       if (player.wallet.chips < toCallChips) {
         round.responded.add(player.id);
-        return { action: "fold", paidChips: 0, toCallChips, newCurrentBetChips: round.currentBetChips, forcedFold: true };
+        return record({ action: "fold", paidChips: 0, toCallChips, newCurrentBetChips: round.currentBetChips, forcedFold: true });
       }
       action = "call";
     }
@@ -113,13 +136,13 @@ const BettingEngine = (function () {
       ensureAiCanAfford(player, toCallChips);
     } else if (toCallChips > player.wallet.chips) {
       round.responded.add(player.id);
-      return { action: "fold", paidChips: 0, toCallChips, newCurrentBetChips: round.currentBetChips, forcedFold: true };
+      return record({ action: "fold", paidChips: 0, toCallChips, newCurrentBetChips: round.currentBetChips, forcedFold: true });
     }
 
     const { paid } = ChipEconomy.pay(player.wallet, toCallChips);
     round.committed[player.id] = committed + paid;
     round.responded.add(player.id);
-    return { action: "call", paidChips: paid, toCallChips, newCurrentBetChips: round.currentBetChips };
+    return record({ action: "call", paidChips: paid, toCallChips, newCurrentBetChips: round.currentBetChips });
   }
 
   function collectAntes(players, anteDollars) {

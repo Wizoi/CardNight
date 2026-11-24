@@ -23,21 +23,55 @@ const StudAIProfiles = (function () {
   // Free Enterprise's Enterprise pile: judged against the player's WHOLE
   // hand, hole cards included (a stud player genuinely knows their own hole
   // cards, unlike Midnight Baseball's self-reveal convention, so this isn't
-  // peeking). Picks the CHEAPEST pile position that actually improves the
-  // hand's category, ties broken toward cheaper -- a rational buyer
-  // wouldn't pay more for an equally-good option.
-  function bestEnterprisePileChoice(player, pile) {
+  // peeking).
+  //
+  // Real bug, found during the 2026-11-23 archetype design review's
+  // follow-up pass (not reported live): the old comment here claimed this
+  // "picks the CHEAPEST pile position that actually improves the hand...
+  // ties broken toward cheaper," but the code never actually compared
+  // price at all -- it picked the single STRONGEST result regardless of
+  // cost, only ever "tying toward cheaper" by accident (iterating
+  // positions in order and only replacing on a strictly better result). It
+  // also counted a kicker-only improvement (same category, better
+  // tiebreaker) as worth buying, so every profile would pay $3 (or $6 on
+  // the doubled final round) for a kicker bump alone.
+  //
+  // Fixed by reusing two existing fields rather than inventing new ones,
+  // applied to the decisions they already describe elsewhere:
+  // `buyWildOnlyOnCategoryGain` (already gating decideBuy9 and 3 Buy 5's
+  // exchange) skips a candidate whose only gain is a kicker, not a real
+  // category jump. `lossAversion >= 0.75` makes a profile price-conscious:
+  // among candidates that reach the best achievable category, it buys the
+  // CHEAPEST one, since the same category costs $1 vs $3 ($2 vs $6 on the
+  // doubled final round) depending on position -- the-calculator.md's own
+  // "buying only while the new expected hand quality still clears that
+  // round's cost." Profiles below that threshold (Live Wire, aggressive,
+  // Streak Chaser, Subversive) keep the original "strongest card
+  // regardless of price" behavior -- live-wire.md: "paying for the option
+  // is itself a small thrill." Also filters out anything the player can't
+  // actually afford, so the caller's own affordability check below is now
+  // redundant (but harmless) rather than occasionally giving up on an
+  // improving card it could have afforded at a cheaper position.
+  function bestEnterprisePileChoice(player, state, profile) {
     const asCards = (cards) => cards.map((c) => ({ rank: c.rank, suit: c.suit, isWild: false }));
     const withoutCard = HandEvaluator.evaluatePartial(asCards(player.hand));
-    let best = null;
-    pile.forEach((card, position) => {
+    const candidates = [];
+    state.enterprisePile.forEach((card, position) => {
       const withCard = HandEvaluator.evaluatePartial(asCards(player.hand.concat([card])));
       if (!HandEvaluator.isBetter(withCard, withoutCard)) return;
-      if (best == null || HandEvaluator.isBetter(withCard, best.result)) {
-        best = { position, result: withCard };
-      }
+      if (profile && profile.buyWildOnlyOnCategoryGain && withCard.category <= withoutCard.category) return; // kicker-only: not worth paying for
+      const priceDollars = StudRules.currentEnterprisePriceDollars(state, position);
+      if (player.wallet.chips < ChipEconomy.dollarsToChips(priceDollars)) return; // can't afford this position
+      candidates.push({ position, result: withCard, priceDollars });
     });
-    return best ? best.position : null;
+    if (!candidates.length) return null;
+    if (profile && (profile.lossAversion || 0) >= 0.75) {
+      const bestCategory = Math.max(...candidates.map((c) => c.result.category));
+      return candidates
+        .filter((c) => c.result.category === bestCategory)
+        .sort((a, b) => a.priceDollars - b.priceDollars || a.position - b.position)[0].position;
+    }
+    return candidates.reduce((best, c) => (HandEvaluator.isBetter(c.result, best.result) ? c : best)).position;
   }
 
   // Whether the player can even afford this position's price factors in
@@ -50,7 +84,7 @@ const StudAIProfiles = (function () {
   // instead of paying $1 to reshuffle the pile on a hand that isn't there
   // yet; a looser profile still pays for another shot, same as before.
   function decideEnterpriseChoice(player, state, profile) {
-    const bestPosition = bestEnterprisePileChoice(player, state.enterprisePile);
+    const bestPosition = bestEnterprisePileChoice(player, state, profile);
     if (bestPosition != null) {
       const priceDollars = StudRules.currentEnterprisePriceDollars(state, bestPosition);
       if (player.wallet.chips >= ChipEconomy.dollarsToChips(priceDollars)) {

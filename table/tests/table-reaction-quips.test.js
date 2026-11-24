@@ -12,22 +12,22 @@ const { createSandbox, loadFiles, exportsFrom } = require("./harness");
 const { makeChecker } = require("./check");
 
 // A minimal stub standing in for every one of the 14 real session
-// factories -- this test drives table-night.js's own onHandComplete
-// wiring directly (recordHandOutcomes -> a reaction quip -> getViewState
-// exposing it), not any one family's actual turn loop, so no real game
-// logic is needed. Captures the onHandComplete callback config.chooseNextGame
-// handed to it so the test can fire it manually, as if a real hand had
-// just completed.
-function makeCapturingSessionStub(capturedCallbacks) {
+// factories -- this test drives table-night.js's own onHandComplete and
+// onBettingAction wiring directly (recordHandOutcomes/recordBettingAction
+// -> a reaction quip -> getViewState exposing it), not any one family's
+// actual turn loop, so no real game logic is needed. Captures each
+// config object handed to it so the test can fire its callbacks manually,
+// as if a real hand or a real bet had just happened.
+function makeCapturingSessionStub(capturedConfigs) {
   return {
     create: (config) => {
-      capturedCallbacks.push(config.onHandComplete);
+      capturedConfigs.push(config);
       return { getViewState: () => ({ state: null, pending: null }), snapshot: () => ({}) };
     },
   };
 }
 
-function buildSandbox(capturedCallbacks) {
+function buildSandbox(capturedConfigs) {
   const stubNames = [
     "SessionMidnightBaseball", "SessionMexicanSweat", "SessionCommunityStud",
     "SessionGuts", "SessionWildInYourHand", "SessionStud", "SessionPressYourLuck",
@@ -35,7 +35,7 @@ function buildSandbox(capturedCallbacks) {
     "SessionDrawPoker", "SessionAnaconda", "SessionHoldem", "SessionAceyDucey",
   ];
   const extra = {};
-  for (const name of stubNames) extra[name] = makeCapturingSessionStub(capturedCallbacks);
+  for (const name of stubNames) extra[name] = makeCapturingSessionStub(capturedConfigs);
   const sandbox = createSandbox(extra);
   loadFiles(sandbox, [
     "deck.js", "hand-evaluator.js", "ai-profiles.js", "chip-economy.js", "target-sum-evaluator.js", "betting-engine.js",
@@ -95,11 +95,11 @@ function run() {
 
   // --- table-night.js's own onHandComplete -> reactionQuip wiring ---
   {
-    const capturedCallbacks = [];
-    const TableNight = buildSandbox(capturedCallbacks);
+    const capturedConfigs = [];
+    const TableNight = buildSandbox(capturedConfigs);
     TableNight.init({ humanName: "Kevin", seatCount: 6, dealMode: "dealersChoice" }, () => {});
     TableNight.chooseNextGame("aceyDucey", {});
-    const onHandComplete = capturedCallbacks[capturedCallbacks.length - 1];
+    const onHandComplete = capturedConfigs[capturedConfigs.length - 1].onHandComplete;
 
     const vs0 = TableNight.getViewState();
     check("lastReactionQuip starts null on a fresh night", vs0.lastReactionQuip === null);
@@ -149,11 +149,11 @@ function run() {
   // A fold-out or a modest win must never trigger a reaction (no misfire
   // on an ordinary, unremarkable hand).
   {
-    const capturedCallbacks = [];
-    const TableNight = buildSandbox(capturedCallbacks);
+    const capturedConfigs = [];
+    const TableNight = buildSandbox(capturedConfigs);
     TableNight.init({ humanName: "Kevin", seatCount: 6, dealMode: "dealersChoice" }, () => {});
     TableNight.chooseNextGame("aceyDucey", {});
-    const onHandComplete = capturedCallbacks[capturedCallbacks.length - 1];
+    const onHandComplete = capturedConfigs[capturedConfigs.length - 1].onHandComplete;
     const players = TableNight.getViewState().players;
     for (const p of players) {
       if (!p.isHuman) {
@@ -165,6 +165,68 @@ function run() {
     winner.wallet.chips += 1; // a trivially small net gain -- not a "big win"
     onHandComplete({ winnerId: winner.id, rainedOut: false, potChips: 0 });
     check("a modest, unremarkable win never triggers a reaction quip", TableNight.getViewState().lastReactionQuip === null);
+  }
+
+  // --- reactBigRaise: table-night.js's onBettingAction -> reactionQuip wiring ---
+  {
+    const capturedConfigs = [];
+    const TableNight = buildSandbox(capturedConfigs);
+    TableNight.init({ humanName: "Kevin", seatCount: 6, dealMode: "dealersChoice" }, () => {});
+    TableNight.chooseNextGame("aceyDucey", {});
+    const onBettingAction = capturedConfigs[capturedConfigs.length - 1].onBettingAction;
+    const players = TableNight.getViewState().players;
+    for (const p of players) {
+      if (!p.isHuman) {
+        p.profileName = "diplomat";
+        p.tablePersonId = "diplomat--he-him";
+      }
+    }
+    const raiser = players.find((p) => !p.isHuman);
+
+    // A synthetic round mirroring what betting-engine.js's submitBet
+    // actually stamps on round.lastSubmit for a real raise -- 4+ raise
+    // increments (or an all-in) is the same "tier-3 near-nuts/overbet"
+    // yardstick AIProfiles.scaledRaiseDollars already uses for its own
+    // value-raise sizing.
+    const bigRound = { lastSubmit: { playerId: raiser.id, action: "raise", raiseChips: 4, incrementChips: 1, wentAllIn: false } };
+    let sawRaiseReaction = false;
+    for (let i = 0; i < 300 && !sawRaiseReaction; i++) {
+      onBettingAction(raiser.id, "raise", bigRound);
+      const vs = TableNight.getViewState();
+      if (vs.lastReactionQuip) {
+        sawRaiseReaction = true;
+        check("the reactBigRaise quip is well-formed", typeof vs.lastReactionQuip.text === "string");
+        check("the reactBigRaise quip is NOT attributed to the raiser themselves", vs.lastReactionQuip.playerId !== raiser.id);
+      }
+    }
+    check("at least one of 300 big-raise trials produced a real reactBigRaise quip", sawRaiseReaction);
+
+    // A small (1-increment) raise never counts as "big".
+    const smallRound = { lastSubmit: { playerId: raiser.id, action: "raise", raiseChips: 1, incrementChips: 1, wentAllIn: false } };
+    const capturedConfigs2 = [];
+    const TableNight2 = buildSandbox(capturedConfigs2);
+    TableNight2.init({ humanName: "Kevin", seatCount: 6, dealMode: "dealersChoice" }, () => {});
+    TableNight2.chooseNextGame("aceyDucey", {});
+    const onBettingAction2 = capturedConfigs2[capturedConfigs2.length - 1].onBettingAction;
+    const players2 = TableNight2.getViewState().players;
+    for (const p of players2) {
+      if (!p.isHuman) {
+        p.profileName = "diplomat";
+        p.tablePersonId = "diplomat--he-him";
+      }
+    }
+    const raiser2 = players2.find((p) => !p.isHuman);
+    smallRound.lastSubmit.playerId = raiser2.id;
+    for (let i = 0; i < 20; i++) onBettingAction2(raiser2.id, "raise", smallRound);
+    check("a small (1-increment) raise never triggers a reactBigRaise quip", TableNight2.getViewState().lastReactionQuip === null);
+
+    // A raise that got downgraded to a plain call (betting-engine.js's
+    // cap-hit path) must never fire a reaction, even if the caller still
+    // requested "raise" -- round.lastSubmit.action ("call") overrides the
+    // stale requested action.
+    const downgradedRound = { lastSubmit: { playerId: raiser2.id, action: "call", raiseChips: 0, incrementChips: 1, wentAllIn: false } };
+    onBettingAction2(raiser2.id, "raise", downgradedRound);
+    check("a raise downgraded to a call never triggers a reactBigRaise quip", TableNight2.getViewState().lastReactionQuip === null);
   }
 
   return summary("table-reaction-quips");

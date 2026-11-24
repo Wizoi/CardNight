@@ -98,6 +98,9 @@ const TABLE_PEOPLE = [
       "Look at you. I had a feeling about that hand the second you sat up straight.",
       "Hey. That one stung, I saw it on your face. You'll get it back.",
       "Don't let that one follow you into the next hand, alright? I mean that.",
+      "Now THAT'S a raise. Somebody's feeling brave tonight, and I respect it.",
+      "Whoa. Alright, we've got a real bet on the table now, folks.",
+      "I'll remember that raise. That's the kind of thing I write down.",
     ],
     phrasesByMoment: {
       fold: [
@@ -149,6 +152,11 @@ const TABLE_PEOPLE = [
       reactHumanBadBeat: [
         "Hey. That one stung, I saw it on your face. You'll get it back.",
         "Don't let that one follow you into the next hand, alright? I mean that.",
+      ],
+      reactBigRaise: [
+        "Now THAT'S a raise. Somebody's feeling brave tonight, and I respect it.",
+        "Whoa. Alright, we've got a real bet on the table now, folks.",
+        "I'll remember that raise. That's the kind of thing I write down.",
       ],
       general: [
         "You've been awful quiet over there, Priya — rough week, or just a good hand?",
@@ -256,6 +264,9 @@ const TABLE_PEOPLE = [
       "Look at that. I had a read on you and it was right, for once in a good way.",
       "That one hurt, I could tell. Take a breath before the next hand.",
       "I noticed that landed harder than you let on. You don't have to pretend otherwise with me.",
+      "That's a big raise. I'm genuinely curious what you're sitting on now.",
+      "Interesting. You don't usually bet that size unless you mean it.",
+      "Okay, that raise just changed how I'm reading the rest of this hand.",
     ],
     phrasesByMoment: {
       fold: [
@@ -301,6 +312,11 @@ const TABLE_PEOPLE = [
       reactHumanBadBeat: [
         "That one hurt, I could tell. Take a breath before the next hand.",
         "I noticed that landed harder than you let on. You don't have to pretend otherwise with me.",
+      ],
+      reactBigRaise: [
+        "That's a big raise. I'm genuinely curious what you're sitting on now.",
+        "Interesting. You don't usually bet that size unless you mean it.",
+        "Okay, that raise just changed how I'm reading the rest of this hand.",
       ],
       general: [
         "Take your time — I'm not going anywhere, and neither is this hand.",
@@ -412,6 +428,9 @@ const TABLE_PEOPLE = [
       "That's a read I didn't see coming. Respect.",
       "Rough one. You want to talk about it or just keep moving?",
       "That landed hard, I know. Doesn't have to follow you to the next hand.",
+      "That's a raise with some real weight behind it. Noted.",
+      "Okay, that's a statement bet if I've ever seen one.",
+      "I'll fold to that, but I'm filing away how it felt to watch.",
     ],
     phrasesByMoment: {
       fold: [
@@ -460,6 +479,11 @@ const TABLE_PEOPLE = [
       reactHumanBadBeat: [
         "Rough one. You want to talk about it or just keep moving?",
         "That landed hard, I know. Doesn't have to follow you to the next hand.",
+      ],
+      reactBigRaise: [
+        "That's a raise with some real weight behind it. Noted.",
+        "Okay, that's a statement bet if I've ever seen one.",
+        "I'll fold to that, but I'm filing away how it felt to watch.",
       ],
       general: [
         "Hey, before we get into this hand — how are you actually doing tonight?",
@@ -999,6 +1023,9 @@ const TABLE_PEOPLE = [
       "Whoa — okay, NOW we're getting somewhere. Deal it again.",
       "Ohh, that's a rough one — shake it off, get back in there!",
       "That hurt to watch and I loved every second of it, no offense.",
+      "NOW we're talking! Somebody finally shoved their whole stack in the middle!",
+      "Oh I LOVE that raise. Reckless and beautiful, the two best things.",
+      "You just made this hand interesting again — I'm in no matter what.",
     ],
     phrasesByMoment: {
       fold: [
@@ -1043,6 +1070,11 @@ const TABLE_PEOPLE = [
       reactHumanBadBeat: [
         "Ohh, that's a rough one — shake it off, get back in there!",
         "That hurt to watch and I loved every second of it, no offense.",
+      ],
+      reactBigRaise: [
+        "NOW we're talking! Somebody finally shoved their whole stack in the middle!",
+        "Oh I LOVE that raise. Reckless and beautiful, the two best things.",
+        "You just made this hand interesting again — I'm in no matter what.",
       ],
       general: [
         "Current's flowing, boys, don't touch me now.",
@@ -1151,6 +1183,9 @@ const TABLE_PEOPLE = [
       "Look at you go, mama — I'm almost jealous, almost.",
       "Ouch, neng. That one's gonna sting for a minute — get back in there.",
       "That's a rough one, diba, but at least you were in it till the end.",
+      "Diba! Now THAT's a raise — finally somebody with some nerve!",
+      "Ooh, I love it when somebody just shoves everything in. Drama, finally!",
+      "That raise has main-character energy, mama, I respect it.",
     ],
     phrasesByMoment: {
       fold: [
@@ -1194,6 +1229,11 @@ const TABLE_PEOPLE = [
       reactHumanBadBeat: [
         "Ouch, neng. That one's gonna sting for a minute — get back in there.",
         "That's a rough one, diba, but at least you were in it till the end.",
+      ],
+      reactBigRaise: [
+        "Diba! Now THAT's a raise — finally somebody with some nerve!",
+        "Ooh, I love it when somebody just shoves everything in. Drama, finally!",
+        "That raise has main-character energy, mama, I respect it.",
       ],
       general: [
         "Both, baby. I said both.",
@@ -1303,6 +1343,9 @@ const TABLE_PEOPLE = [
       "That's the kind of pot I drove four hundred miles for. Nice.",
       "Rough front to get caught in. Shake it off, there's more coming.",
       "That one had some real pressure behind it. You rode it out fine.",
+      "Now THAT's a funnel dropping. Somebody just bet the whole front.",
+      "That raise has real rotation on it. I'm not missing what happens next.",
+      "Finally, some real weather at this table. Good on you for sending it.",
     ],
     phrasesByMoment: {
       fold: [
@@ -1339,6 +1382,11 @@ const TABLE_PEOPLE = [
       reactHumanBadBeat: [
         "Rough front to get caught in. Shake it off, there's more coming.",
         "That one had some real pressure behind it. You rode it out fine.",
+      ],
+      reactBigRaise: [
+        "Now THAT's a funnel dropping. Somebody just bet the whole front.",
+        "That raise has real rotation on it. I'm not missing what happens next.",
+        "Finally, some real weather at this table. Good on you for sending it.",
       ],
       general: [
         "I didn't drive four hundred miles for a nothing hand, deal it.",
@@ -1879,6 +1927,9 @@ const TABLE_PEOPLE = [
       "Nice landing. Smooth, no drama — I respect that.",
       "Rough one. You'll land the next approach just fine.",
       "That one stings. Won't matter by the time we deal again.",
+      "That's a real raise. I'll believe it until you show me otherwise.",
+      "Big number. Doesn't rattle me, but I'll give it the respect it's asking for.",
+      "You put some weight behind that one. I noticed.",
     ],
     phrasesByMoment: {
       fold: [
@@ -1914,6 +1965,11 @@ const TABLE_PEOPLE = [
       reactOpponentBigWin: [
         "Good hand. I'll say the same thing about the next one, win or lose.",
         "Nice landing. Smooth, no drama — I respect that.",
+      ],
+      reactBigRaise: [
+        "That's a real raise. I'll believe it until you show me otherwise.",
+        "Big number. Doesn't rattle me, but I'll give it the respect it's asking for.",
+        "You put some weight behind that one. I noticed.",
       ],
       reactHumanBadBeat: [
         "Rough one. You'll land the next approach just fine.",
@@ -2031,6 +2087,9 @@ const TABLE_PEOPLE = [
       "Nice win. Stack it even, like it's any other night — that's the move.",
       "Bad beat. Doesn't make you owed the next hand, but it's alright to feel it for a second.",
       "That one's rough. Won't matter by hand fifty, I promise you that.",
+      "That's a real raise. I'll treat it like one.",
+      "Big bet. I've seen bigger, but I'll give this one its due.",
+      "You meant that raise. I can tell the difference.",
     ],
     phrasesByMoment: {
       fold: [
@@ -2071,6 +2130,11 @@ const TABLE_PEOPLE = [
       reactHumanBadBeat: [
         "Bad beat. Doesn't make you owed the next hand, but it's alright to feel it for a second.",
         "That one's rough. Won't matter by hand fifty, I promise you that.",
+      ],
+      reactBigRaise: [
+        "That's a real raise. I'll treat it like one.",
+        "Big bet. I've seen bigger, but I'll give this one its due.",
+        "You meant that raise. I can tell the difference.",
       ],
       general: [
         "Thirty years at this room and the cards still don't owe me anything.",
@@ -2182,6 +2246,9 @@ const TABLE_PEOPLE = [
       "Nice one. No need to make it bigger than it already is.",
       "That one landed hard. It'll stop mattering faster than it feels like right now.",
       "You get one sentence about that beat, then we're moving on — I mean that kindly.",
+      "That's real information, that raise. I'll treat it as such.",
+      "Big number. I'll fold to it or I won't, but I noticed it.",
+      "That raise says something. I'm just not sure yet what.",
     ],
     phrasesByMoment: {
       fold: [
@@ -2217,6 +2284,11 @@ const TABLE_PEOPLE = [
       reactOpponentBigWin: [
         "Good hand. I'd say the same whether you won it big or small.",
         "Nice one. No need to make it bigger than it already is.",
+      ],
+      reactBigRaise: [
+        "That's real information, that raise. I'll treat it as such.",
+        "Big number. I'll fold to it or I won't, but I noticed it.",
+        "That raise says something. I'm just not sure yet what.",
       ],
       reactHumanBadBeat: [
         "That one landed hard. It'll stop mattering faster than it feels like right now.",

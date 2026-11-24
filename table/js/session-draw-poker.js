@@ -135,7 +135,7 @@ const SessionDrawPoker = (function () {
             const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = DrawPokerAIProfiles.decideBet(bettor, state, profile);
             RulesDrawPoker.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
-            onBettingAction(bettorId, decision.action);
+            onBettingAction(bettorId, decision.action, state.bettingRound);
             if (decision.action === "raise") maybeQuip(bettor, "raise");
             else if (decision.action === "fold") maybeQuip(bettor, "fold");
             notify();
@@ -152,7 +152,8 @@ const SessionDrawPoker = (function () {
               return;
             }
             await sleep(DRAW_DELAY_MS * AIProfiles.tempoFor(player.profileName, state.recentResults && state.recentResults[player.id]));
-            const discardIdx = DrawPokerAIProfiles.decideDraw(player);
+            const drawProfile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
+            const discardIdx = DrawPokerAIProfiles.decideDraw(player, drawProfile);
             RulesDrawPoker.resolveDraw(state, playerId, discardIdx);
             notify();
             continue;
@@ -179,7 +180,7 @@ const SessionDrawPoker = (function () {
       const human = getHuman();
       if (!state.bettingRound || RulesDrawPoker.getCurrentBettor(state) !== human.id) return;
       RulesDrawPoker.submitBet(state, human.id, action, raiseDollars || 0);
-      onBettingAction(human.id, action);
+      onBettingAction(human.id, action, state.bettingRound);
       notify();
       processLoop();
     }

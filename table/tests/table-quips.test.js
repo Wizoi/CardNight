@@ -64,8 +64,8 @@ function run() {
     if (p.phrasesByMoment.raise.length === 0) zeroRaiseIds.push(p.id);
   }
   check(
-    "total phrase count across all characters is 1514 (1478 from the original re-bucketing pass + 36 new reactOpponentBigWin/reactHumanBadBeat lines added 2026-11-23 for finding #9)",
-    totalPhrases === 1514
+    "total phrase count across all characters is 1541 (1514 after finding #9's reactOpponentBigWin/reactHumanBadBeat lines + 27 new reactBigRaise lines, 3 each for the same 9 characters)",
+    totalPhrases === 1541
   );
   check("every bucketed line is accounted for exactly once per character (sum of buckets == sum of phrases)", totalBucketed === totalPhrases);
   check("every character has at least 1 fold line (min across roster: 3)", minFold >= 1);
@@ -79,7 +79,8 @@ function run() {
   );
 
   // Design review finding #9 (2026-11-23): reaction quip moments
-  // (reactOpponentBigWin, reactHumanBadBeat) written only for the 9
+  // (reactOpponentBigWin, reactHumanBadBeat, and -- added for the
+  // "reactBigRaise" open item -- reactBigRaise) written only for the 9
   // characters the review names -- Diplomat, Steady Hand, Live Wire,
   // 3 pronoun variants each. Every other character correctly has none at
   // all (TableQuips.pickQuip falls back to `general` for them, same as
@@ -87,12 +88,16 @@ function run() {
   const REACTION_ARCHETYPES = ["diplomat", "steady-hand", "live-wire"];
   let charactersWithReactions = 0;
   for (const p of TABLE_PEOPLE) {
-    const hasReactions = (p.phrasesByMoment.reactOpponentBigWin || []).length > 0 || (p.phrasesByMoment.reactHumanBadBeat || []).length > 0;
+    const hasReactions =
+      (p.phrasesByMoment.reactOpponentBigWin || []).length > 0 ||
+      (p.phrasesByMoment.reactHumanBadBeat || []).length > 0 ||
+      (p.phrasesByMoment.reactBigRaise || []).length > 0;
     const shouldHaveReactions = REACTION_ARCHETYPES.includes(p.archetypeId);
     check(`${p.id}: reaction quip lines present only if the archetype is one of Diplomat/Steady Hand/Live Wire`, hasReactions === shouldHaveReactions);
     if (hasReactions) {
       check(`${p.id}: has at least 1 reactOpponentBigWin line`, (p.phrasesByMoment.reactOpponentBigWin || []).length >= 1);
       check(`${p.id}: has at least 1 reactHumanBadBeat line`, (p.phrasesByMoment.reactHumanBadBeat || []).length >= 1);
+      check(`${p.id}: has at least 1 reactBigRaise line`, (p.phrasesByMoment.reactBigRaise || []).length >= 1);
       charactersWithReactions += 1;
     }
   }
