@@ -16,7 +16,7 @@ const StudAIProfiles = (function () {
   function decideBuyOnDeal(player, card, profile) {
     if (card.rank === "3") return AIProfiles.decideBuy3(player);
     if (card.rank === "9") return AIProfiles.decideBuy9(player, profile, player.hand.indexOf(card));
-    if (card.rank === "4") return AIProfiles.decideBuy4(player);
+    if (card.rank === "4") return AIProfiles.decideBuy4(player, profile);
     return false;
   }
 

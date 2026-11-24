@@ -655,8 +655,18 @@ const AIProfiles = (function () {
     return true;
   }
 
-  function decideBuy4(player) {
-    return player.wallet.chips >= ChipEconomy.dollarsToChips(1);
+  // 2026-11-23, design review finding #11: this used to always buy if
+  // affordable, regardless of archetype -- a $1 bonus card is still a
+  // speculative buy (one more chance to improve, nothing guaranteed), so
+  // the roster's most loss-averse profiles (Fortress/cautious,
+  // lossAversion >= 2) skip it outright, treating even a cheap gamble as
+  // not worth the risk. `profile` is optional so a caller that still
+  // hasn't resolved one (none currently do) keeps the old behavior
+  // rather than breaking.
+  function decideBuy4(player, profile) {
+    if (player.wallet.chips < ChipEconomy.dollarsToChips(1)) return false;
+    if (profile && profile.lossAversion >= 2) return false;
+    return true;
   }
 
   // No legitimate basis to prefer one still-hidden card over another — flip in

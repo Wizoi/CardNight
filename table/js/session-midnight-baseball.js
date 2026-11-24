@@ -204,7 +204,7 @@ const SessionMidnightBaseball = (function () {
         notify();
         await sleep(DECISION_DELAY_MS * tempo);
       } else if (needsDecision === "buy4") {
-        const willBuy = AIProfiles.decideBuy4(player);
+        const willBuy = AIProfiles.decideBuy4(player, profile);
         MidnightBaseball.resolveBuy4(state, player.id, willBuy);
         if (willBuy) maybeQuip(player, "buyBonus");
         notify();
