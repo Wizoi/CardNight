@@ -8,6 +8,7 @@ on:
       - "table/**"
       - "index.html"
       - "privacy-policy.html"
+      - "terms-of-service.html"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
 

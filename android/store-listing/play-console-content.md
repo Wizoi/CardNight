@@ -20,6 +20,17 @@ Pages deploy workflow's path triggers — **this only resolves once the repo
 is pushed to `main` and the Pages deploy has run.** Confirm it loads in a
 browser before pasting the URL into this field.
 
+### Terms of Service
+
+URL: `https://wizoi.github.io/CardNight/terms-of-service.html`
+
+Not required by Play Console's own "App content" checklist, but worth
+having (and linking from the privacy policy, which it now does) — covers
+no-real-money-gambling, the 18+ age requirement, license to use the app, no
+warranty, and limitation of liability. Same deploy dependency as the
+privacy policy above: only resolves once pushed and the Pages deploy has
+run.
+
 ### Sign in details
 
 **"No, users can access all features without creating an account or
