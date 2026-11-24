@@ -35,7 +35,7 @@ function buildSandbox() {
   }
   const sandbox = createSandbox(extra);
   loadFiles(sandbox, [
-    "deck.js", "hand-evaluator.js", "chip-economy.js", "target-sum-evaluator.js", "betting-engine.js",
+    "deck.js", "hand-evaluator.js", "ai-profiles.js", "chip-economy.js", "target-sum-evaluator.js", "betting-engine.js",
     "baseball-family-wildcards.js", "rules-stud.js", "game-configs-stud.js",
     "rules-mexican-sweat.js", "game-configs-mexican-sweat.js",
     "rules-community-stud.js", "game-configs-community-stud.js",
@@ -110,6 +110,70 @@ function run() {
       `a game already picked 8 times is picked far less than its uniform share (omaha: ${(omahaShare * 100).toFixed(1)}% over ${TRIALS} trials, uniform would be ${(uniformShare * 100).toFixed(1)}%)`,
       omahaShare < uniformShare * 0.5
     );
+  }
+
+  // Follow-up design idea, also from the user (2026-11-23): "I'm
+  // wondering if those profiles we have for each person should have a
+  // randomness % weight over games their persona would favor." Each
+  // archetype's gameCategoryAffinity (ai-profiles.js) multiplies on top
+  // of the anti-repeat weighting above -- e.g. the Live Wire (chaos,
+  // illusion-of-control) leans toward Guts over the Statistician's
+  // calculable hold'em/Poker Scored lean. Isolated here from the
+  // anti-repeat effect by re-initing fresh (gamePickCounts back to all-0)
+  // before every single sample, same reasoning as the test just above.
+  {
+    const counts = {};
+    const TRIALS = 150;
+    for (let i = 0; i < TRIALS; i++) {
+      TableNight.init({ humanName: "Kevin", seatCount: 5, dealMode: "dealersChoice" }, () => {});
+      // The human is seat 0 and already dealerIndex 0's picker in a fresh
+      // night -- borrowing that seat to carry a known profileName is the
+      // simplest way to exercise autoPickForAI's picker-resolution path
+      // without constructing a full dealer-rotation scenario; the
+      // function itself doesn't care whether the picker is human, only
+      // the UI layer gates that.
+      const vs = TableNight.getViewState();
+      vs.players[0].profileName = "live-wire";
+      const result = TableNight.autoPickForAI();
+      counts[result.choice.category] = (counts[result.choice.category] || 0) + 1;
+    }
+    const gutsShare = (counts.Guts || 0) / TRIALS;
+    const holdemShare = (counts["Texas Hold'em variant"] || 0) / TRIALS;
+    check(
+      `a Live Wire picker favors Guts over hold'em (Guts: ${(gutsShare * 100).toFixed(1)}%, hold'em: ${(holdemShare * 100).toFixed(1)}% over ${TRIALS} trials)`,
+      gutsShare > holdemShare
+    );
+  }
+
+  // Same check with The Statistician, whose affinity is the roster's
+  // near-mirror-image of the Live Wire's (hold'em/Poker Scored favored,
+  // Guts/"Other" disfavored) -- confirms the weighting reads each
+  // archetype's OWN table, not just one hardcoded direction.
+  {
+    const counts = {};
+    const TRIALS = 150;
+    for (let i = 0; i < TRIALS; i++) {
+      TableNight.init({ humanName: "Kevin", seatCount: 5, dealMode: "dealersChoice" }, () => {});
+      const vs = TableNight.getViewState();
+      vs.players[0].profileName = "statistician";
+      const result = TableNight.autoPickForAI();
+      counts[result.choice.category] = (counts[result.choice.category] || 0) + 1;
+    }
+    const gutsShare = (counts.Guts || 0) / TRIALS;
+    const holdemShare = (counts["Texas Hold'em variant"] || 0) / TRIALS;
+    check(
+      `a Statistician picker favors hold'em over Guts (Guts: ${(gutsShare * 100).toFixed(1)}%, hold'em: ${(holdemShare * 100).toFixed(1)}% over ${TRIALS} trials)`,
+      holdemShare > gutsShare
+    );
+  }
+
+  // A picker with no archetype data at all (e.g. profileName left null,
+  // the human's actual default) must still pick SOMETHING sensible --
+  // categoryAffinityWeight's fallback-to-1 path, not a crash.
+  {
+    TableNight.init({ humanName: "Kevin", seatCount: 5, dealMode: "dealersChoice" }, () => {});
+    const result = TableNight.autoPickForAI();
+    check("a picker with no profileName still produces a valid pick", !!result.choice && !!result.choice.id);
   }
 
   return summary("table-night");

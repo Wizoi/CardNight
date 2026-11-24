@@ -569,8 +569,28 @@ const TableNight = (function () {
   // just increasingly unlikely until other games catch up.
   const PICK_WEIGHT_EXPONENT = 1.5; // higher = stronger anti-repeat pull; tune against how lopsided a real night still feels
 
-  function weightedRandomGame(list) {
-    const weights = list.map((g) => 1 / Math.pow((gamePickCounts[g.id] || 0) + 1, PICK_WEIGHT_EXPONENT));
+  // A second weighting layer on top of the anti-repeat one above
+  // (2026-11-23, user's follow-up idea): a picker with a known archetype
+  // leans toward games.md categories that genuinely suit its documented
+  // psychology (see each profile's own gameCategoryAffinity in
+  // ai-profiles.js, e.g. The Live Wire favoring Guts' chaos, The Wall
+  // favoring hold'em's deep concealable hole cards). `pickerPlayer` is
+  // optional and missing/unaffiliated players (no profileName, or a
+  // category the profile's affinity table doesn't mention) just fall back
+  // to 1 -- no lean, same as today -- so this never breaks for a player
+  // with no archetype data.
+  function categoryAffinityWeight(game, pickerPlayer) {
+    if (!pickerPlayer || !pickerPlayer.profileName || typeof AIProfiles === "undefined") return 1;
+    const profile = AIProfiles.profileFor(pickerPlayer.profileName);
+    if (!profile || !profile.gameCategoryAffinity) return 1;
+    const affinity = profile.gameCategoryAffinity[game.category];
+    return affinity == null ? 1 : affinity;
+  }
+
+  function weightedRandomGame(list, pickerPlayer) {
+    const weights = list.map(
+      (g) => (1 / Math.pow((gamePickCounts[g.id] || 0) + 1, PICK_WEIGHT_EXPONENT)) * categoryAffinityWeight(g, pickerPlayer)
+    );
     const totalWeight = weights.reduce((sum, w) => sum + w, 0);
     let roll = Math.random() * totalWeight;
     for (let i = 0; i < list.length; i++) {
@@ -587,7 +607,8 @@ const TableNight = (function () {
   // table view appears.
   function autoPickForAI() {
     const list = GameRegistry.list();
-    const choice = weightedRandomGame(list);
+    const pickerPlayer = players.find((p) => p.id === currentPickerSeatId());
+    const choice = weightedRandomGame(list, pickerPlayer);
     const variantChoices = GameRegistry.randomVariantChoices(choice);
     chooseNextGame(choice.id, variantChoices);
     return { choice, variantChoices };

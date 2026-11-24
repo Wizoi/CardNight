@@ -108,6 +108,7 @@ const GameRegistry = (function () {
   const games = {
     midnightBaseball: {
       id: "midnightBaseball",
+      category: "Baseball",
       premium: false,
       name: "Midnight Baseball",
       uiFamily: "midnightBaseball",
@@ -115,6 +116,7 @@ const GameRegistry = (function () {
     },
     daytimeBaseball: {
       id: "daytimeBaseball",
+      category: "Baseball",
       premium: false,
       name: "Daytime Baseball",
       uiFamily: "stud",
@@ -122,6 +124,7 @@ const GameRegistry = (function () {
     },
     rainyDayBaseball: {
       id: "rainyDayBaseball",
+      category: "Baseball",
       premium: false,
       name: "Rainy Day Baseball",
       uiFamily: "stud",
@@ -140,6 +143,7 @@ const GameRegistry = (function () {
     },
     freeEnterprise: {
       id: "freeEnterprise",
+      category: "Stud-based",
       premium: false,
       name: "Free Enterprise",
       uiFamily: "stud",
@@ -158,6 +162,7 @@ const GameRegistry = (function () {
     },
     followTheQueen: {
       id: "followTheQueen",
+      category: "Stud-based",
       premium: false,
       name: "Follow the Queen",
       uiFamily: "stud",
@@ -176,6 +181,7 @@ const GameRegistry = (function () {
     },
     sevenAndWhatMakesIt: {
       id: "sevenAndWhatMakesIt",
+      category: "Stud-based",
       premium: false,
       name: "Seven and What Makes It",
       uiFamily: "stud",
@@ -183,6 +189,7 @@ const GameRegistry = (function () {
     },
     goodBadUgly: {
       id: "goodBadUgly",
+      category: "Stud-based",
       premium: false,
       name: "The Good, the Bad and the Ugly",
       uiFamily: "stud",
@@ -190,6 +197,7 @@ const GameRegistry = (function () {
     },
     mexicanSweat: {
       id: "mexicanSweat",
+      category: "Stud-based",
       premium: false,
       name: "Mexican Sweat",
       uiFamily: "mexicanSweat",
@@ -208,6 +216,7 @@ const GameRegistry = (function () {
     },
     cincinnati: {
       id: "cincinnati",
+      category: "Community Stud",
       premium: false,
       name: "Cincinnati",
       uiFamily: "communityStud",
@@ -227,6 +236,7 @@ const GameRegistry = (function () {
     },
     crissCross: {
       id: "crissCross",
+      category: "Community Stud",
       premium: false,
       name: "Criss Cross (Iron Cross)",
       uiFamily: "communityStud",
@@ -255,6 +265,7 @@ const GameRegistry = (function () {
     },
     deepOrDoubleScrew: {
       id: "deepOrDoubleScrew",
+      category: "Guts",
       premium: false,
       name: "Deep or Double Screw",
       uiFamily: "guts",
@@ -275,6 +286,7 @@ const GameRegistry = (function () {
     },
     threeBuyFive: {
       id: "threeBuyFive",
+      category: "Guts",
       premium: false,
       name: "3 Buy 5 / 5 Buy 5",
       uiFamily: "guts",
@@ -302,6 +314,7 @@ const GameRegistry = (function () {
     },
     fourTwoTwo: {
       id: "fourTwoTwo",
+      category: "Guts",
       premium: false,
       name: "Four-Two-Two",
       uiFamily: "guts",
@@ -320,6 +333,7 @@ const GameRegistry = (function () {
     },
     threeFiveSeven: {
       id: "threeFiveSeven",
+      category: "Guts",
       premium: false,
       name: "3-5-7 Guts",
       uiFamily: "guts",
@@ -340,6 +354,7 @@ const GameRegistry = (function () {
     },
     wildInYourHand: {
       id: "wildInYourHand",
+      category: "Guts",
       premium: false,
       name: "Wild in Your Hand",
       uiFamily: "wildInYourHand",
@@ -347,6 +362,7 @@ const GameRegistry = (function () {
     },
     omaha: {
       id: "omaha",
+      category: "Texas Hold'em variant",
       premium: false,
       name: "Omaha",
       uiFamily: "holdem",
@@ -354,6 +370,7 @@ const GameRegistry = (function () {
     },
     seattle: {
       id: "seattle",
+      category: "Texas Hold'em variant",
       premium: false,
       name: "Seattle",
       uiFamily: "holdem",
@@ -361,6 +378,7 @@ const GameRegistry = (function () {
     },
     boise: {
       id: "boise",
+      category: "Texas Hold'em variant",
       premium: false,
       name: "Boise",
       uiFamily: "holdem",
@@ -368,6 +386,7 @@ const GameRegistry = (function () {
     },
     jerseyHoldem: {
       id: "jerseyHoldem",
+      category: "Texas Hold'em variant",
       premium: false,
       name: "Jersey Hold'em",
       uiFamily: "holdem",
@@ -375,6 +394,7 @@ const GameRegistry = (function () {
     },
     fiveFiveTwentyOne: {
       id: "fiveFiveTwentyOne",
+      category: "Other",
       premium: false,
       name: "5.5-21",
       uiFamily: "pressYourLuck",
@@ -382,6 +402,7 @@ const GameRegistry = (function () {
     },
     sevenTwentySeven: {
       id: "sevenTwentySeven",
+      category: "Other",
       premium: false,
       name: "7-27",
       uiFamily: "pressYourLuck",
@@ -400,6 +421,7 @@ const GameRegistry = (function () {
     },
     threeThirtyThree: {
       id: "threeThirtyThree",
+      category: "Other",
       premium: false,
       name: "3-33",
       uiFamily: "threeThirtyThree",
@@ -407,6 +429,7 @@ const GameRegistry = (function () {
     },
     aceyDucey: {
       id: "aceyDucey",
+      category: "Other",
       premium: false,
       name: "Acey Ducey",
       uiFamily: "aceyDucey",
@@ -414,6 +437,7 @@ const GameRegistry = (function () {
     },
     blindMansBluff: {
       id: "blindMansBluff",
+      category: "Other",
       premium: false,
       name: "Blind Man's Bluff",
       uiFamily: "blindMansBluff",
@@ -421,6 +445,7 @@ const GameRegistry = (function () {
     },
     gameOfLife: {
       id: "gameOfLife",
+      category: "Poker Scored",
       premium: false,
       name: "Game of Life",
       uiFamily: "gameOfLife",
@@ -429,6 +454,7 @@ const GameRegistry = (function () {
     },
     pairOfJacksTripsToWin: {
       id: "pairOfJacksTripsToWin",
+      category: "Poker Scored",
       premium: false,
       name: "Pair of Jacks, Trips to Win",
       uiFamily: "drawPoker",
@@ -437,6 +463,7 @@ const GameRegistry = (function () {
     },
     anaconda: {
       id: "anaconda",
+      category: "Stud-based",
       premium: false,
       name: "Anaconda (Pass the Trash)",
       uiFamily: "anaconda",

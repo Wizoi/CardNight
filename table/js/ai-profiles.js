@@ -94,6 +94,27 @@ const AIProfiles = (function () {
     "the-calculator": {
       name: "the-calculator",
       label: "Tight-Aggressive",
+      // gameCategoryAffinity: a per-games.md-category multiplier on top of
+      // TableNight's own anti-repeat picker weighting (2026-11-23, see
+      // table-night.js's weightedRandomGame) -- lets an AI dealer with a
+      // known archetype lean toward games.md categories that genuinely fit
+      // its documented psychology (personas/players/OVERVIEW.md), without
+      // ever excluding a category outright. Kept to a deliberately narrow
+      // 0.5-1.6 range across the whole roster so no archetype reads as
+      // "only ever plays X" -- a nudge, not a hard preference. The
+      // Calculator (explicit-probability-driven, Tendler's Process Model)
+      // favors the most information-dense, calculable games -- hold'em's
+      // pot odds, stud's showing-hand math, Poker Scored's clean hand-rank
+      // gates -- over Guts' pure-nerve, no-information escalation.
+      gameCategoryAffinity: {
+        "Texas Hold'em variant": 1.4,
+        "Stud-based": 1.3,
+        "Poker Scored": 1.3,
+        "Community Stud": 1.2,
+        Baseball: 1,
+        Other: 0.8,
+        Guts: 0.6,
+      },
       buyWildOnlyOnCategoryGain: true,
       chancePerCard: 0.75,
       raiseWhenLeading: true,
@@ -115,6 +136,20 @@ const AIProfiles = (function () {
     "live-wire": {
       name: "live-wire",
       label: "Maniac",
+      // See the-calculator's gameCategoryAffinity comment for the general
+      // shape. The Live Wire (wide range, chaos over EV, illusion-of-
+      // control) leans into Guts' escalating-nerve pot wars and the
+      // Baseball family's chaotic wildcard-buy swings over anything that
+      // rewards the Calculator's kind of disciplined, calculable play.
+      gameCategoryAffinity: {
+        Guts: 1.6,
+        Other: 1.3,
+        Baseball: 1.3,
+        "Stud-based": 1,
+        "Community Stud": 0.9,
+        "Texas Hold'em variant": 0.7,
+        "Poker Scored": 0.7,
+      },
       buyWildOnlyOnCategoryGain: false,
       chancePerCard: 1.8,
       raiseWhenLeading: true,
@@ -136,6 +171,21 @@ const AIProfiles = (function () {
     fortress: {
       name: "fortress",
       label: "Nit",
+      // See the-calculator's gameCategoryAffinity comment for the general
+      // shape. The Fortress (extreme loss aversion, folds anything short
+      // of a near-lock) favors games it can cheaply bow out of street by
+      // street -- stud's showing-hand math, Poker Scored's narrow-range
+      // gates -- and most avoids Guts, whose ante-escalation structurally
+      // forces repeated re-exposure every hand, the nit's nightmare.
+      gameCategoryAffinity: {
+        "Poker Scored": 1.4,
+        "Stud-based": 1.3,
+        "Community Stud": 1.2,
+        "Texas Hold'em variant": 1.1,
+        Baseball: 1,
+        Other: 0.7,
+        Guts: 0.5,
+      },
       buyWildOnlyOnCategoryGain: true,
       chancePerCard: 0.3,
       raiseWhenLeading: false,
@@ -158,6 +208,21 @@ const AIProfiles = (function () {
     storm: {
       name: "storm",
       label: "Sharp (untilted)",
+      // See the-calculator's gameCategoryAffinity comment for the general
+      // shape. The Storm (skilled but combustible, spirals after perceived
+      // bad luck) gravitates to the most visibly dramatic, swing-heavy
+      // games -- the Baseball family's beat-the-board reversals, Guts'
+      // escalating pots, hold'em's big multi-street swings -- where a bad
+      // beat actually has room to be dramatic.
+      gameCategoryAffinity: {
+        Baseball: 1.4,
+        Guts: 1.3,
+        "Texas Hold'em variant": 1.2,
+        Other: 1.1,
+        "Stud-based": 1,
+        "Community Stud": 0.9,
+        "Poker Scored": 0.8,
+      },
       buyWildOnlyOnCategoryGain: false,
       chancePerCard: 1.1,
       raiseWhenLeading: true,
@@ -180,6 +245,21 @@ const AIProfiles = (function () {
     diplomat: {
       name: "diplomat",
       label: "Small-Ball",
+      // See the-calculator's gameCategoryAffinity comment for the general
+      // shape. The Diplomat (social, reads people through conversation,
+      // adaptive small-ball) favors games with the most visible repeated
+      // decision points to read and adapt against -- stud's showing-hand-
+      // leads-betting dynamic, Community Stud's shared board, the Baseball
+      // family's reveal-and-react rhythm.
+      gameCategoryAffinity: {
+        "Stud-based": 1.3,
+        "Community Stud": 1.3,
+        Baseball: 1.2,
+        Other: 1,
+        "Texas Hold'em variant": 1,
+        "Poker Scored": 0.9,
+        Guts: 0.8,
+      },
       buyWildOnlyOnCategoryGain: false,
       chancePerCard: 1.1,
       raiseWhenLeading: true,
@@ -205,6 +285,22 @@ const AIProfiles = (function () {
     wall: {
       name: "wall",
       label: "Unreadable",
+      // See the-calculator's gameCategoryAffinity comment for the general
+      // shape. The Wall (deliberate information control, a wide hidden
+      // range masked behind total consistency) favors games with the most
+      // private information to mask in the first place -- hold'em's deep
+      // hole cards across a full multi-street hand, Community Stud's
+      // private-hole-plus-shared-board split -- and least favors Guts,
+      // whose binary in/out declare leaves little room for a mask at all.
+      gameCategoryAffinity: {
+        "Texas Hold'em variant": 1.4,
+        "Community Stud": 1.3,
+        "Stud-based": 1.1,
+        Baseball: 1,
+        "Poker Scored": 1,
+        Other: 0.9,
+        Guts: 0.7,
+      },
       buyWildOnlyOnCategoryGain: false,
       chancePerCard: 1,
       raiseWhenLeading: true,
@@ -228,6 +324,22 @@ const AIProfiles = (function () {
     statistician: {
       name: "statistician",
       label: "Process-Driven",
+      // See the-calculator's gameCategoryAffinity comment for the general
+      // shape. The Statistician (Annie Duke's "resulting" -- judges
+      // decisions on process, not outcome) favors the most decision-dense,
+      // analyzable games (hold'em, Poker Scored's clean hand-rank math,
+      // stud/Community Stud's showing-hand math) over the luck-forward
+      // "Other" grab-bag and Guts' binary declare, both thinner on the
+      // kind of process worth separating from outcome.
+      gameCategoryAffinity: {
+        "Texas Hold'em variant": 1.4,
+        "Poker Scored": 1.3,
+        "Stud-based": 1.2,
+        "Community Stud": 1.2,
+        Baseball: 1,
+        Guts: 0.7,
+        Other: 0.7,
+      },
       buyWildOnlyOnCategoryGain: true,
       chancePerCard: 0.9,
       raiseWhenLeading: true,
@@ -251,6 +363,21 @@ const AIProfiles = (function () {
     "streak-chaser": {
       name: "streak-chaser",
       label: "Streaky (avg.)",
+      // See the-calculator's gameCategoryAffinity comment for the general
+      // shape. The Streak Chaser (hot-hand/gambler's-fallacy, believes in
+      // momentum and rituals) favors games that resolve fast and often, so
+      // a "streak" is actually visible and trackable hand to hand -- Guts'
+      // quick escalating resolution, the "Other" grab-bag's fast rounds --
+      // over hold'em's slower, more deliberate multi-street pacing.
+      gameCategoryAffinity: {
+        Guts: 1.4,
+        Other: 1.3,
+        Baseball: 1.2,
+        "Stud-based": 1,
+        "Community Stud": 0.9,
+        "Poker Scored": 0.9,
+        "Texas Hold'em variant": 0.8,
+      },
       buyWildOnlyOnCategoryGain: false,
       chancePerCard: 1.3,
       raiseWhenLeading: true,
@@ -276,6 +403,24 @@ const AIProfiles = (function () {
     subversive: {
       name: "subversive",
       label: "Unconventional",
+      // See the-calculator's gameCategoryAffinity comment for the general
+      // shape. Grounded directly in personas/subversive.md's own stated
+      // favorite decision points, not just a generic guess: Boise's
+      // flexible hand-construction rule ("a particular favorite... the
+      // 'correct' combination is genuinely debatable"), hi-lo declares
+      // (Anaconda/Omaha-family/Criss Cross), and the Baseball family's
+      // priced wildcard-buy bluffing -- so hold'em, Community Stud, and
+      // the "Other" grab-bag (which carries most of the hi-lo-adjacent
+      // target-sum games) lead, with Baseball just behind.
+      gameCategoryAffinity: {
+        Other: 1.3,
+        "Community Stud": 1.3,
+        "Texas Hold'em variant": 1.3,
+        Baseball: 1.1,
+        "Stud-based": 1,
+        "Poker Scored": 0.8,
+        Guts: 0.8,
+      },
       buyWildOnlyOnCategoryGain: false,
       chancePerCard: 1.4,
       raiseWhenLeading: false,
@@ -301,6 +446,21 @@ const AIProfiles = (function () {
     "steady-hand": {
       name: "steady-hand",
       label: "Veteran",
+      // Deliberately flat (no lean either way), unlike every other
+      // archetype's gameCategoryAffinity -- the Steady Hand's whole trait
+      // is treating a huge pot and a tiny one, any game at all, with
+      // identical process (Brunson-style, decades of variance long since
+      // internalized as normal). Indifference IS the characterization
+      // here, not an oversight.
+      gameCategoryAffinity: {
+        Guts: 1,
+        "Stud-based": 1,
+        "Community Stud": 1,
+        Baseball: 1,
+        "Texas Hold'em variant": 1,
+        "Poker Scored": 1,
+        Other: 1,
+      },
       buyWildOnlyOnCategoryGain: true,
       chancePerCard: 0.85,
       raiseWhenLeading: true,
