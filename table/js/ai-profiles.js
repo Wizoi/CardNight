@@ -38,6 +38,8 @@ const AIProfiles = (function () {
     cautious: {
       name: "cautious",
       label: "Cautious",
+      talkativeness: 0.2, // quiet -- doesn't volunteer much (2026-11-23, design review finding #8)
+      tempo: 1.1, // a hair more deliberate than baseline
       buyWildOnlyOnCategoryGain: true, // only pays for a 9 if it changes the hand's category, not just a kicker
       chancePerCard: 0.5, // how many "hand categories" of gap one more unknown flip is assumed worth closing
       // How many extra call-worthy category tiers a bet this big demands, scaled
@@ -67,6 +69,8 @@ const AIProfiles = (function () {
     balanced: {
       name: "balanced",
       label: "Balanced",
+      talkativeness: 0.35, // matches this project's old flat QUIP_CHANCE default -- the generic baseline
+      tempo: 1,
       buyWildOnlyOnCategoryGain: false,
       chancePerCard: 1,
       lossAversion: 1,
@@ -86,6 +90,8 @@ const AIProfiles = (function () {
     aggressive: {
       name: "aggressive",
       label: "Aggressive",
+      talkativeness: 0.45,
+      tempo: 0.8, // quick, doesn't linger over a decision
       buyWildOnlyOnCategoryGain: false,
       chancePerCard: 1.5,
       lossAversion: 0, // bet size doesn't change the calculus -- fits the reckless archetype
@@ -110,6 +116,8 @@ const AIProfiles = (function () {
     "the-calculator": {
       name: "the-calculator",
       label: "Tight-Aggressive",
+      talkativeness: 0.3,
+      tempo: 1.4, // visibly pauses to work out odds (2026-11-23, design review finding #8 -- also the natural home for a `thinking` quip bucket, not yet wired)
       // gameCategoryAffinity: a per-games.md-category multiplier on top of
       // TableNight's own anti-repeat picker weighting (2026-11-23, see
       // table-night.js's weightedRandomGame) -- lets an AI dealer with a
@@ -154,6 +162,8 @@ const AIProfiles = (function () {
     "live-wire": {
       name: "live-wire",
       label: "Maniac",
+      talkativeness: 0.55, // talks trash and reacts loudly
+      tempo: 0.6, // fast -- doesn't deliberate
       // See the-calculator's gameCategoryAffinity comment for the general
       // shape. The Live Wire (wide range, chaos over EV, illusion-of-
       // control) leans into Guts' escalating-nerve pot wars and the
@@ -192,6 +202,8 @@ const AIProfiles = (function () {
     fortress: {
       name: "fortress",
       label: "Nit",
+      talkativeness: 0.25, // minimal unprompted talk
+      tempo: 1.2,
       // See the-calculator's gameCategoryAffinity comment for the general
       // shape. The Fortress (extreme loss aversion, folds anything short
       // of a near-lock) favors games it can cheaply bow out of street by
@@ -231,6 +243,8 @@ const AIProfiles = (function () {
     storm: {
       name: "storm",
       label: "Tilts After Bad Beats",
+      talkativeness: 0.4, // baseline -- profileForState's tilt overlay bumps this up while tilted
+      tempo: 1, // baseline -- profileForState's tilt overlay speeds this up while tilted
       // See the-calculator's gameCategoryAffinity comment for the general
       // shape. The Storm (skilled but combustible, spirals after perceived
       // bad luck) gravitates to the most visibly dramatic, swing-heavy
@@ -274,6 +288,8 @@ const AIProfiles = (function () {
     diplomat: {
       name: "diplomat",
       label: "Small-Ball",
+      talkativeness: 0.55, // running friendly patter
+      tempo: 1,
       // See the-calculator's gameCategoryAffinity comment for the general
       // shape. The Diplomat (social, reads people through conversation,
       // adaptive small-ball) favors games with the most visible repeated
@@ -316,6 +332,8 @@ const AIProfiles = (function () {
     wall: {
       name: "wall",
       label: "Unreadable",
+      talkativeness: 0.12, // minimal unprompted talk -- most of this archetype's own lines are about NOT talking
+      tempo: 1, // a fixed, unremarkable pace is itself its tell suppression -- never faster or slower than baseline
       // See the-calculator's gameCategoryAffinity comment for the general
       // shape. The Wall (deliberate information control, a wide hidden
       // range masked behind total consistency) favors games with the most
@@ -358,6 +376,8 @@ const AIProfiles = (function () {
     statistician: {
       name: "statistician",
       label: "Process-Driven",
+      talkativeness: 0.25, // explicitly immune to the result-driven social swings of #3, which now has something to contrast with
+      tempo: 1.2, // deliberate, process-driven pacing
       // See the-calculator's gameCategoryAffinity comment for the general
       // shape. The Statistician (Annie Duke's "resulting" -- judges
       // decisions on process, not outcome) favors the most decision-dense,
@@ -400,6 +420,8 @@ const AIProfiles = (function () {
     "streak-chaser": {
       name: "streak-chaser",
       label: "Rides Streaks",
+      talkativeness: 0.45,
+      tempo: 0.8,
       // See the-calculator's gameCategoryAffinity comment for the general
       // shape. The Streak Chaser (hot-hand/gambler's-fallacy, believes in
       // momentum and rituals) favors games that resolve fast and often, so
@@ -442,6 +464,8 @@ const AIProfiles = (function () {
     subversive: {
       name: "subversive",
       label: "Unconventional",
+      talkativeness: 0.35,
+      tempo: 0.9,
       // See the-calculator's gameCategoryAffinity comment for the general
       // shape. Grounded directly in personas/subversive.md's own stated
       // favorite decision points, not just a generic guess: Boise's
@@ -487,6 +511,8 @@ const AIProfiles = (function () {
     "steady-hand": {
       name: "steady-hand",
       label: "Veteran",
+      talkativeness: 0.3, // offers calm unsolicited perspective, but doesn't run its mouth
+      tempo: 1, // identical process in a huge pot and a tiny one -- pacing is flat too, Brunson-style
       // Deliberately flat (no lean either way), unlike every other
       // archetype's gameCategoryAffinity -- the Steady Hand's whole trait
       // is treating a huge pot and a tiny one, any game at all, with
@@ -572,6 +598,10 @@ const AIProfiles = (function () {
         // Design review finding #5's own note: a tilted player isn't
         // rationally weighing an escalating Guts pot at all.
         gutsPotRiskSensitivity: 0,
+        // Finding #8's own "Storm faster while tilted" note: reacts
+        // louder and quicker after a bad beat, not calmer and slower.
+        talkativeness: Math.min(1, base.talkativeness + 0.25),
+        tempo: base.tempo * 0.7,
       };
     }
 
@@ -696,6 +726,23 @@ const AIProfiles = (function () {
     if (sizing === "big") return 3;
     if (sizing === "mirror") return 1 + Math.floor(Math.random() * 3);
     return 1;
+  }
+
+  // profile.tempo (2026-11-23, design review finding #8): a per-archetype
+  // multiplier on the delay before an AI acts -- previously every AI
+  // paused for the exact same flat delay regardless of archetype, even
+  // though this doc describes the Calculator's visible pause to work out
+  // odds and the Live Wire's snap decisions. Every session-*.js's own
+  // sleep(ms) already routes through TableFX.paceDelay so the 1x/2x/
+  // Turbo speed setting still applies on top of this -- tempo scales the
+  // BASE delay passed in, it doesn't replace that scaling. Looked up by
+  // profileName (not a resolved profile object) so call sites that
+  // haven't resolved the real decision-affecting profile yet (most of
+  // them resolve it via profileForState AFTER their own sleep call) don't
+  // need to be reordered just to read this one field.
+  function tempoFor(profileName) {
+    const profile = profileFor(profileName);
+    return (profile && profile.tempo) || 1;
   }
 
   // Fewer live opponents justifies looser raising (heads-up: only one hand
@@ -930,6 +977,7 @@ const AIProfiles = (function () {
     scaledRaiseDollars,
     shouldBluff,
     bluffRaiseTier,
+    tempoFor,
     opponentCountBarAdjustment,
     liveOpponentCount,
     liveOpponentIds,

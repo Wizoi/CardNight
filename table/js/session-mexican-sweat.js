@@ -135,7 +135,7 @@ const SessionMexicanSweat = (function () {
               notify();
               break;
             }
-            await sleep(BET_DELAY_MS);
+            await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
             const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = MexicanSweatAIProfiles.decideBet(bettor, state, profile);
             MexicanSweatRules.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);

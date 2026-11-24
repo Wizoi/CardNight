@@ -131,7 +131,7 @@ const SessionCommunityStud = (function () {
               notify();
               break;
             }
-            await sleep(BET_DELAY_MS);
+            await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
             const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = CommunityStudAIProfiles.decideBet(bettor, state, profile);
             CommunityStudRules.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);

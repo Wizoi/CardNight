@@ -131,7 +131,7 @@ const SessionDrawPoker = (function () {
               notify();
               return;
             }
-            await sleep(BET_DELAY_MS);
+            await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
             const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = DrawPokerAIProfiles.decideBet(bettor, state, profile);
             RulesDrawPoker.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
@@ -151,7 +151,7 @@ const SessionDrawPoker = (function () {
               notify();
               return;
             }
-            await sleep(DRAW_DELAY_MS);
+            await sleep(DRAW_DELAY_MS * AIProfiles.tempoFor(player.profileName));
             const discardIdx = DrawPokerAIProfiles.decideDraw(player);
             RulesDrawPoker.resolveDraw(state, playerId, discardIdx);
             notify();

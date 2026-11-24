@@ -189,7 +189,7 @@ const SessionStud = (function () {
               notify();
               break;
             }
-            await sleep(BET_DELAY_MS);
+            await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
             const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = StudAIProfiles.decideBet(bettor, state, profile);
             StudRules.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
@@ -232,12 +232,13 @@ const SessionStud = (function () {
               break;
             }
             const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
-            await sleep(DECISION_DELAY_MS);
+            const tempo = AIProfiles.tempoFor(player.profileName);
+            await sleep(DECISION_DELAY_MS * tempo);
             const decision = StudAIProfiles.decideEnterpriseChoice(player, state, profile);
             resolveEnterpriseDecision(dealt.playerId, decision.action, decision.position);
             notify();
             if (decision.action === "wipe") {
-              await sleep(DECISION_DELAY_MS);
+              await sleep(DECISION_DELAY_MS * tempo);
               const followUp = StudAIProfiles.decideEnterpriseAfterWipe(player, state, profile);
               resolveEnterpriseDecision(dealt.playerId, followUp.action, followUp.position);
               notify();
@@ -251,7 +252,7 @@ const SessionStud = (function () {
             }
             const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
             const willBuy = StudAIProfiles.decideBuyOnDeal(player, dealt.card, profile);
-            await sleep(DECISION_DELAY_MS);
+            await sleep(DECISION_DELAY_MS * AIProfiles.tempoFor(player.profileName));
             resolveBuyDecision(dealt.needsDecision, dealt.playerId, willBuy);
             notify();
           }

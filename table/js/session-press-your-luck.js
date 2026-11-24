@@ -135,7 +135,7 @@ const SessionPressYourLuck = (function () {
               notify();
               return;
             }
-            await sleep(DECIDE_DELAY_MS);
+            await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(player.profileName));
             const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
             const choice = PressYourLuckAIProfiles.decideBuyBack(player, state, profile);
             // resolveInitialBuyback only advances the cursor once this
@@ -162,7 +162,7 @@ const SessionPressYourLuck = (function () {
               notify();
               return;
             }
-            await sleep(DECIDE_DELAY_MS);
+            await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
             const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = PressYourLuckAIProfiles.decideBet(bettor, state, profile);
             if (decision.action === "fold") maybeQuip(bettor, "fold");
@@ -194,7 +194,8 @@ const SessionPressYourLuck = (function () {
             notify();
             return;
           }
-          await sleep(DECIDE_DELAY_MS);
+          const tempo = AIProfiles.tempoFor(player.profileName);
+          await sleep(DECIDE_DELAY_MS * tempo);
           const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
           const action = PressYourLuckAIProfiles.decideHitOrStand(player, state, profile);
           let { needsBuyBack } = PressYourLuckRules.resolveHitOrStand(state, playerId, action);
@@ -204,7 +205,7 @@ const SessionPressYourLuck = (function () {
           // of ending the turn -- loop until this player is genuinely
           // done, same as the human path's own re-armed pending object.
           while (needsBuyBack) {
-            await sleep(DECIDE_DELAY_MS);
+            await sleep(DECIDE_DELAY_MS * tempo);
             const choice = PressYourLuckAIProfiles.decideBuyBack(player, state, profile);
             ({ needsBuyBack } = PressYourLuckRules.resolveBuyBack(state, playerId, choice));
             notify();

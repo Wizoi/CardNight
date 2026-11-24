@@ -126,7 +126,7 @@ const Session333 = (function () {
             notify();
             return;
           }
-          await sleep(BET_DELAY_MS);
+          await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
           const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
           const decision = Rules333AIProfiles.decideBet(bettor, state, profile);
           Rules333.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);

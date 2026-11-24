@@ -149,7 +149,7 @@ const SessionMidnightBaseball = (function () {
               notify();
               break;
             }
-            await sleep(BET_DELAY_MS);
+            await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
             const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = AIProfiles.decideBet(bettor, state, profile);
             MidnightBaseball.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
@@ -183,14 +183,15 @@ const SessionMidnightBaseball = (function () {
       const cardIndex = AIProfiles.decideNextCardIndex(player);
       const { needsDecision } = MidnightBaseball.flipCard(state, player.id, cardIndex);
       notify();
-      await sleep(FLIP_DELAY_MS);
+      const tempo = AIProfiles.tempoFor(player.profileName);
+      await sleep(FLIP_DELAY_MS * tempo);
 
       if (needsDecision === "buy3") {
         const willBuy = AIProfiles.decideBuy3(player);
         const { declined } = MidnightBaseball.resolveBuy3(state, player.id, willBuy);
         if (!declined) maybeQuip(player, "buyWild");
         notify();
-        await sleep(DECISION_DELAY_MS);
+        await sleep(DECISION_DELAY_MS * tempo);
         if (declined) {
           stopTurnWithQuips(player.id, "declinedWild");
           notify();
@@ -201,13 +202,13 @@ const SessionMidnightBaseball = (function () {
         MidnightBaseball.resolveBuy9(state, player.id, willBuy);
         if (willBuy) maybeQuip(player, "buyWild");
         notify();
-        await sleep(DECISION_DELAY_MS);
+        await sleep(DECISION_DELAY_MS * tempo);
       } else if (needsDecision === "buy4") {
         const willBuy = AIProfiles.decideBuy4(player);
         MidnightBaseball.resolveBuy4(state, player.id, willBuy);
         if (willBuy) maybeQuip(player, "buyBonus");
         notify();
-        await sleep(DECISION_DELAY_MS);
+        await sleep(DECISION_DELAY_MS * tempo);
       }
 
       if (MidnightBaseball.hasBeatenBoard(state, player.id)) {

@@ -30,9 +30,25 @@ const TableQuips = (function () {
   // 2026-11-23 re-bucketing pass (fortress--she-her and
   // statistician--they-them both have zero `raise` lines written) degrade
   // to a plain general line instead of firing nothing or throwing.
+  // Per-profile talkativeness (2026-11-23, design review finding #8)
+  // takes priority over the caller-supplied `chance` whenever the player
+  // has real archetype data: previously every archetype talked at the
+  // exact same flat rate (the session's own QUIP_CHANCE), so the Wall
+  // (most of whose own lines are about NOT talking) chattered exactly as
+  // often as the Diplomat. `chance` stays the fallback for a player with
+  // no resolvable profile (or in a test harness that hands this a plain
+  // synthetic profile-less player), so this is additive, not breaking.
+  function effectiveChance(player, chance) {
+    if (typeof AIProfiles !== "undefined" && player.profileName) {
+      const profile = AIProfiles.profileFor(player.profileName);
+      if (profile && profile.talkativeness != null) return profile.talkativeness;
+    }
+    return chance == null ? DEFAULT_QUIP_CHANCE : chance;
+  }
+
   function pickQuip(player, moment, chance) {
     if (player.isHuman || !player.tablePersonId) return null;
-    if (Math.random() > (chance == null ? DEFAULT_QUIP_CHANCE : chance)) return null;
+    if (Math.random() > effectiveChance(player, chance)) return null;
     const person = TablePeople.getById(player.tablePersonId);
     if (!person || !person.phrasesByMoment) return null;
     const pool = person.phrasesByMoment[moment];

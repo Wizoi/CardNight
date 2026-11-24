@@ -131,7 +131,7 @@ const SessionHoldem = (function () {
               notify();
               break;
             }
-            await sleep(BET_DELAY_MS);
+            await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
             const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = HoldemAIProfiles.decideBet(bettor, state, profile);
             HoldemRules.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);

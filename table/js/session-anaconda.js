@@ -131,7 +131,7 @@ const SessionAnaconda = (function () {
               notify();
               return;
             }
-            await sleep(DECIDE_DELAY_MS);
+            await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(nextPlayer.profileName));
             const discardIdx = kind === "discard1" ? AnacondaAIProfiles.decideDiscard1(nextPlayer) : AnacondaAIProfiles.decideDiscard2(nextPlayer);
             if (kind === "discard1") RulesAnaconda.submitDiscard1(state, nextPlayer.id, discardIdx);
             else RulesAnaconda.submitDiscard2(state, nextPlayer.id, discardIdx);
@@ -151,7 +151,7 @@ const SessionAnaconda = (function () {
               notify();
               return;
             }
-            await sleep(DECIDE_DELAY_MS);
+            await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(nextPlayer.profileName));
             const order = AnacondaAIProfiles.decideArrangeOrder(nextPlayer);
             RulesAnaconda.submitArrangeOrder(state, nextPlayer.id, order);
             notify();
@@ -177,7 +177,7 @@ const SessionAnaconda = (function () {
             notify();
             return;
           }
-          await sleep(BET_DELAY_MS);
+          await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
           const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
           const decision = AnacondaAIProfiles.decideBet(bettor, state, profile);
           RulesAnaconda.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);

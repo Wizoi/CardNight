@@ -120,7 +120,7 @@ const SessionAceyDucey = (function () {
             notify();
             return;
           }
-          await sleep(BET_DELAY_MS);
+          await sleep(BET_DELAY_MS * AIProfiles.tempoFor(player.profileName));
           const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
           const betDollars = AceyDuceyAIProfiles.decideBet(player, state, profile);
           AceyDuceyRules.resolveBet(state, playerId, betDollars);

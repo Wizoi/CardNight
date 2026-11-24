@@ -129,7 +129,7 @@ const SessionGameOfLife = (function () {
               notify();
               return;
             }
-            await sleep(FLIP_DELAY_MS);
+            await sleep(FLIP_DELAY_MS * AIProfiles.tempoFor(player.profileName));
             const rowChoice = required || GameOfLifeAIProfiles.decideFlipChoice(player, state);
             RulesGameOfLife.resolveFlip(state, playerId, rowChoice);
             notify();
@@ -148,7 +148,7 @@ const SessionGameOfLife = (function () {
             notify();
             return;
           }
-          await sleep(BET_DELAY_MS);
+          await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
           const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
           const decision = GameOfLifeAIProfiles.decideBet(bettor, state, profile);
           RulesGameOfLife.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
