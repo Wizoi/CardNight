@@ -50,7 +50,7 @@ const Rules333AIProfiles = (function () {
     }
     const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));
     const raiseThreshold = 2 - barAdjustment;
-    if (profile.raiseWhenLeading && bestDistance <= raiseThreshold) {
+    if ((profile.raiseWhenLeading || AIProfiles.breaksPattern(profile)) && bestDistance <= raiseThreshold) {
       const maxRaise = Rules333.maxRaiseDollars(state, player.id);
       if (maxRaise > 0) {
         const tier = AIProfiles.confidenceTier(Math.floor(raiseThreshold - bestDistance));

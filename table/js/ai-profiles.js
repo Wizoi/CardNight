@@ -488,11 +488,18 @@ const AIProfiles = (function () {
       chancePerCard: 1.4,
       lossAversion: 0.25, // stays in on nearly anything, by design -- bet size barely registers
       raiseWhenLeading: false,
-      // With raiseWhenLeading off, bluffing is this profile's ONLY path to
-      // ever raising at all -- fitting, since an unpredictable raise
-      // untethered from actual hand strength IS the "contrarian" trait,
-      // not just a flavor add-on the way it is for other profiles.
+      // With raiseWhenLeading off, bluffing and pattern-breaking are this
+      // profile's only two paths to ever raising at all. bluffFrequency
+      // raises baselessly (hand strength irrelevant); patternBreakRate
+      // (2026-11-23, design review finding #10) is the opposite -- an
+      // unpredictable chance to actually press a genuine monster hand
+      // (gated by raiseMinCategory below) it would otherwise always
+      // decline to, replacing the old "never raises for value, full
+      // stop" rigidity (itself a fixed, perfectly predictable pattern)
+      // with real unpredictability in BOTH directions.
       bluffFrequency: 0.2,
+      patternBreakRate: 0.15,
+      raiseMinCategory: HandEvaluator.CATEGORY.TRIPS, // only a genuine monster breaks the pattern
       reRaiseChanceAdjustment: 0, // contrarian, not predictably timid or predictably stubborn either way
       opponentAdaptSensitivity: 0.2, // some awareness, but plays unconventionally regardless of what it implies
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD,
@@ -711,6 +718,22 @@ const AIProfiles = (function () {
     return Math.random() < (profile.bluffFrequency || 0);
   }
 
+  // profile.patternBreakRate (2026-11-23, design review finding #10):
+  // Subversive's old "never raises for value" (raiseWhenLeading: false,
+  // full stop) was itself a fixed, perfectly predictable rule -- a player
+  // who only ever calls, even holding a straight flush, reads as a
+  // calling station, not a genuinely creative/contrarian one. A small
+  // chance to raise a monster anyway (breaking its own established
+  // pattern) is wired into every raiseWhenLeading gate alongside the
+  // normal check, so this archetype occasionally DOES press a real lead
+  // it would otherwise always decline to -- still gated on actually
+  // clearing the category bar (via whatever raiseMinCategory the profile
+  // defines), so it's a genuine strong hand being pressed unpredictably,
+  // not a baseless raise (that's what bluffFrequency is already for).
+  function breaksPattern(profile) {
+    return Math.random() < (profile.patternBreakRate || 0);
+  }
+
   // profile.bluffSizing (2026-11-23, design review finding #7) -- every
   // bluff used to raise the exact same tier-1 "plain-looking" amount
   // regardless of archetype, which was itself a tell once a whole night's
@@ -915,7 +938,7 @@ const AIProfiles = (function () {
   }
 
   function worthRaisingAsLeader(player, state, profile, barAdjustment) {
-    if (!profile.raiseWhenLeading) return false;
+    if (!profile.raiseWhenLeading && !breaksPattern(profile)) return false;
     const showing = MidnightBaseball.evaluateShowingHand(state, player.id);
     const remaining = MidnightBaseball.remainingFaceDownCount(state, player.id);
     return showing.category >= raiseBarForLeader(remaining, profile, barAdjustment);
@@ -978,6 +1001,7 @@ const AIProfiles = (function () {
     shouldBluff,
     bluffRaiseTier,
     tempoFor,
+    breaksPattern,
     opponentCountBarAdjustment,
     liveOpponentCount,
     liveOpponentIds,

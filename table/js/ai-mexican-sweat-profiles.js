@@ -18,7 +18,7 @@ const MexicanSweatAIProfiles = (function () {
   }
 
   function worthRaisingAsLeader(player, state, profile, barAdjustment) {
-    if (!profile.raiseWhenLeading) return false;
+    if (!profile.raiseWhenLeading && !AIProfiles.breaksPattern(profile)) return false;
     const showing = MexicanSweatRules.evaluateShowingHand(state, player.id);
     const roundsLeft = MexicanSweatRules.roundsRemaining(state);
     return showing.category >= raiseBarFor(roundsLeft, profile, barAdjustment);

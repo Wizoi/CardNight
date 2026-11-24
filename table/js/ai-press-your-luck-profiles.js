@@ -154,7 +154,7 @@ const PressYourLuckAIProfiles = (function () {
     // distance threshold goes DOWN for the same effect).
     const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));
     const raiseThreshold = profile.pressYourLuckStandThreshold - barAdjustment;
-    if (profile.raiseWhenLeading && isLocked && bestDistance <= raiseThreshold) {
+    if ((profile.raiseWhenLeading || AIProfiles.breaksPattern(profile)) && isLocked && bestDistance <= raiseThreshold) {
       const maxRaise = PressYourLuckRules.maxRaiseDollars(state, player.id);
       if (maxRaise > 0) {
         const tier = AIProfiles.confidenceTier(Math.floor(raiseThreshold - bestDistance));

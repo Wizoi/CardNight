@@ -38,7 +38,7 @@ const DrawPokerAIProfiles = (function () {
       if (isFinal && hand.category < HandEvaluator.CATEGORY.TRIPS) return { action: "fold" };
       if (!isFinal && hand.category < HandEvaluator.CATEGORY.PAIR) return { action: "fold" };
     }
-    if (profile.raiseWhenLeading) {
+    if (profile.raiseWhenLeading || AIProfiles.breaksPattern(profile)) {
       const minCategory = isFinal ? HandEvaluator.CATEGORY.TRIPS : profile.raiseMinCategory;
       if (hand.category >= minCategory) {
         const maxRaise = RulesDrawPoker.maxRaiseDollars(state, player.id);

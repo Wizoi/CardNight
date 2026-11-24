@@ -61,7 +61,7 @@ const GameOfLifeAIProfiles = (function () {
     }
     const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));
     const bar = raiseBarFor(flipsLeft, profile, barAdjustment);
-    if (profile.raiseWhenLeading && myHand.category >= bar) {
+    if ((profile.raiseWhenLeading || AIProfiles.breaksPattern(profile)) && myHand.category >= bar) {
       const maxRaise = RulesGameOfLife.maxRaiseDollars(state, player.id);
       if (maxRaise > 0) {
         const tier = AIProfiles.confidenceTier(myHand.category - bar);

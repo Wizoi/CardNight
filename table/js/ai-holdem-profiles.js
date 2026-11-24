@@ -107,7 +107,7 @@ const HoldemAIProfiles = (function () {
     }
     const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));
     const escalatedBar = raiseBarFor(streetsLeft, profile, barAdjustment + raisesSoFar);
-    if (profile.raiseWhenLeading && canRaiseAgain && myHand.category >= escalatedBar) {
+    if ((profile.raiseWhenLeading || AIProfiles.breaksPattern(profile)) && canRaiseAgain && myHand.category >= escalatedBar) {
       const maxRaise = HoldemRules.maxRaiseDollars(state, player.id);
       if (maxRaise > 0) {
         const tier = AIProfiles.confidenceTier(myHand.category - escalatedBar);

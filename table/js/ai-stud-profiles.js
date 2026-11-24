@@ -89,7 +89,7 @@ const StudAIProfiles = (function () {
   }
 
   function worthRaisingAsLeaderStud(player, state, profile, barAdjustment) {
-    if (!profile.raiseWhenLeading) return false;
+    if (!profile.raiseWhenLeading && !AIProfiles.breaksPattern(profile)) return false;
     const showing = StudRules.evaluateShowingHand(state, player.id);
     const streetsLeft = StudRules.streetsRemaining(state);
     return showing.category >= raiseBarForStud(streetsLeft, profile, barAdjustment);
