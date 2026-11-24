@@ -165,7 +165,65 @@ finished `1.0`. `versionCode` still has to strictly increase on every
 upload regardless of what `versionName` says.
 
 **Still manual, not automatable through this plugin**: adding testers to
-the internal track. That's a Play Console UI action (Testing -> Internal
-testing -> Testers tab -> create an email list -> add tester emails ->
-share the generated opt-in link) with no equivalent exposed here -- done
-directly by the user, not scripted.
+any track. That's a Play Console UI action (Testing -> [track] -> Testers
+tab -> create an email list -> add tester emails -> share the generated
+opt-in link) with no equivalent exposed here -- done directly by the user,
+not scripted.
+
+## Store listing content, pushed automatically (2026-11-24)
+
+`android/app/src/main/play/` follows Gradle Play Publisher's own directory
+convention (`listings/en-US/title.txt`/`shortDescription.txt`/
+`fullDescription.txt`, `graphics/icon`/`featureGraphic`/`phoneScreenshots`,
+`release-notes/en-US/default.txt`, `contact-email.txt`). `./gradlew.bat
+publishReleaseListing` pushes all of it via the same service-account
+credentials, gated the same way as the bundle publish (only applies if
+`play-service-account.json` exists).
+
+**Real, non-obvious blocker hit on the very first listing push**: `403
+Forbidden -- "The default language for your application is not currently
+supported."` on the commit step, even though the API's own `edits.details`
+read back `defaultLanguage: "en-US"` just fine. This is a genuine Play
+Developer API limitation, not a propagation delay (confirmed by forcing a
+full `--rerun-tasks` re-run, which reproduced the identical error) -- a
+brand-new app's first store-listing language has to be manually saved once
+through the Console UI (Main store listing page) before the API can touch
+it at all. Once the user did that one manual save, the identical automated
+push succeeded immediately. The two phone screenshots
+(`graphics/phoneScreenshots/1.jpg`/`2.jpg`) are real captures of the live
+app at a phone viewport (the setup/roster screen, a Midnight Baseball hand
+in progress) -- not placeholders; Play's screenshot requirement (min 2)
+was satisfied honestly rather than with filler images.
+
+## Closed testing (2026-11-24)
+
+Two closed-testing tracks exist in Play Console: **Alpha** (for
+individually-added users) and **External Testing** (for a broader tester
+community). Two real, non-obvious gotchas hit publishing to them, both
+worth remembering for any future track:
+
+1. **A custom track's display name in the Console UI is not always its API
+   identifier.** `GET .../tracks` is the source of truth -- it listed
+   `production`, `beta`, `alpha` (lowercase -- Play's legacy default closed
+   track, which is what the Console UI's "Alpha" track actually maps to)
+   `internal`, and `External Testing` (a genuinely custom track, whose API
+   name matches its display name exactly, case included). Don't guess from
+   what's shown in the UI; query the tracks list.
+2. **A non-internal track only accepts `draft`-status releases while the
+   app itself is still in Play Console's "draft" app-state** (content
+   questionnaires filled in via the API but not yet formally submitted for
+   review through the Console) -- `releaseStatus.set(...DRAFT)` in the
+   `play { }` block is required for this, commented out by default since
+   internal testing doesn't need it. **A draft release never goes live on
+   its own** -- the user still has to open Play Console, find the draft
+   release on that track, and click Review release -> Start rollout, same
+   as a first-time manual upload would require. First successful draft
+   publishes: versionCode 3 (alpha), versionCode 4 (External Testing),
+   same 2026-11-24 build as internal's versionCode 2.
+
+`app/build.gradle`'s `play { }` block defaults back to `track.set("internal")`
+(with `releaseStatus` commented out) after this -- publishing to a closed
+track again means temporarily changing both, publishing, then reverting,
+the same way this session did it by hand rather than something
+parameterized via a Gradle property (not worth the extra indirection for
+how rarely this actually needs to happen).

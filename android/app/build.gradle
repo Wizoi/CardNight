@@ -19,7 +19,7 @@ android {
         applicationId "com.luckofthedeal.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
+        versionCode 4
         versionName "0.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -62,8 +62,20 @@ if (rootProject.file("play-service-account.json").exists()) {
 
     play {
         serviceAccountCredentials.set(rootProject.file("play-service-account.json"))
+        // Default target is internal testing -- the one track exempt from
+        // the "app still in draft state" restriction below, so a plain
+        // `./gradlew.bat publishReleaseBundle` always targets it. Publishing
+        // to a closed-testing track instead is a deliberate, temporary
+        // override (see android/README.md's "Closed testing" section) --
+        // change `track` (and uncomment `releaseStatus`) for that, then
+        // revert back to this default afterward.
         track.set("internal")
         defaultToAppBundles.set(true)
+        // Uncomment when targeting a non-internal track while the app is
+        // still in Play Console's "draft" app-state (content questionnaires
+        // filled in but not yet formally submitted for review) -- Play only
+        // accepts draft-status releases on those tracks until that happens.
+        // releaseStatus.set(com.github.triplet.gradle.androidpublisher.ReleaseStatus.DRAFT)
     }
 }
 
