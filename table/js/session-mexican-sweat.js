@@ -146,7 +146,15 @@ const SessionMexicanSweat = (function () {
           }
 
           if (MexicanSweatRules.isRoundRevealComplete(state)) {
-            MexicanSweatRules.startBettingRound(state);
+            // No betting round after the final reveal -- see
+            // isFinalRevealRound's own comment: by then every hand is
+            // already fully face up for the whole table, so there's no
+            // new information left to bet on.
+            if (MexicanSweatRules.isFinalRevealRound(state)) {
+              MexicanSweatRules.resolveShowdown(state);
+            } else {
+              MexicanSweatRules.startBettingRound(state);
+            }
             notify();
             continue;
           }

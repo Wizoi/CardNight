@@ -69,6 +69,26 @@ function run() {
     check("fold-out win leaves bestHandDescribed null (nothing was genuinely compared)", state.bestHandDescribed == null);
   }
 
+  // Real bug, reported directly (2026-11-23): a betting round used to
+  // open unconditionally after every reveal round, including the final
+  // one -- but by the time every player's last card is face up, every
+  // hand is already fully known to everyone, so there's no new
+  // information left to bet on. isFinalRevealRound is the rules-layer
+  // signal the session loop now checks before ever starting that last
+  // betting round -- see session-mexican-sweat.test.js for the full
+  // end-to-end check that one genuinely never opens.
+  {
+    const players = [
+      { id: "p0", name: "Kevin", isHuman: true, wallet: { chips: 10000 } },
+      { id: "p1", name: "Marisol", isHuman: false, wallet: { chips: 10000 } },
+    ];
+    const cfg = Object.assign({}, MEXICAN_SWEAT_CONFIG, { killCard: false });
+    const state = MexicanSweatRules.createHandState(players, 0, settings, 0, cfg);
+    check("isFinalRevealRound is false at the very start of the hand", MexicanSweatRules.isFinalRevealRound(state) === false);
+    state.roundIndex = state.cardsPerPlayer - 1;
+    check("isFinalRevealRound is true once roundIndex reaches the last card", MexicanSweatRules.isFinalRevealRound(state) === true);
+  }
+
   return summary("rules-mexican-sweat");
 }
 

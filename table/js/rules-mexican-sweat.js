@@ -97,6 +97,23 @@ const MexicanSweatRules = (function () {
     return nextRevealTarget(state) == null;
   }
 
+  // Real bug, reported directly (2026-11-23): a betting round used to open
+  // unconditionally after EVERY reveal round, including the final one —
+  // but by the time every player's last card is face up, every hand at
+  // the table is already fully known to everyone (nothing left hidden
+  // from anyone, unlike a stud game's still-private hole cards even on
+  // its own final street). Betting at that exact fully-revealed moment
+  // can't react to any new information, so it shouldn't happen. The
+  // user's own framing: this WOULD make sense if the kill card (when
+  // enabled) were saved to flip as the very last piece of information —
+  // but it isn't; killRank is drawn and announced at deal time (see
+  // createHandState), fully known from the start of the hand, so there's
+  // no remaining uncertainty left to bet on by the final round either
+  // way.
+  function isFinalRevealRound(state) {
+    return state.roundIndex >= state.cardsPerPlayer - 1;
+  }
+
   function nextRevealTarget(state) {
     for (let i = state.revealCursor; i < state.turnOrder.length; i++) {
       const pid = state.turnOrder[i];
@@ -262,6 +279,7 @@ const MexicanSweatRules = (function () {
     cardsPerPlayerFor,
     createHandState,
     isRoundRevealComplete,
+    isFinalRevealRound,
     nextRevealTarget,
     revealNextCard,
     isRevealingDone,
