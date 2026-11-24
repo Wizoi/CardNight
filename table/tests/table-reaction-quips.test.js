@@ -108,10 +108,22 @@ function run() {
     // reactor, guaranteed to have real reactOpponentBigWin lines) and the
     // winner into a big, qualifying net gain -- the simplest way to
     // reliably exercise the real trigger threshold without needing an
-    // actual multi-hand betting sequence.
+    // actual multi-hand betting sequence. Both `profileName` (talkativeness/
+    // behavior) AND `tablePersonId` (which character's actual dialogue bank
+    // pickReaction reads) have to be set -- a real test bug, caught only
+    // by chasing an intermittent flake: setting profileName alone left
+    // tablePersonId at whatever random character TableNight.init() happened
+    // to assign, so roughly ~1 in 4 random 6-seat rosters landed on zero
+    // reaction-capable characters among the other AI seats, making every
+    // one of the 300 "trials" below fail together (they all share the SAME
+    // fixed roster -- the loop never re-rolls character assignment, so it
+    // was never really 300 independent chances to begin with).
     const players = vs0.players;
     for (const p of players) {
-      if (!p.isHuman) p.profileName = "diplomat";
+      if (!p.isHuman) {
+        p.profileName = "diplomat";
+        p.tablePersonId = "diplomat--he-him";
+      }
     }
     const winner = players.find((p) => !p.isHuman);
     winner.wallet.chips += 50; // a large, unambiguous net gain this hand
@@ -144,7 +156,10 @@ function run() {
     const onHandComplete = capturedCallbacks[capturedCallbacks.length - 1];
     const players = TableNight.getViewState().players;
     for (const p of players) {
-      if (!p.isHuman) p.profileName = "diplomat";
+      if (!p.isHuman) {
+        p.profileName = "diplomat";
+        p.tablePersonId = "diplomat--he-him";
+      }
     }
     const winner = players.find((p) => !p.isHuman);
     winner.wallet.chips += 1; // a trivially small net gain -- not a "big win"

@@ -81,6 +81,53 @@ function run() {
   const lateWorth = remaining * (profile.chancePerCard + lateBonus) >= gap;
   check("with nothing left to hope for, the same borderline hand still folds (matches the pre-fix, correctly-reasoned flat math)", lateWorth === false);
 
+  // Real bug, reported directly (2026-11-23), found live: "Ingrid didn't
+  // even take a card. She just completely folded on Midnight Baseball" --
+  // screenshotted with all 5 of her cards still face-down. The fix above
+  // (decideContinue, the player's OWN reveal-turn "keep going?" decision)
+  // never reached decideBet's fold check, which can fire during a betting
+  // round BEFORE a player has ever flipped a single one of their own
+  // cards -- the exact same "is this hand worth chasing" question, just
+  // asked from a different code path, with the identical blind spot:
+  // judging an all-face-down (or near-empty) showing hand against the
+  // board with zero credit for the family's own buyable wilds/bonus
+  // draws still to come.
+  {
+    const { HandEvaluator, BaseballWildcards, AIProfiles, MidnightBaseball } = load(
+      ["deck.js", "hand-evaluator.js", "baseball-family-wildcards.js", "ai-profiles.js"],
+      ["HandEvaluator", "BaseballWildcards", "AIProfiles", "MidnightBaseball"],
+      {
+        MidnightBaseball: {
+          // The same borderline shape the decideContinue fix above already
+          // validates (gap of exactly 4, 4 cards remaining -- flat math
+          // folds at 4*0.85=3.4 < 4, the wildcard bonus pushes it over),
+          // here reached through decideBet's OWN fold check instead, since
+          // that's the path Ingrid's report actually went through.
+          currentBestHand: () => ({ holderId: "nico", hand: { category: HandEvaluator.CATEGORY.STRAIGHT, tiebreakers: [9] } }),
+          evaluateShowingHand: () => ({ category: HandEvaluator.CATEGORY.HIGH_CARD, tiebreakers: [2] }),
+          remainingFaceDownCount: () => 4,
+          maxRaiseDollars: () => 0,
+        },
+      }
+    );
+    const player = { id: "ingrid", profileName: "steady-hand", hand: [] };
+    const profile = AIProfiles.PROFILES["steady-hand"];
+    const state = {
+      bettingRound: { currentBetChips: 100, committed: { ingrid: 0 }, raiseCounts: {} },
+      pot: 200,
+      players: [player],
+      raiseIncrementDollars: 0.25,
+      // A fresh hand -- nobody's flipped a 3/9/4 face up anywhere yet, so
+      // the wildcard bonus should be at its strongest.
+      discardPile: [],
+    };
+    const decision = AIProfiles.decideBet(player, state, profile);
+    check(
+      "a player facing a bet with ZERO cards flipped yet no longer folds reflexively -- the reported bug, reproduced and fixed",
+      decision.action !== "fold"
+    );
+  }
+
   return summary("ai-midnight-baseball-wildcard-awareness");
 }
 

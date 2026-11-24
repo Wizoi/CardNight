@@ -972,10 +972,26 @@ const AIProfiles = (function () {
     if (!isLeader && toCallChips > 0) {
       const showing = MidnightBaseball.evaluateShowingHand(state, player.id);
       const remaining = MidnightBaseball.remainingFaceDownCount(state, player.id);
+      // Real bug, reported directly (2026-11-23): a player facing a bet
+      // during a betting round -- which can happen before they've ever
+      // flipped a single one of their own cards -- judged `showing`
+      // (artificially weak or literally empty for anyone who hasn't had
+      // their own reveal turn yet) against the board with no credit for
+      // the family's own buyable wilds/bonus draws still to come, even
+      // though decideContinue (this same "worth chasing" question, just
+      // asked from the player's OWN reveal-turn instead of a betting
+      // round) already got this fix. Ingrid folded with all 5 cards still
+      // face-down, having never taken a single card -- the same
+      // wildcardChanceBonus term decideContinue uses belongs here too,
+      // since it's the identical signal either way: the family's wilds
+      // and flip-up bonuses exist specifically to keep a moderate hand in
+      // the game a bit longer, not just for the self-reveal case.
+      const wildcardBonus = typeof BaseballWildcards !== "undefined" ? BaseballWildcards.wildcardChanceBonus(state) : 0;
       const chanceBonus =
         potOddsChanceBonus(toCallChips, state.pot) +
         reRaiseChanceAdjustment(br, player.id, profile) +
-        opponentLoosenessAdjustment(state.opponentStats, liveOpponentIds(state.players, player.id), profile);
+        opponentLoosenessAdjustment(state.opponentStats, liveOpponentIds(state.players, player.id), profile) +
+        wildcardBonus;
       if (!worthPursuing(showing, best.hand, remaining, profile, chanceBonus)) {
         return { action: "fold" };
       }
