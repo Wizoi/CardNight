@@ -21,6 +21,9 @@ const SessionBlindMansBluff = (function () {
     let carriedPotChips = config.carriedPotChips || 0;
     let state = null;
     let running = false;
+    let lastQuip = null;
+    let quipSeq = 0;
+    const QUIP_CHANCE = 0.35;
 
     // Full mid-hand resume (2026-08-29) -- see the identical note in
     // session-stud.js. No `pending` here (fold/call/raise is the only
@@ -30,6 +33,8 @@ const SessionBlindMansBluff = (function () {
       state = config.resumeFrom.state;
       handNumber = config.resumeFrom.extra.handNumber;
       carriedPotChips = config.resumeFrom.extra.carriedPotChips;
+      lastQuip = config.resumeFrom.extra.lastQuip;
+      quipSeq = config.resumeFrom.extra.quipSeq;
       if (state) {
         state.opponentStats = opponentStats;
         state.recentResults = recentResults;
@@ -38,7 +43,18 @@ const SessionBlindMansBluff = (function () {
     }
 
     function snapshot() {
-      return { state, pending: null, extra: { handNumber, carriedPotChips } };
+      return { state, pending: null, extra: { handNumber, carriedPotChips, lastQuip, quipSeq } };
+    }
+
+    // 2026-11-23: this game previously had no quip wiring at all (design
+    // review finding #2's own list). Same shared selection logic every
+    // other family uses, same fold/raise/win moments.
+    function maybeQuip(player, moment) {
+      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE);
+      if (!picked) return;
+      quipSeq += 1;
+      lastQuip = { id: quipSeq, playerId: player.id, text: picked.text };
+      if (state) state.log.push(`${picked.personName}: "${picked.text}"`);
     }
 
     function sleep(ms) {
@@ -110,6 +126,8 @@ const SessionBlindMansBluff = (function () {
           const decision = BlindMansBluffAIProfiles.decideBet(bettor, state, profile);
           BlindMansBluffRules.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
           onBettingAction(bettorId, decision.action);
+          if (decision.action === "raise") maybeQuip(bettor, "raise");
+          else if (decision.action === "fold") maybeQuip(bettor, "fold");
           notify();
         }
       } finally {
@@ -117,6 +135,7 @@ const SessionBlindMansBluff = (function () {
       }
       if (state && state.status === "complete") {
         carriedPotChips = 0;
+        if (state.winnerId) maybeQuip(BlindMansBluffRules.getPlayer(state, state.winnerId), "win");
         onHandComplete({ winnerId: state.winnerId, rainedOut: false, potChips: 0 });
         notify();
       }
@@ -132,7 +151,7 @@ const SessionBlindMansBluff = (function () {
     }
 
     function getViewState() {
-      return { gameId: "blindMansBluff", players, dealerIndex, handNumber, state, pending: null, lastQuip: null };
+      return { gameId: "blindMansBluff", players, dealerIndex, handNumber, state, pending: null, lastQuip };
     }
 
     return {

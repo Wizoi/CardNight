@@ -24,6 +24,9 @@ const SessionAceyDucey = (function () {
     let state = null;
     let pending = null; // {kind: 'bet', playerId}
     let running = false;
+    let lastQuip = null;
+    let quipSeq = 0;
+    const QUIP_CHANCE = 0.35;
 
     // Full mid-hand resume (2026-08-29) -- see the identical note in
     // session-stud.js. No opponentStats in this family (Acey Ducey's
@@ -34,11 +37,31 @@ const SessionAceyDucey = (function () {
       pending = config.resumeFrom.pending;
       handNumber = config.resumeFrom.extra.handNumber;
       carriedPotChips = config.resumeFrom.extra.carriedPotChips;
+      lastQuip = config.resumeFrom.extra.lastQuip;
+      quipSeq = config.resumeFrom.extra.quipSeq;
       if (state && state.status !== "complete" && !pending) processLoop();
     }
 
     function snapshot() {
-      return { state, pending, extra: { handNumber, carriedPotChips } };
+      return { state, pending, extra: { handNumber, carriedPotChips, lastQuip, quipSeq } };
+    }
+
+    // 2026-11-23: this game previously had no quip wiring at all (design
+    // review finding #2's own list -- Acey Ducey, Blind Man's Bluff, and
+    // 3-33 all had none; 3-33 got built the same day, these two were
+    // deliberately deferred). There's no raise/fold/win in the usual
+    // sense here -- just one bet-up-to-the-pot decision per turn,
+    // resolved as win/lose/post/pass -- so this reuses the existing
+    // win/lostHand/fold buckets rather than inventing new, data-less ones:
+    // a losing bet (or "hitting the post," a worse losing bet) reads as
+    // lostHand; declining to bet at all reads as the closest existing
+    // equivalent to folding.
+    function maybeQuip(player, moment) {
+      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE);
+      if (!picked) return;
+      quipSeq += 1;
+      lastQuip = { id: quipSeq, playerId: player.id, text: picked.text };
+      if (state) state.log.push(`${picked.personName}: "${picked.text}"`);
     }
 
     function sleep(ms) {
@@ -124,6 +147,10 @@ const SessionAceyDucey = (function () {
           const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
           const betDollars = AceyDuceyAIProfiles.decideBet(player, state, profile);
           AceyDuceyRules.resolveBet(state, playerId, betDollars);
+          const { outcome } = state.lastResult;
+          if (outcome === "win") maybeQuip(player, "win");
+          else if (outcome === "lose" || outcome === "post") maybeQuip(player, "lostHand");
+          else if (outcome === "pass") maybeQuip(player, "fold");
           notify();
         }
       } finally {
@@ -157,7 +184,7 @@ const SessionAceyDucey = (function () {
     }
 
     function getViewState() {
-      return { gameId: "aceyDucey", players, dealerIndex, handNumber, state, pending, lastQuip: null };
+      return { gameId: "aceyDucey", players, dealerIndex, handNumber, state, pending, lastQuip };
     }
 
     return {
