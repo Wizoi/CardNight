@@ -24,7 +24,17 @@ const AnacondaAIProfiles = (function () {
         // at showdown across several hands).
         const aJoker = a.c.rank === "JOKER" ? 1 : 0;
         const bJoker = b.c.rank === "JOKER" ? 1 : 0;
-        if (aJoker !== bJoker) return bJoker - aJoker; // Jokers sort last -> kept
+        // Real bug, reported directly after live play (2026-11-23): this
+        // comparator's sign was backwards from its own comment -- `bJoker -
+        // aJoker` sorts a Joker to the FRONT of the array when it's `a`,
+        // and `slice(0, count)` (below) discards from the front. So a
+        // Joker was actually the FIRST card offered up for discard/pass,
+        // the opposite of "never volunteer one ahead of a real card" this
+        // same function was fixed to do once already (see the comment
+        // above). `aJoker - bJoker` (matching decideArrangeOrder's own,
+        // correctly-signed version just below) sorts Jokers to the END,
+        // so the discard slice skips over them.
+        if (aJoker !== bJoker) return aJoker - bJoker; // Jokers sort last -> kept
         const aGrouped = rankCounts[a.c.rank] >= 2 ? 1 : 0;
         const bGrouped = rankCounts[b.c.rank] >= 2 ? 1 : 0;
         if (aGrouped !== bGrouped) return aGrouped - bGrouped;

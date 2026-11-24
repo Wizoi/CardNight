@@ -464,7 +464,7 @@ const TableFX = (function () {
         const holeEval = HandEvaluator.evaluatePartial(human.hand);
         return holeEval && holeEval.category >= 0 ? `${foldPrefix}Hole Cards: <strong>${HandEvaluator.describe(holeEval)}</strong>` : "";
       }
-      if ((gameId === "deepOrDoubleScrew" || gameId === "threeBuyFive" || gameId === "fourTwoTwo") && typeof GutsRules !== "undefined") {
+      if ((gameId === "deepOrDoubleScrew" || gameId === "threeBuyFive" || gameId === "fourTwoTwo" || gameId === "threeFiveSeven") && typeof GutsRules !== "undefined") {
         const best = GutsRules.evaluateHand(gvs.state, human);
         if (best && best.category >= 0) return `${foldPrefix}Your Hand: <strong>${HandEvaluator.describe(best)}</strong>`;
       }
@@ -809,12 +809,23 @@ const TableFX = (function () {
     if (gameId === "threeFiveSeven" || gameId === "deepOrDoubleScrew" || gameId === "threeBuyFive" || gameId === "fourTwoTwo") {
       const canDeclareNow = gvs.pending && gvs.pending.kind === "stayDecision" && gvs.pending.playerId == null;
       const humanDecision = state.stayDecisions ? state.stayDecisions[vs.humanId] : null;
-      const wildDesc =
-        state.wildRanks && state.wildRanks.length
-          ? `${state.wildRanks.join(", ")}s WILD`
-          : state.gameConfig && state.gameConfig.lowestCardWild
-          ? "LOWEST HOLE CARD WILD"
-          : "NO WILDS";
+      // Real bug, reported directly after live play (2026-11-23): "it says
+      // chidi has a straight flush? How is that?" -- the hand was correct
+      // (Deep or Double Screw's lowestCardWild base rule plus a flip-up
+      // wildcard both applied, exactly as the engine always intended), but
+      // this badge used to be an either/or: whenever a flip-up wild rank
+      // was active, it showed ONLY that ("6s WILD") and hid that the
+      // lowest-card-is-always-wild base rule was ALSO in effect the whole
+      // time -- so a hand using both wild sources at once looked
+      // unexplainable. Both conditions are independent (lowestCardWild is
+      // a per-game base rule; wildRanks is the optional flip-up ON TOP of
+      // it, see rules-guts.js), so the badge now states both whenever both
+      // apply, matching the combined badge table-fx.js's own Wild In Your
+      // Hand board already uses correctly just below.
+      const wildParts = [];
+      if (state.gameConfig && state.gameConfig.lowestCardWild) wildParts.push("LOWEST HOLE CARD WILD");
+      if (state.wildRanks && state.wildRanks.length) wildParts.push(`${state.wildRanks.join(", ")}s WILD`);
+      const wildDesc = wildParts.length ? wildParts.join(" · ") : "NO WILDS";
 
       let dummyHtml = "";
       if (state.dummyHand) {
@@ -1712,6 +1723,14 @@ const TableFX = (function () {
       return `<div class="pv-no-variants">✓ Standard House Rules — Ready to Deal Immediately</div>`;
     }
     const current = ensureInlineVariants(entry);
+    // A choice can declare `fitsPlayerCount(n)` (e.g. Deep or Double
+    // Screw / 3-5-7 Guts's dummy hand, which the engine silently skips
+    // dealing at all once it doesn't fit one deck) -- real bug, reported
+    // directly after live play (2026-11-23): nothing ever told the dealer
+    // their choice wouldn't actually do anything before they picked it. A
+    // choice that doesn't fit tonight's table is now disabled outright
+    // instead of silently no-op'ing once the hand actually deals.
+    const playerCount = latestPickerVs && latestPickerVs.players ? latestPickerVs.players.length : null;
     return `
       <div class="pv-variants-box">
         <div class="pv-variants-title">⚙️ DEALER'S CHOICE VARIANT OPTIONS</div>
@@ -1720,7 +1739,9 @@ const TableFX = (function () {
             const pills = opt.choices
               .map((c, idx) => {
                 const active = current[opt.key] === c.value;
-                return `<button type="button" class="pv-var-pill ${active ? "pv-var-pill-active" : ""}" data-fx-var-game="${entry.id}" data-fx-var-key="${opt.key}" data-fx-var-idx="${idx}">${c.label}</button>`;
+                const fits = !c.fitsPlayerCount || playerCount == null || c.fitsPlayerCount(playerCount);
+                const label = fits ? c.label : c.unfitLabel || c.label;
+                return `<button type="button" class="pv-var-pill ${active ? "pv-var-pill-active" : ""}" ${fits ? "" : 'disabled title="Won\'t fit at tonight\'s table size"'} data-fx-var-game="${entry.id}" data-fx-var-key="${opt.key}" data-fx-var-idx="${idx}">${label}</button>`;
               })
               .join("");
             return `

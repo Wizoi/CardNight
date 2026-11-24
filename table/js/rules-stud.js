@@ -643,8 +643,16 @@ const StudRules = (function () {
   // path was being written anyway -- the shared completeHand() used by
   // every OTHER stud game still only supports a single high winner, a
   // separate pre-existing gap not touched by this change).
+  //
+  // Real bug, reported directly after live play (2026-11-23): this
+  // originally special-cased the Ace to value 1 ("low"), on the mistaken
+  // assumption Low Chicago needed an ace-low exception -- it doesn't. Low
+  // Chicago uses the same ace-HIGH ranking as every other hand evaluation
+  // in this project, so the Ace is the WORST spade to hold for this side
+  // pot (the 2 of spades is the best/lowest), exactly like a real Low
+  // Chicago side bet. Just defer to the normal rank values.
   function lowChicagoSpadeValue(card) {
-    return card.rank === "A" ? 1 : Deck.RANK_VALUES[card.rank];
+    return Deck.RANK_VALUES[card.rank];
   }
 
   function resolveShowdownWithLowChicago(state) {

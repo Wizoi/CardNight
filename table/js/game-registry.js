@@ -74,6 +74,37 @@ const GameRegistry = (function () {
     default: 0,
   };
 
+  // Deep or Double Screw / 3-5-7 Guts's shared "dummy hand" dealer's-choice
+  // variant -- an extra, unowned hand everyone who stays in must also beat.
+  // Real bug, reported directly after live play (2026-11-23): "I don't see
+  // it and it is never mentioned... if there are too many people to not
+  // give enough cards, then player shouldn't be able to call for a dummy."
+  // The ENGINE already handled this correctly -- GutsRules.createRoundState
+  // only deals a dummy hand when it actually fits within one deck alongside
+  // every real player's hand, and silently skips it (with nothing logged)
+  // otherwise, a deliberate "no-op, not a crash" choice. But nothing ever
+  // told the DEALER their choice wouldn't do anything before they made it.
+  // `fitsPlayerCount` here mirrors that exact engine-side fit check
+  // ((playerCount + 1) * dealSize <= 52, both games share the same dealSize
+  // scaling: 7 cards under 8 players, 6 at a full table) so the picker UI
+  // can disable the option outright instead of letting it silently fail.
+  function gutsDummyHandFitsPlayerCount(playerCount) {
+    const dealSize = playerCount >= 8 ? 6 : 7;
+    return (playerCount + 1) * dealSize <= 52;
+  }
+
+  function gutsDummyHandVariantOption() {
+    return {
+      key: "dummyHandEnabled",
+      label: "Dummy hand — an extra unowned hand everyone who stays in must also beat",
+      choices: [
+        { value: false, label: "None (base game)" },
+        { value: true, label: "Deal a dummy hand", fitsPlayerCount: gutsDummyHandFitsPlayerCount, unfitLabel: "Deal a dummy hand (won't fit at this table size)" },
+      ],
+      default: false,
+    };
+  }
+
   const games = {
     midnightBaseball: {
       id: "midnightBaseball",
@@ -238,15 +269,7 @@ const GameRegistry = (function () {
           ],
           default: 0,
         },
-        {
-          key: "dummyHandEnabled",
-          label: "Dummy hand — an extra unowned hand everyone who stays in must also beat",
-          choices: [
-            { value: false, label: "None (base game)" },
-            { value: true, label: "Deal a dummy hand (only if it fits at tonight's table size)" },
-          ],
-          default: false,
-        },
+        gutsDummyHandVariantOption(),
       ],
       createOrchestrator: (config) => SessionGuts.create({ ...config, gameConfig: applyVariants(DEEP_OR_DOUBLE_SCREW_CONFIG, config.variantChoices) }),
     },
@@ -311,15 +334,7 @@ const GameRegistry = (function () {
           ],
           default: 0,
         },
-        {
-          key: "dummyHandEnabled",
-          label: "Dummy hand — an extra unowned hand everyone who stays in must also beat",
-          choices: [
-            { value: false, label: "None (base game)" },
-            { value: true, label: "Deal a dummy hand (only if it fits at tonight's table size)" },
-          ],
-          default: false,
-        },
+        gutsDummyHandVariantOption(),
       ],
       createOrchestrator: (config) => SessionGuts.create({ ...config, gameConfig: applyVariants(THREE_FIVE_SEVEN_GUTS_CONFIG, config.variantChoices) }),
     },

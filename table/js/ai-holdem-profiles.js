@@ -21,10 +21,29 @@ const HoldemAIProfiles = (function () {
     return HandEvaluator.evaluatePartial(player.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: false })));
   }
 
-  function worthContinuing(myHand, streetsLeft, profile, chanceBonus) {
+  // The fold gate is deliberately scaled by actual CARDS still to come, not
+  // by `streetsLeft` (a street count) -- real bug, reported directly after
+  // live play against Omaha ("2 folded before the flop!", confirmed by
+  // screenshot: two AI seats folded preflop facing a cheap $1 call, with
+  // zero board cards shown yet). `streetsLeft` treats the flop as "1" unit
+  // of future improvement even though it actually deals 3 new community
+  // cards at once -- the same calibration community-stud's `revealsLeft`
+  // gets right for free, since there each reveal really is one card.
+  // Preflop was therefore massively under-crediting its own very next,
+  // biggest step, making an unpaired starting hand (the norm, not the
+  // exception, in a 4-5 hole-card game) fold almost immediately regardless
+  // of how cheap the bet was.
+  function cardsStillToReveal(streetIndex) {
+    if (streetIndex <= 0) return 5; // flop (3) + turn (1) + river (1)
+    if (streetIndex === 1) return 2; // turn + river
+    if (streetIndex === 2) return 1; // river
+    return 0;
+  }
+
+  function worthContinuing(myHand, cardsLeft, profile, chanceBonus) {
     if (myHand.category >= CALL_WORTHY_CATEGORY) return true;
     const gap = CALL_WORTHY_CATEGORY - myHand.category;
-    return streetsLeft * (profile.chancePerCard + (chanceBonus || 0)) >= gap;
+    return cardsLeft * (profile.chancePerCard + (chanceBonus || 0)) >= gap;
   }
 
   // The raise bar tightens the more streets are still to come, instead of
@@ -77,7 +96,7 @@ const HoldemAIProfiles = (function () {
       AIProfiles.potOddsChanceBonus(toCallChips, state.pot) +
       AIProfiles.reRaiseChanceAdjustment(br, player.id, profile) +
       AIProfiles.opponentLoosenessAdjustment(state.opponentStats, AIProfiles.liveOpponentIds(state.players, player.id), profile);
-    if (toCallChips > 0 && !worthContinuing(myHand, streetsLeft, profile, chanceBonus)) {
+    if (toCallChips > 0 && !worthContinuing(myHand, cardsStillToReveal(state.streetIndex), profile, chanceBonus)) {
       return { action: "fold" };
     }
     const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));

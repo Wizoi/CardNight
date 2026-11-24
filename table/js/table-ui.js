@@ -12,7 +12,6 @@
 // explicit user actions (or the auto-pick timer) call showView().
 (function () {
   const el = {};
-  let debugMode = false;
   let lastViewState = null;
   let historyReturnView = "table"; // where "Back" from History goes -- wherever it was opened from
   const SETUP_PREFS_KEY = "cardnight.table.setupPrefs.v1";
@@ -78,7 +77,6 @@
   }
 
   function cacheEls() {
-    el.debugToggle = document.getElementById("debug-toggle");
     el.setupView = document.getElementById("setup-view");
     el.tableView = document.getElementById("table-view");
     el.historyView = document.getElementById("history-view");
@@ -131,6 +129,8 @@
     el.exportHistoryBtn = document.getElementById("export-history-btn");
     el.backToTableBtn = document.getElementById("back-to-table-btn");
     el.setupHistoryBtn = document.getElementById("setup-history-btn");
+    el.setupTutorialBtn = document.getElementById("setup-tutorial-btn");
+    el.tutorialMenuBtn = document.getElementById("tutorial-menu-btn");
 
     el.cutForDealDraws = document.getElementById("cutfordeal-draws");
     el.cutForDealWinner = document.getElementById("cutfordeal-winner");
@@ -769,21 +769,28 @@
   // place of the game grid once a human picker clicks a game that has
   // variantOptions; a game with none skips straight to chooseNextGame
   // instead (see the picker-menu click handler).
-  function variantFormMarkup(entry) {
+  function variantFormMarkup(entry, playerCount) {
     const groups = entry.variantOptions
       .map(
         (opt) => `
           <fieldset class="variant-option-group">
             <legend>${opt.label}</legend>
             ${opt.choices
-              .map(
-                (c, i) => `
+              .map((c, i) => {
+                // Same fit-check this options form shares with the rich
+                // picker in table-fx.js -- a choice that can't fit
+                // tonight's table (e.g. Deep or Double Screw / 3-5-7
+                // Guts's dummy hand) is disabled outright rather than
+                // silently no-op'ing once the hand actually deals.
+                const fits = !c.fitsPlayerCount || playerCount == null || c.fitsPlayerCount(playerCount);
+                const label = fits ? c.label : c.unfitLabel || c.label;
+                return `
                   <label class="variant-choice-label">
-                    <input type="radio" name="variant-${opt.key}" value="${i}" ${c.value === opt.default ? "checked" : ""} />
-                    ${c.label}
+                    <input type="radio" name="variant-${opt.key}" value="${i}" ${c.value === opt.default ? "checked" : ""} ${fits ? "" : "disabled"} />
+                    ${label}
                   </label>
-                `
-              )
+                `;
+              })
               .join("")}
           </fieldset>
         `
@@ -878,7 +885,7 @@
     if (pendingVariantGameId) {
       const entry = GameRegistry.get(pendingVariantGameId);
       el.pickerHeading.textContent = "Pick the next game";
-      el.pickerMenu.innerHTML = variantFormMarkup(entry);
+      el.pickerMenu.innerHTML = variantFormMarkup(entry, vs && vs.players ? vs.players.length : null);
       if (typeof TableFX !== "undefined" && typeof TableFX.enhancePickerMenu === "function") TableFX.enhancePickerMenu(el.pickerMenu, false);
       return;
     }
@@ -1188,7 +1195,7 @@
       }
       const familyModule = familyModuleFor(vs.activeGameId);
       familyModule.wireActions(el, TableNight.orchestrator);
-      familyModule.renderSeats(el, gvs, debugMode, activeQuip);
+      familyModule.renderSeats(el, gvs, false, activeQuip);
       // #board-hand itself is rendered by TableFX.enhanceTable's
       // renderCustomGameBoard below, not by the family module -- every
       // registered game has its own bespoke board there now, and it always
@@ -1229,11 +1236,6 @@
   }
 
   function wireEvents() {
-    el.debugToggle.addEventListener("change", () => {
-      debugMode = el.debugToggle.checked;
-      if (lastViewState) render(lastViewState);
-    });
-
     el.resumeBanner.hidden = !TableNight.hasSavedSnapshot();
     el.resumeNightBtn.addEventListener("click", () => {
       const saved = TableNight.loadSnapshot();
@@ -1518,6 +1520,9 @@
     el.backToTableBtn.addEventListener("click", () => showView(historyReturnView));
     el.exportHistoryBtn.addEventListener("click", () => TableNight.exportHistory());
 
+    el.setupTutorialBtn.addEventListener("click", () => Tutorial.open());
+    el.tutorialMenuBtn.addEventListener("click", () => Tutorial.open());
+
     el.rebuyBtn.addEventListener("click", () => {
       const amount = ChipEconomy.BUY_IN_INCREMENT_DOLLARS;
       if (!TableNight.canRebuy(amount)) {
@@ -1534,4 +1539,5 @@
   cacheEls();
   wireEvents();
   showView("setup");
+  Tutorial.maybeAutoOpen();
 })();

@@ -59,6 +59,46 @@ function run() {
     check("high value is exactly 33 (aces high)", highVal === 33);
   }
 
+  // Real bug, reported directly after live play (2026-11-23): games.md
+  // calls for a betting round after EACH of the 5 community reveals,
+  // including the 5th -- this used to skip straight to showdown the
+  // instant the 5th reveal happened, with no final betting round at all.
+  {
+    const players = [
+      { id: "p0", name: "Kevin", isHuman: true, wallet: { chips: 10000 } },
+      { id: "p1", name: "Marisol", isHuman: false, wallet: { chips: 10000 } },
+      { id: "p2", name: "Nico", isHuman: false, wallet: { chips: 10000 } },
+    ];
+    const state = Rules333.createHandState(players, 0, settings, 0);
+    // Deliberately avoid Ultima/matching-rank edge cases so every reveal
+    // just opens a fresh betting round as expected.
+    players.forEach((p) => (p.hand = [{ rank: "K", suit: "S" }, { rank: "Q", suit: "H" }, { rank: "J", suit: "D" }]));
+
+    function closeBettingRound() {
+      check("a betting round is open", state.status === "betting" && !!state.bettingRound);
+      for (const p of players) {
+        if (Rules333.getCurrentBettor(state) == null) break;
+        Rules333.submitBet(state, Rules333.getCurrentBettor(state), "call", 0);
+      }
+      Rules333.advanceAfterBetting(state);
+    }
+
+    closeBettingRound(); // the deal's own opening round
+    check("status moves to revealing after the opening round", state.status === "revealing");
+    for (let i = 0; i < Rules333.TOTAL_ROUNDS; i++) {
+      Rules333.revealNextCommunityCard(state);
+      if (i < Rules333.TOTAL_ROUNDS - 1) {
+        check(`reveal ${i + 1}: a betting round opens`, state.status === "betting");
+        closeBettingRound();
+        check(`reveal ${i + 1}: betting round closes back to revealing`, state.status === "revealing");
+      } else {
+        check("the 5th reveal also opens a betting round, not an immediate showdown", state.status === "betting" && state.results == null);
+        closeBettingRound();
+        check("showdown only happens once the 5th reveal's betting round closes", state.status === "complete" && state.results != null);
+      }
+    }
+  }
+
   return summary("rules-333");
 }
 

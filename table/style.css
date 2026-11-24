@@ -530,6 +530,32 @@ input::placeholder {
   transform: translateY(-1px);
 }
 
+#setup-tutorial-link {
+  margin: 0.5rem 0 0;
+}
+
+.link-style-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.52rem 0.75rem;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px dashed rgba(212, 175, 55, 0.34);
+  color: var(--gold-soft);
+  font-size: 0.8rem;
+  font-weight: 700;
+  box-shadow: none;
+  transition: background 0.14s ease, border-color 0.14s ease;
+}
+
+.link-style-btn:hover {
+  background: rgba(212, 175, 55, 0.12);
+  border-color: var(--gold-soft);
+}
+
 /* Rich V2 Character Lineup Cards in Lobby */
 #setup-seat-boxes {
   display: grid;
@@ -2948,16 +2974,6 @@ fieldset {
   border-bottom: 1px solid rgba(255, 215, 128, 0.25);
 }
 
-#debug-toggle-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.78rem;
-  color: var(--gold-soft);
-  cursor: pointer;
-  padding: 0.35rem 0.5rem;
-}
-
 /* ============================================================================
    Cut-for-Deal Ceremony & Concept 3 Dealer's Choice Game Vault (#picker-view)
    ============================================================================ */
@@ -4448,6 +4464,116 @@ fieldset {
 .roster-card-archetype { font-size: 0.75rem; color: var(--gold-soft); }
 .roster-card-oneliner { font-size: 0.72rem; opacity: 0.85; }
 .roster-card-taken { font-size: 0.7rem; color: var(--gold-soft); opacity: 0.7; }
+
+#tutorial-modal[hidden] { display: none; }
+
+#tutorial-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 60;
+}
+
+#tutorial-modal-content {
+  background: radial-gradient(circle at top, var(--felt-light), var(--felt-dark));
+  border: 2px solid var(--gold);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 420px;
+  padding: 1.4rem 1.3rem;
+  text-align: center;
+  color: var(--cream);
+}
+
+#tutorial-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-bottom: 0.9rem;
+}
+
+.tutorial-dot {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(212, 175, 55, 0.3);
+  border: none;
+  box-shadow: none;
+}
+
+.tutorial-dot-active {
+  background: var(--gold);
+}
+
+#tutorial-icon {
+  font-size: 2.6rem;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+#tutorial-title {
+  margin: 0 0 0.6rem;
+  font-size: 1.2rem;
+}
+
+#tutorial-body {
+  margin: 0 0 1.2rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  opacity: 0.92;
+}
+
+#tutorial-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+#tutorial-skip-btn {
+  background: transparent;
+  color: var(--cream);
+  opacity: 0.7;
+  font-size: 0.82rem;
+  font-weight: 600;
+  box-shadow: none;
+  padding: 0.5rem 0.4rem;
+}
+
+#tutorial-skip-btn:hover { opacity: 1; }
+
+#tutorial-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+#tutorial-back-btn {
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--gold-soft);
+  border: 1.5px solid rgba(212, 175, 55, 0.48);
+  font-size: 0.85rem;
+  padding: 0.5rem 0.8rem;
+}
+
+#tutorial-next-btn {
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+}
+
+@media (max-width: 480px) {
+  #tutorial-modal-content { padding: 1.1rem 1rem; }
+  #tutorial-actions { flex-wrap: wrap; }
+  #tutorial-skip-btn { order: 2; margin: 0 auto; }
+  #tutorial-nav { order: 1; width: 100%; justify-content: space-between; margin-left: 0; }
+  #tutorial-back-btn, #tutorial-next-btn { min-height: 44px; }
+}
 
 /* ============================================================================
    Multi-Device Form Factors:

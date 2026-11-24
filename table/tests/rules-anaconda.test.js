@@ -10,11 +10,35 @@ const { makeChecker } = require("./check");
 
 function run() {
   const { check, summary } = makeChecker();
-  const { RulesAnaconda } = load(
-    ["deck.js", "hand-evaluator.js", "chip-economy.js", "betting-engine.js", "rules-anaconda.js"],
-    ["RulesAnaconda"]
+  const { RulesAnaconda, HandEvaluator, Deck, AnacondaAIProfiles } = load(
+    ["deck.js", "hand-evaluator.js", "chip-economy.js", "betting-engine.js", "rules-anaconda.js", "ai-anaconda-profiles.js"],
+    ["RulesAnaconda", "HandEvaluator", "Deck", "AnacondaAIProfiles"]
   );
   const settings = { anteDollars: 0.5, raiseIncrementDollars: 0.25, maxBetDollars: 2 };
+
+  // Real bug, reported directly after live play (2026-11-23): "I was passed
+  // a joker, that is very unexpected." chooseDiscards' Joker-protection
+  // comparator had its sign backwards, sorting a Joker to the FRONT of the
+  // discard list (first to be passed away) instead of the back -- the
+  // opposite of "never volunteer one ahead of a real card." Covers both
+  // discard rounds (3 then 2) with a hand that has plenty of real,
+  // ungrouped low cards a correct heuristic should prefer instead.
+  {
+    const hand = [
+      { rank: "JOKER", suit: null },
+      { rank: "2", suit: "C" },
+      { rank: "4", suit: "D" },
+      { rank: "7", suit: "H" },
+      { rank: "K", suit: "S" },
+      { rank: "K", suit: "H" },
+      { rank: "9", suit: "D" },
+    ];
+    const discard1Idx = AnacondaAIProfiles.decideDiscard1({ hand });
+    check("round 1's 3 discards never include the Joker", !discard1Idx.map((i) => hand[i].rank).includes("JOKER"));
+    const kept = hand.filter((_, i) => !discard1Idx.includes(i));
+    const discard2Idx = AnacondaAIProfiles.decideDiscard2({ hand: kept });
+    check("round 2's 2 discards (from the kept 4) never include the Joker", !discard2Idx.map((i) => kept[i].rank).includes("JOKER"));
+  }
 
   const players = [
     { id: "p0", name: "Kevin", isHuman: true, wallet: { chips: 10000 } },

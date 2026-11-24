@@ -196,7 +196,12 @@ const Rules333 = (function () {
   function advanceAfterBetting(state) {
     if (state.status === "complete") return;
     state.bettingRound = null;
-    state.status = "revealing";
+    if (state.roundIndex >= TOTAL_ROUNDS) {
+      state.status = "complete";
+      resolveShowdown(state);
+    } else {
+      state.status = "revealing";
+    }
   }
 
   function isRevealDone(state) {
@@ -248,13 +253,16 @@ const Rules333 = (function () {
       state.pot = 0;
       return { card, emptiedIds };
     }
-    if (state.roundIndex >= TOTAL_ROUNDS) {
-      state.status = "complete";
-      resolveShowdown(state);
-    } else {
-      state.status = "betting";
-      startBettingRound(state);
-    }
+    // Real bug, reported directly after live play (2026-11-23): games.md is
+    // explicit that betting happens "right after the deal, then another
+    // after each of the 5 community-card reveals" -- but this used to skip
+    // straight to resolveShowdown once roundIndex hit TOTAL_ROUNDS, with no
+    // betting round after the 5th (final) reveal at all. A betting round
+    // now always follows every reveal, including the last one;
+    // advanceAfterBetting (below) is what actually triggers showdown once
+    // THAT final round closes.
+    state.status = "betting";
+    startBettingRound(state);
     return { card, emptiedIds };
   }
 
