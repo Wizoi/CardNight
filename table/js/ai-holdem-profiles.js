@@ -95,7 +95,7 @@ const HoldemAIProfiles = (function () {
     // the next re-raise war.
     if (canRaiseAgain && AIProfiles.shouldBluff(profile)) {
       const maxRaise = HoldemRules.maxRaiseDollars(state, player.id);
-      if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(1, state.raiseIncrementDollars, maxRaise) };
+      if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(AIProfiles.bluffRaiseTier(profile), state.raiseIncrementDollars, maxRaise) };
     }
 
     const chanceBonus =

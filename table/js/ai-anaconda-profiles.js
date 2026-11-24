@@ -107,7 +107,7 @@ const AnacondaAIProfiles = (function () {
 
     if (AIProfiles.shouldBluff(profile)) {
       const maxRaise = RulesAnaconda.maxRaiseDollars(state, player.id);
-      if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(1, state.raiseIncrementDollars, maxRaise) };
+      if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(AIProfiles.bluffRaiseTier(profile), state.raiseIncrementDollars, maxRaise) };
     }
 
     if (toCallChips > 0) {

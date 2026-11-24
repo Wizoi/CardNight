@@ -105,7 +105,7 @@ const StudAIProfiles = (function () {
     // before the fold gate -- same shared pattern as every other family.
     if (AIProfiles.shouldBluff(profile)) {
       const maxRaise = StudRules.maxRaiseDollars(state, player.id);
-      if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(1, state.raiseIncrementDollars, maxRaise) };
+      if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(AIProfiles.bluffRaiseTier(profile), state.raiseIncrementDollars, maxRaise) };
     }
 
     if (!isLeader && toCallChips > 0) {

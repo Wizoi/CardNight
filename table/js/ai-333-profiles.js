@@ -34,7 +34,7 @@ const Rules333AIProfiles = (function () {
 
     if (AIProfiles.shouldBluff(profile)) {
       const maxRaise = Rules333.maxRaiseDollars(state, player.id);
-      if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(1, state.raiseIncrementDollars, maxRaise) };
+      if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(AIProfiles.bluffRaiseTier(profile), state.raiseIncrementDollars, maxRaise) };
     }
     // potOddsChanceBonus's units are "categories per unknown card" in most
     // families -- this game's fold check is in raw distance units, a

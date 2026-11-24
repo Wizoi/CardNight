@@ -102,7 +102,7 @@ const PressYourLuckAIProfiles = (function () {
     // same shared shape as every other family.
     if (AIProfiles.shouldBluff(profile)) {
       const maxRaise = PressYourLuckRules.maxRaiseDollars(state, player.id);
-      if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(1, state.raiseIncrementDollars, maxRaise) };
+      if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(AIProfiles.bluffRaiseTier(profile), state.raiseIncrementDollars, maxRaise) };
     }
     // The 2026-08-26 loosened bar above still wasn't enough for 5.5-21's
     // stricter 'bust' rule: a single mid/high card (6 through 10) already

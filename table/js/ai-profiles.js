@@ -174,6 +174,7 @@ const AIProfiles = (function () {
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.HIGH_CARD,
       bluffFrequency: 0.25, // the loosest in the roster -- "raises on nothing" is close to literal
+      bluffSizing: "big", // overbets everything, bluff or not -- no reason for a bluff to look any smaller
       reRaiseChanceAdjustment: 0.3, // never backs down -- if anything, digs in harder
       opponentAdaptSensitivity: 0, // raises on nothing regardless of who's across the table -- doesn't adapt at all
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD,
@@ -337,6 +338,7 @@ const AIProfiles = (function () {
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
       bluffFrequency: 0.1, // a real, unpredictable bluff rate is the whole point of "gives away nothing"
+      bluffSizing: "mirror", // draws the bluff's size tier from the same spread a value raise would use -- tell suppression, realized as actual behavior now that sizing tiers exist (2026-11-23, design review finding #7)
       reRaiseChanceAdjustment: -0.1, // textbook-steady, dead-middle reaction to match
       opponentAdaptSensitivity: 0.35, // textbook-solid play reads the table without showing it
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
@@ -679,6 +681,23 @@ const AIProfiles = (function () {
     return Math.random() < (profile.bluffFrequency || 0);
   }
 
+  // profile.bluffSizing (2026-11-23, design review finding #7) -- every
+  // bluff used to raise the exact same tier-1 "plain-looking" amount
+  // regardless of archetype, which was itself a tell once a whole night's
+  // worth of hands had gone by (a sizing PATTERN is a tell, Caro's tell
+  // theory turned around): "small" (the default, unchanged) always sizes
+  // tier 1; "big" (Live Wire -- overbets everything, bluff or not) always
+  // sizes tier 3; "mirror" (Wall -- "tell suppression" realized as actual
+  // behavior now that bet-sizing tiers exist) draws a genuinely random
+  // tier from {1,2,3}, the same spread a real value raise could land on,
+  // so a bluff's size alone can never give it away.
+  function bluffRaiseTier(profile) {
+    const sizing = profile.bluffSizing || "small";
+    if (sizing === "big") return 3;
+    if (sizing === "mirror") return 1 + Math.floor(Math.random() * 3);
+    return 1;
+  }
+
   // Fewer live opponents justifies looser raising (heads-up: only one hand
   // to beat); more live opponents calls for tighter raising (a marginal
   // edge means less against 4-5 live hands than against 1). Returns a
@@ -867,7 +886,7 @@ const AIProfiles = (function () {
     // hand that would otherwise fold still gets a shot at it.
     if (shouldBluff(profile)) {
       const maxRaise = MidnightBaseball.maxRaiseDollars(state, player.id);
-      if (maxRaise > 0) return { action: "raise", raiseDollars: scaledRaiseDollars(1, state.raiseIncrementDollars, maxRaise) };
+      if (maxRaise > 0) return { action: "raise", raiseDollars: scaledRaiseDollars(bluffRaiseTier(profile), state.raiseIncrementDollars, maxRaise) };
     }
 
     if (!isLeader && toCallChips > 0) {
@@ -910,6 +929,7 @@ const AIProfiles = (function () {
     confidenceTier,
     scaledRaiseDollars,
     shouldBluff,
+    bluffRaiseTier,
     opponentCountBarAdjustment,
     liveOpponentCount,
     liveOpponentIds,
