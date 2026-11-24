@@ -131,6 +131,9 @@ const PressYourLuckAIProfiles = (function () {
         AIProfiles.opponentLoosenessAdjustment(state.opponentStats, AIProfiles.liveOpponentIds(state.players, player.id), profile)) *
       3;
     if (!isOpeningRound && toCallChips > 0 && bestDistance > profile.pressYourLuckStandThreshold + 2 + roomToImprove + chanceBonus) {
+      // Hero call (design review finding #10, closed out 2026-11-23):
+      // currently only Subversive's patternBreakRate ever fires this.
+      if (AIProfiles.shouldHeroCall(profile)) return { action: "call" };
       return { action: "fold" };
     }
     // Raising means "I'm confident I'm ahead," but a hand that's still

@@ -61,7 +61,7 @@ const SessionWildInYourHand = (function () {
     // comment). This wrapper just owns this session's own resumable
     // quipSeq/lastQuip/state.log bookkeeping.
     function maybeQuip(player, moment) {
-      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE);
+      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE, state.recentResults && state.recentResults[player.id]);
       if (!picked) return;
       quipSeq += 1;
       lastQuip = { id: quipSeq, playerId: player.id, text: picked.text };
@@ -139,7 +139,7 @@ const SessionWildInYourHand = (function () {
           notify();
           return;
         }
-        await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(p.profileName));
+        await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(p.profileName, state.recentResults && state.recentResults[p.id]));
         const { toLeftIdx, toRightIdx } = WildInYourHandRules.defaultPassSelection(state, p, state.passCounts.left, state.passCounts.right);
         WildInYourHandRules.submitPassSelection(state, p.id, toLeftIdx, toRightIdx);
         notify();
@@ -214,7 +214,7 @@ const SessionWildInYourHand = (function () {
           notify();
           return;
         }
-        await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(player.profileName));
+        await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(player.profileName, state.recentResults && state.recentResults[player.id]));
         const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
         const payingIn = WildInYourHandAIProfiles.decideRowBet(player, state, profile);
         if (!payingIn) maybeQuip(player, "fold");
@@ -258,7 +258,7 @@ const SessionWildInYourHand = (function () {
           notify();
           return;
         }
-        await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(p.profileName));
+        await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(p.profileName, state.recentResults && state.recentResults[p.id]));
         const profile = AIProfiles.profileForState(p.profileName, state.recentResults && state.recentResults[p.id]);
         const stayingIn = WildInYourHandAIProfiles.decideDeclare(p, state, profile);
         WildInYourHandRules.submitStayDecision(state, p.id, stayingIn);

@@ -146,7 +146,13 @@ const AIProfiles = (function () {
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
       bluffFrequency: 0.08, // selective and purposeful even when bluffing, not never
       reRaiseChanceAdjustment: -0.2, // process-driven -- respects a genuine renewed signal
-      opponentAdaptSensitivity: 0.5, // explicit-probability-driven -- the most genuinely read-adaptive profile in the roster
+      // Lowered from 0.5 (2026-11-23, follow-up review): probability-driven
+      // doesn't mean opponent-read-driven -- the Calculator's whole style is
+      // computing its OWN hand's odds correctly, not primarily adjusting to
+      // how loose or tight the table's been playing. The Diplomat, whose
+      // entire archetype IS deliberate information-gathering, is the more
+      // genuinely opponent-adaptive profile in the roster now.
+      opponentAdaptSensitivity: 0.35,
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.TWO_PAIR,
       gutsPotRiskSensitivity: 1, // explicit-probability-driven -- weighs the growing pot the same way it weighs everything else
       pressYourLuckStandThreshold: 2,
@@ -312,7 +318,11 @@ const AIProfiles = (function () {
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
       bluffFrequency: 0.05,
       reRaiseChanceAdjustment: -0.2, // small-ball -- avoids blowing up a pot against renewed aggression
-      opponentAdaptSensitivity: 0.5, // plays cheap hands specifically to gather information -- adaptive by design
+      // Raised from 0.5 to 0.6 (2026-11-23, follow-up review) -- the
+      // roster's single most opponent-read-driven profile: info-gathering
+      // calls exist specifically to build a read, so that read should move
+      // this player's own play more than anyone else's.
+      opponentAdaptSensitivity: 0.6,
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
       gutsPotRiskSensitivity: 0.75,
       pressYourLuckStandThreshold: 1.5,
@@ -323,12 +333,14 @@ const AIProfiles = (function () {
     },
 
     // Unreadable (Ivey-style): the defining trait is that bet-sizing and
-    // pacing look identical whether the hand is strong or weak -- a genuine
-    // tell-suppression trait none of these numeric bet-shape knobs can
-    // really capture (there's no opponent-facing "tell" to suppress in this
-    // engine at all). Deliberately centered dead-middle of the whole
-    // roster's range instead: a true "textbook, gives away nothing" baseline
-    // rather than leaning tight or loose either way.
+    // pacing look identical whether the hand is strong or weak. This WAS a
+    // trait none of these numeric bet-shape knobs could really capture --
+    // but isn't anymore: `bluffSizing: "mirror"` (finding #7) and a flat
+    // `tempo: 1` (finding #8) are exactly that tell-suppression, realized
+    // as real behavior once bet-sizing tiers and per-profile pacing
+    // existed to suppress a tell WITH. Deliberately centered dead-middle
+    // of the whole roster's range otherwise: a true "textbook, gives away
+    // nothing" baseline rather than leaning tight or loose either way.
     wall: {
       name: "wall",
       label: "Unreadable",
@@ -744,6 +756,35 @@ const AIProfiles = (function () {
     return Math.random() < (profile.patternBreakRate || 0);
   }
 
+  // The other two pattern-break directions finding #10 named but this
+  // project only shipped one of at first ("raise a monster" via
+  // breaksPattern above) -- closed out 2026-11-23 after a follow-up review
+  // flagged them as still-open rather than genuinely done. Both reuse the
+  // exact same patternBreakRate knob (currently only Subversive, 0.15),
+  // since all three are the same underlying trait -- "plays unconventionally
+  // regardless of what it implies" -- just facing in different directions:
+  //
+  // shouldSlowPlay: the inverse of breaksPattern's raise-a-monster case --
+  // a hand that genuinely clears the raise bar (raiseWhenLeading would
+  // normally press it) occasionally just calls/checks instead, the classic
+  // slow-play. Callers check this ALONGSIDE the normal raiseWhenLeading
+  // condition and suppress the raise when it fires, rather than pressing
+  // every qualifying lead like clockwork.
+  //
+  // shouldHeroCall: a hand that fails worthContinuing/worthPursuing (would
+  // otherwise fold) occasionally calls anyway -- a hero call against a read
+  // the archetype itself doesn't actually believe. Deliberately separate
+  // from shouldBluff (which RAISES on a weak hand) -- this only ever calls,
+  // never raises, matching "despite a clear fold" rather than "claims a
+  // lead it doesn't have."
+  function shouldSlowPlay(profile) {
+    return breaksPattern(profile);
+  }
+
+  function shouldHeroCall(profile) {
+    return breaksPattern(profile);
+  }
+
   // profile.bluffSizing (2026-11-23, design review finding #7) -- every
   // bluff used to raise the exact same tier-1 "plain-looking" amount
   // regardless of archetype, which was itself a tell once a whole night's
@@ -773,8 +814,17 @@ const AIProfiles = (function () {
   // haven't resolved the real decision-affecting profile yet (most of
   // them resolve it via profileForState AFTER their own sleep call) don't
   // need to be reordered just to read this one field.
-  function tempoFor(profileName) {
-    const profile = profileFor(profileName);
+  // Real bug, caught by a follow-up review (2026-11-23): this originally
+  // called plain profileFor(profileName), which meant Storm's own tilt
+  // overlay (#3's profileForState -- "Storm faster while tilted") could
+  // never actually reach a real delay: the overlay's tempo field was
+  // computed correctly, but nothing here ever read it, only the flat
+  // baseline. Takes the same `recentResults` shape profileForState
+  // already expects (a specific player's own last ~5 hands, or
+  // null/undefined) so a tilted Storm genuinely acts faster, not just on
+  // paper.
+  function tempoFor(profileName, recentResults) {
+    const profile = profileForState(profileName, recentResults);
     return (profile && profile.tempo) || 1;
   }
 
@@ -871,9 +921,28 @@ const AIProfiles = (function () {
   // (Live Wire, Aggressive). `potBeforeCall` is `state.pot` at the moment
   // of the decision, the same "pot before this call" convention
   // potOddsChanceBonus already uses.
-  function callWorthyCategoryFor(baseCategory, profile, toCallChips, potBeforeCall) {
+  // Real bug, caught by a follow-up review (2026-11-23), confirmed by
+  // direct simulation: a flat lossAversion shift, applied with no regard
+  // for how much of the hand is still left to develop, made the tightest
+  // archetypes fold EVERY unpaired preflop hand in hold'em facing just the
+  // big blind -- preflop's own blind-to-pot ratio is structurally lopsided
+  // (toCall/pot is roughly 0.67 every single hand, purely from the ante
+  // mechanic, regardless of any real aggression), which was enough on its
+  // own to push the bar up a tier and fold a hand that would otherwise
+  // have cleared it easily with 5 cards still to come (Fortress folded
+  // 50/50 simulated trials). `cardsLeft` is the same "how many
+  // cards/streets/reveals remain" value every caller already has in scope
+  // for its own worthContinuing check -- loss aversion should bind
+  // hardest once a bet is a late, closer-to-fully-informed signal, not an
+  // early one with a lot of the hand still unknown. Optional: a caller
+  // with no meaningful version of that signal (Anaconda, whose own hand
+  // is always already fully fixed by the time this runs -- see
+  // ai-anaconda-profiles.js's own comment) gets the original,
+  // undiscounted behavior.
+  function callWorthyCategoryFor(baseCategory, profile, toCallChips, potBeforeCall, cardsLeft) {
     if (!profile.lossAversion || toCallChips <= 0 || potBeforeCall <= 0) return baseCategory;
-    const shift = Math.floor((profile.lossAversion * toCallChips) / potBeforeCall);
+    const earlyDiscount = cardsLeft != null && cardsLeft >= 3 ? 0.5 : 1;
+    const shift = Math.floor((profile.lossAversion * toCallChips * earlyDiscount) / potBeforeCall);
     return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, baseCategory + shift);
   }
 
@@ -951,7 +1020,11 @@ const AIProfiles = (function () {
     if (!profile.raiseWhenLeading && !breaksPattern(profile)) return false;
     const showing = MidnightBaseball.evaluateShowingHand(state, player.id);
     const remaining = MidnightBaseball.remainingFaceDownCount(state, player.id);
-    return showing.category >= raiseBarForLeader(remaining, profile, barAdjustment);
+    const clearsBar = showing.category >= raiseBarForLeader(remaining, profile, barAdjustment);
+    // Slow-play: a lead that genuinely clears the bar occasionally just
+    // gets called/checked instead of pressed (design review finding #10).
+    if (clearsBar && profile.raiseWhenLeading && shouldSlowPlay(profile)) return false;
+    return clearsBar;
   }
 
   function decideBet(player, state, profile) {
@@ -1028,6 +1101,8 @@ const AIProfiles = (function () {
     bluffRaiseTier,
     tempoFor,
     breaksPattern,
+    shouldSlowPlay,
+    shouldHeroCall,
     opponentCountBarAdjustment,
     liveOpponentCount,
     liveOpponentIds,

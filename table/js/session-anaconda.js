@@ -55,7 +55,7 @@ const SessionAnaconda = (function () {
     // comment). This wrapper just owns this session's own resumable
     // quipSeq/lastQuip/state.log bookkeeping.
     function maybeQuip(player, moment) {
-      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE);
+      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE, state.recentResults && state.recentResults[player.id]);
       if (!picked) return;
       quipSeq += 1;
       lastQuip = { id: quipSeq, playerId: player.id, text: picked.text };
@@ -131,7 +131,7 @@ const SessionAnaconda = (function () {
               notify();
               return;
             }
-            await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(nextPlayer.profileName));
+            await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(nextPlayer.profileName, state.recentResults && state.recentResults[nextPlayer.id]));
             const discardIdx = kind === "discard1" ? AnacondaAIProfiles.decideDiscard1(nextPlayer) : AnacondaAIProfiles.decideDiscard2(nextPlayer);
             if (kind === "discard1") RulesAnaconda.submitDiscard1(state, nextPlayer.id, discardIdx);
             else RulesAnaconda.submitDiscard2(state, nextPlayer.id, discardIdx);
@@ -151,7 +151,7 @@ const SessionAnaconda = (function () {
               notify();
               return;
             }
-            await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(nextPlayer.profileName));
+            await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(nextPlayer.profileName, state.recentResults && state.recentResults[nextPlayer.id]));
             const order = AnacondaAIProfiles.decideArrangeOrder(nextPlayer);
             RulesAnaconda.submitArrangeOrder(state, nextPlayer.id, order);
             notify();
@@ -177,7 +177,7 @@ const SessionAnaconda = (function () {
             notify();
             return;
           }
-          await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
+          await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName, state.recentResults && state.recentResults[bettor.id]));
           const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
           const decision = AnacondaAIProfiles.decideBet(bettor, state, profile);
           RulesAnaconda.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);

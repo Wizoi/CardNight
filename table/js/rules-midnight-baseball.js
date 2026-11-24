@@ -249,11 +249,27 @@ const MidnightBaseball = (function () {
   // #human-hand so players can always see their last flipped card and what
   // they held; a copy is also added to discardPile once in case the deck runs
   // dry on 4-bonus draws.
+  //
+  // Real bug, caught by a follow-up review (2026-11-23): this used to drop
+  // `faceUp` entirely, so a folded player's STILL-FACE-DOWN cards (a player
+  // can fold mid-hand with several of their own cards never yet flipped)
+  // landed in discardPile looking identical to their already-revealed
+  // ones. `baseball-family-wildcards.js`'s `unseenRankBoost` counts
+  // discardPile cards as "seen" when tallying how many 3s/9s/4s are still
+  // unaccounted for -- so the AI's own wildcard-awareness credit was
+  // quietly reading hidden card identities it was never actually shown.
+  // Preserving `faceUp` here lets that function skip genuinely-never-
+  // revealed cards the same way it already skips a live player's own
+  // still-face-down hand. Safe to carry the extra field through: a
+  // reshuffled-back card is always re-wrapped into a fresh plain object
+  // with its own explicit `faceUp` (see e.g. `BaseballWildcards.
+  // resolveBuy4`), so a stale `faceUp` here can never leak into a
+  // newly-dealt card's own face state.
   function foldPlayer(state, playerId) {
     const player = getPlayer(state, playerId);
     if (!player.folded) {
       player.folded = true;
-      state.discardPile.push(...player.hand.map((c) => ({ rank: c.rank, suit: c.suit })));
+      state.discardPile.push(...player.hand.map((c) => ({ rank: c.rank, suit: c.suit, faceUp: !!c.faceUp })));
     }
   }
 

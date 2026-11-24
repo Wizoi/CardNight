@@ -382,9 +382,14 @@ const WildInYourHandRules = (function () {
   // regardless (createRoundState resets `folded` for everyone), so there's
   // no separate "who's still in the cycle" state to track between hands
   // here either.
+  // allInShortfalls: same clarity fix as rules-guts.js's own
+  // collectLoserMatches (2026-11-23, reported directly) -- a player
+  // watching the ante pool escalate assumed that WAS their own loss, when
+  // the real accounting already caps what they pay at their own wallet.
   function collectLoserAntePoolMatches(state) {
     if (state.noContest) return state.potAtShowdown;
     let carried = 0;
+    state.allInShortfalls = [];
     for (const loserId of state.loserIds) {
       const loser = getPlayer(state, loserId);
       if (!loser.isHuman) {
@@ -392,9 +397,14 @@ const WildInYourHandRules = (function () {
           ChipEconomy.rebuy(loser.wallet, ChipEconomy.BUY_IN_INCREMENT_DOLLARS, Date.now());
         }
       }
-      const { paid } = ChipEconomy.pay(loser.wallet, state.antePoolChips);
+      const { paid, allIn } = ChipEconomy.pay(loser.wallet, state.antePoolChips);
       carried += paid;
-      state.log.push(`${loser.name} matches the $${ChipEconomy.chipsToDollars(state.antePoolChips).toFixed(2)} ante pool to keep the game going.`);
+      if (allIn) {
+        state.allInShortfalls.push({ playerId: loser.id, name: loser.name, owedChips: state.antePoolChips, paidChips: paid });
+        state.log.push(`${loser.name} is all-in for $${ChipEconomy.chipsToDollars(paid).toFixed(2)} — short of the $${ChipEconomy.chipsToDollars(state.antePoolChips).toFixed(2)} ante pool.`);
+      } else {
+        state.log.push(`${loser.name} matches the $${ChipEconomy.chipsToDollars(state.antePoolChips).toFixed(2)} ante pool to keep the game going.`);
+      }
     }
     return carried;
   }

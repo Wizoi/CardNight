@@ -46,6 +46,9 @@ const Rules333AIProfiles = (function () {
         AIProfiles.opponentLoosenessAdjustment(state.opponentStats, AIProfiles.liveOpponentIds(state.players, player.id), profile)) *
       3;
     if (toCallChips > 0 && bestDistance > FOLD_BASE + roundsLeft * (profile.chancePerCard + chanceBonus)) {
+      // Hero call (design review finding #10, closed out 2026-11-23):
+      // currently only Subversive's patternBreakRate ever fires this.
+      if (AIProfiles.shouldHeroCall(profile)) return { action: "call" };
       return { action: "fold" };
     }
     const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));

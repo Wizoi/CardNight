@@ -46,7 +46,7 @@ const HoldemAIProfiles = (function () {
   // without it, the tightest archetype called an unlimited hold'em bet
   // with any pair at all.
   function worthContinuing(myHand, cardsLeft, profile, chanceBonus, toCallChips, potChips) {
-    const callWorthyCategory = AIProfiles.callWorthyCategoryFor(CALL_WORTHY_CATEGORY, profile, toCallChips, potChips);
+    const callWorthyCategory = AIProfiles.callWorthyCategoryFor(CALL_WORTHY_CATEGORY, profile, toCallChips, potChips, cardsLeft);
     if (myHand.category >= callWorthyCategory) return true;
     const gap = callWorthyCategory - myHand.category;
     return cardsLeft * (profile.chancePerCard + (chanceBonus || 0)) >= gap;
@@ -103,6 +103,9 @@ const HoldemAIProfiles = (function () {
       AIProfiles.reRaiseChanceAdjustment(br, player.id, profile) +
       AIProfiles.opponentLoosenessAdjustment(state.opponentStats, AIProfiles.liveOpponentIds(state.players, player.id), profile);
     if (toCallChips > 0 && !worthContinuing(myHand, cardsStillToReveal(state.streetIndex), profile, chanceBonus, toCallChips, state.pot)) {
+      // Hero call (design review finding #10, closed out 2026-11-23):
+      // currently only Subversive's patternBreakRate ever fires this.
+      if (AIProfiles.shouldHeroCall(profile)) return { action: "call" };
       return { action: "fold" };
     }
     const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));

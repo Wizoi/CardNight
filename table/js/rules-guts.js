@@ -372,6 +372,16 @@ const GutsRules = (function () {
       ? Math.min(state.potAtShowdown, ChipEconomy.dollarsToChips(state.gameConfig.maxLossPerDealDollars))
       : state.potAtShowdown;
     let carried = 0;
+    // Reported directly (2026-11-23): a player watching the pot escalate
+    // into the hundreds assumed that WAS their own loss, when the real
+    // dollar accounting (ChipEconomy.pay -- no borrowing, ever) had
+    // already capped what they actually paid at whatever was left in
+    // their wallet. The math was always right; nothing here surfaced the
+    // gap between "the pot climbed to $X" and "I only had $Y to actually
+    // put into it." allInShortfalls records that gap per loser this round
+    // so the UI can say so plainly, instead of changing net itself to
+    // show a bigger, not-actually-real loss.
+    state.allInShortfalls = [];
     for (const loserId of state.loserIds) {
       const loser = getPlayer(state, loserId);
       if (!loser.isHuman) {
@@ -379,9 +389,16 @@ const GutsRules = (function () {
           ChipEconomy.rebuy(loser.wallet, ChipEconomy.BUY_IN_INCREMENT_DOLLARS, Date.now());
         }
       }
-      const { paid } = ChipEconomy.pay(loser.wallet, capChips);
+      const { paid, allIn } = ChipEconomy.pay(loser.wallet, capChips);
       carried += paid;
-      state.log.push(`${loser.name} matches ${capChips < state.potAtShowdown ? "the max loss" : "the pot"} ($${ChipEconomy.chipsToDollars(capChips).toFixed(2)}) to keep the game going.`);
+      if (allIn) {
+        state.allInShortfalls.push({ playerId: loser.id, name: loser.name, owedChips: capChips, paidChips: paid });
+        state.log.push(
+          `${loser.name} is all-in for $${ChipEconomy.chipsToDollars(paid).toFixed(2)} — short of the $${ChipEconomy.chipsToDollars(capChips).toFixed(2)} pot match.`
+        );
+      } else {
+        state.log.push(`${loser.name} matches ${capChips < state.potAtShowdown ? "the max loss" : "the pot"} ($${ChipEconomy.chipsToDollars(capChips).toFixed(2)}) to keep the game going.`);
+      }
     }
     return carried;
   }

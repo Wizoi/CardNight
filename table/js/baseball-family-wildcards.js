@@ -96,7 +96,19 @@ const BaseballWildcards = (function () {
         if (ranks.includes(c.rank)) seenMatching += 1;
       }
     }
+    // Real bug, caught by a follow-up review (2026-11-23): a folded
+    // player's cards all land in discardPile together regardless of
+    // whether they were ever individually flipped -- without the same
+    // `faceUp` check the hand loop above already makes, this counted a
+    // folded player's still-hidden cards as "seen" too, quietly reading
+    // hidden card identities nobody was ever shown. Both `foldPlayer`
+    // implementations (Midnight Baseball, the stud engine) now preserve
+    // `faceUp` when pushing here specifically so this check means
+    // something; the Enterprise pile's own discard (always face up on
+    // the table) explicitly sets `faceUp: true` so it isn't wrongly
+    // excluded by this same check.
     for (const c of state.discardPile || []) {
+      if (!c.faceUp) continue;
       seenTotal += 1;
       if (ranks.includes(c.rank)) seenMatching += 1;
     }

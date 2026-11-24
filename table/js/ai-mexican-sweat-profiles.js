@@ -21,7 +21,11 @@ const MexicanSweatAIProfiles = (function () {
     if (!profile.raiseWhenLeading && !AIProfiles.breaksPattern(profile)) return false;
     const showing = MexicanSweatRules.evaluateShowingHand(state, player.id);
     const roundsLeft = MexicanSweatRules.roundsRemaining(state);
-    return showing.category >= raiseBarFor(roundsLeft, profile, barAdjustment);
+    const clearsBar = showing.category >= raiseBarFor(roundsLeft, profile, barAdjustment);
+    // Slow-play (design review finding #10, closed out 2026-11-23):
+    // currently only Subversive's patternBreakRate ever fires this.
+    if (clearsBar && profile.raiseWhenLeading && AIProfiles.shouldSlowPlay(profile)) return false;
+    return clearsBar;
   }
 
   function decideBet(player, state, profile) {
@@ -43,6 +47,9 @@ const MexicanSweatAIProfiles = (function () {
         AIProfiles.reRaiseChanceAdjustment(br, player.id, profile) +
         AIProfiles.opponentLoosenessAdjustment(state.opponentStats, AIProfiles.liveOpponentIds(state.players, player.id), profile);
       if (!AIProfiles.worthPursuing(showing, best.hand, roundsLeft, profile, chanceBonus)) {
+        // Hero call (design review finding #10, closed out 2026-11-23):
+        // currently only Subversive's patternBreakRate ever fires this.
+        if (AIProfiles.shouldHeroCall(profile)) return { action: "call" };
         return { action: "fold" };
       }
     }

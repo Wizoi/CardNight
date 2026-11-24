@@ -65,7 +65,7 @@ const SessionPressYourLuck = (function () {
     // comment). This wrapper just owns this session's own resumable
     // quipSeq/lastQuip/state.log bookkeeping.
     function maybeQuip(player, moment) {
-      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE);
+      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE, state.recentResults && state.recentResults[player.id]);
       if (!picked) return;
       quipSeq += 1;
       lastQuip = { id: quipSeq, playerId: player.id, text: picked.text };
@@ -135,7 +135,7 @@ const SessionPressYourLuck = (function () {
               notify();
               return;
             }
-            await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(player.profileName));
+            await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(player.profileName, state.recentResults && state.recentResults[player.id]));
             const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
             const choice = PressYourLuckAIProfiles.decideBuyBack(player, state, profile);
             // resolveInitialBuyback only advances the cursor once this
@@ -162,7 +162,7 @@ const SessionPressYourLuck = (function () {
               notify();
               return;
             }
-            await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
+            await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(bettor.profileName, state.recentResults && state.recentResults[bettor.id]));
             const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = PressYourLuckAIProfiles.decideBet(bettor, state, profile);
             if (decision.action === "fold") maybeQuip(bettor, "fold");
@@ -194,7 +194,7 @@ const SessionPressYourLuck = (function () {
             notify();
             return;
           }
-          const tempo = AIProfiles.tempoFor(player.profileName);
+          const tempo = AIProfiles.tempoFor(player.profileName, state.recentResults && state.recentResults[player.id]);
           await sleep(DECIDE_DELAY_MS * tempo);
           const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
           const action = PressYourLuckAIProfiles.decideHitOrStand(player, state, profile);

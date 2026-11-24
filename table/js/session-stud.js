@@ -81,7 +81,7 @@ const SessionStud = (function () {
     // comment). This wrapper just owns this session's own resumable
     // quipSeq/lastQuip/state.log bookkeeping.
     function maybeQuip(player, moment) {
-      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE);
+      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE, state.recentResults && state.recentResults[player.id]);
       if (!picked) return;
       quipSeq += 1;
       lastQuip = { id: quipSeq, playerId: player.id, text: picked.text };
@@ -189,7 +189,7 @@ const SessionStud = (function () {
               notify();
               break;
             }
-            await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
+            await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName, state.recentResults && state.recentResults[bettor.id]));
             const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = StudAIProfiles.decideBet(bettor, state, profile);
             StudRules.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
@@ -232,7 +232,7 @@ const SessionStud = (function () {
               break;
             }
             const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
-            const tempo = AIProfiles.tempoFor(player.profileName);
+            const tempo = AIProfiles.tempoFor(player.profileName, state.recentResults && state.recentResults[player.id]);
             await sleep(DECISION_DELAY_MS * tempo);
             const decision = StudAIProfiles.decideEnterpriseChoice(player, state, profile);
             resolveEnterpriseDecision(dealt.playerId, decision.action, decision.position);
@@ -252,7 +252,7 @@ const SessionStud = (function () {
             }
             const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
             const willBuy = StudAIProfiles.decideBuyOnDeal(player, dealt.card, profile);
-            await sleep(DECISION_DELAY_MS * AIProfiles.tempoFor(player.profileName));
+            await sleep(DECISION_DELAY_MS * AIProfiles.tempoFor(player.profileName, state.recentResults && state.recentResults[player.id]));
             resolveBuyDecision(dealt.needsDecision, dealt.playerId, willBuy);
             notify();
           }

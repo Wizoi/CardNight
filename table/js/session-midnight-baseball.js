@@ -62,7 +62,7 @@ const SessionMidnightBaseball = (function () {
     // comment). This wrapper just owns this session's own resumable
     // quipSeq/lastQuip/state.log bookkeeping.
     function maybeQuip(player, moment) {
-      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE);
+      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE, state.recentResults && state.recentResults[player.id]);
       if (!picked) return;
       quipSeq += 1;
       lastQuip = { id: quipSeq, playerId: player.id, text: picked.text };
@@ -149,7 +149,7 @@ const SessionMidnightBaseball = (function () {
               notify();
               break;
             }
-            await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
+            await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName, state.recentResults && state.recentResults[bettor.id]));
             const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = AIProfiles.decideBet(bettor, state, profile);
             MidnightBaseball.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
@@ -183,7 +183,7 @@ const SessionMidnightBaseball = (function () {
       const cardIndex = AIProfiles.decideNextCardIndex(player);
       const { needsDecision } = MidnightBaseball.flipCard(state, player.id, cardIndex);
       notify();
-      const tempo = AIProfiles.tempoFor(player.profileName);
+      const tempo = AIProfiles.tempoFor(player.profileName, state.recentResults && state.recentResults[player.id]);
       await sleep(FLIP_DELAY_MS * tempo);
 
       if (needsDecision === "buy3") {

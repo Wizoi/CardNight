@@ -29,6 +29,9 @@ const BlindMansBluffAIProfiles = (function () {
     }
 
     if (toCallChips > 0 && bestOther >= profile.blindBluffScaryRankValue) {
+      // Hero call (design review finding #10, closed out 2026-11-23):
+      // currently only Subversive's patternBreakRate ever fires this.
+      if (AIProfiles.shouldHeroCall(profile)) return { action: "call" };
       return { action: "fold" };
     }
     if (bestOther < profile.blindBluffRaiseBelowRankValue) {

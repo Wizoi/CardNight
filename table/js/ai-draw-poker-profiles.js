@@ -35,8 +35,14 @@ const DrawPokerAIProfiles = (function () {
     // opponent-count don't have a natural place to plug in here the way
     // they do in every other family's decideBet.
     if (toCallChips > 0) {
-      if (isFinal && hand.category < HandEvaluator.CATEGORY.TRIPS) return { action: "fold" };
-      if (!isFinal && hand.category < HandEvaluator.CATEGORY.PAIR) return { action: "fold" };
+      const belowFloor = isFinal ? hand.category < HandEvaluator.CATEGORY.TRIPS : hand.category < HandEvaluator.CATEGORY.PAIR;
+      // Hero call (design review finding #10, closed out 2026-11-23):
+      // currently only Subversive's patternBreakRate ever fires this.
+      // Calling here never risks winning a hand that can't legally win --
+      // games.md's Trips-or-better-to-win rule still applies at showdown --
+      // it's just occasionally seeing a hand through instead of folding
+      // reflexively against the hard floor.
+      if (belowFloor) return AIProfiles.shouldHeroCall(profile) ? { action: "call" } : { action: "fold" };
     }
     if (profile.raiseWhenLeading || AIProfiles.breaksPattern(profile)) {
       const minCategory = isFinal ? HandEvaluator.CATEGORY.TRIPS : profile.raiseMinCategory;

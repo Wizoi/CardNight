@@ -38,17 +38,24 @@ const TableQuips = (function () {
   // often as the Diplomat. `chance` stays the fallback for a player with
   // no resolvable profile (or in a test harness that hands this a plain
   // synthetic profile-less player), so this is additive, not breaking.
-  function effectiveChance(player, chance) {
+  // Real bug, caught by a follow-up review (2026-11-23): this originally
+  // read plain AIProfiles.profileFor(player.profileName), which meant
+  // Storm's own tilt overlay (#3 -- "talks more after a bad beat") could
+  // never actually reach a real quip chance: the overlay's talkativeness
+  // field was computed correctly, but nothing here ever read it. Takes
+  // the same `recentResults` shape profileForState already expects (a
+  // specific player's own last ~5 hands, or null/undefined).
+  function effectiveChance(player, chance, recentResults) {
     if (typeof AIProfiles !== "undefined" && player.profileName) {
-      const profile = AIProfiles.profileFor(player.profileName);
+      const profile = AIProfiles.profileForState(player.profileName, recentResults);
       if (profile && profile.talkativeness != null) return profile.talkativeness;
     }
     return chance == null ? DEFAULT_QUIP_CHANCE : chance;
   }
 
-  function pickQuip(player, moment, chance) {
+  function pickQuip(player, moment, chance, recentResults) {
     if (player.isHuman || !player.tablePersonId) return null;
-    if (Math.random() > effectiveChance(player, chance)) return null;
+    if (Math.random() > effectiveChance(player, chance, recentResults)) return null;
     const person = TablePeople.getById(player.tablePersonId);
     if (!person || !person.phrasesByMoment) return null;
     const pool = person.phrasesByMoment[moment];
@@ -72,7 +79,7 @@ const TableQuips = (function () {
   // of 30 -- only Diplomat/Steady Hand/Live Wire have any) simply never
   // reacts, rather than saying something generic that happens to be
   // wrong for the moment.
-  function pickReaction(players, excludePlayerId, moment) {
+  function pickReaction(players, excludePlayerId, moment, recentResultsByPlayerId) {
     const eligible = players.filter((p) => !p.isHuman && p.id !== excludePlayerId && p.tablePersonId);
     for (let i = eligible.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -81,7 +88,8 @@ const TableQuips = (function () {
       eligible[j] = tmp;
     }
     for (const player of eligible) {
-      if (Math.random() > effectiveChance(player, null)) continue;
+      const recentResults = recentResultsByPlayerId && recentResultsByPlayerId[player.id];
+      if (Math.random() > effectiveChance(player, null, recentResults)) continue;
       const person = TablePeople.getById(player.tablePersonId);
       const pool = person && person.phrasesByMoment && person.phrasesByMoment[moment];
       if (!pool || !pool.length) continue;

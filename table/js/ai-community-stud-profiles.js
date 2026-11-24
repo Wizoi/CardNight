@@ -16,7 +16,7 @@ const CommunityStudAIProfiles = (function () {
   // per-profile (2026-11-23, design review finding #4) -- see
   // AIProfiles.callWorthyCategoryFor's own comment.
   function worthContinuing(myHand, revealsLeft, profile, chanceBonus, toCallChips, potChips) {
-    const callWorthyCategory = AIProfiles.callWorthyCategoryFor(CALL_WORTHY_CATEGORY, profile, toCallChips, potChips);
+    const callWorthyCategory = AIProfiles.callWorthyCategoryFor(CALL_WORTHY_CATEGORY, profile, toCallChips, potChips, revealsLeft);
     if (myHand.category >= callWorthyCategory) return true;
     const gap = callWorthyCategory - myHand.category;
     return revealsLeft * (profile.chancePerCard + (chanceBonus || 0)) >= gap;
@@ -62,6 +62,9 @@ const CommunityStudAIProfiles = (function () {
       AIProfiles.reRaiseChanceAdjustment(br, player.id, profile) +
       AIProfiles.opponentLoosenessAdjustment(state.opponentStats, AIProfiles.liveOpponentIds(state.players, player.id), profile);
     if (toCallChips > 0 && !worthContinuing(myHand, revealsLeft, profile, chanceBonus, toCallChips, state.pot)) {
+      // Hero call (design review finding #10, closed out 2026-11-23):
+      // currently only Subversive's patternBreakRate ever fires this.
+      if (AIProfiles.shouldHeroCall(profile)) return { action: "call" };
       return { action: "fold" };
     }
     const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));

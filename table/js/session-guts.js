@@ -81,7 +81,7 @@ const SessionGuts = (function () {
     // comment). This wrapper just owns this session's own resumable
     // quipSeq/lastQuip/state.log bookkeeping.
     function maybeQuip(player, moment) {
-      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE);
+      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE, state.recentResults && state.recentResults[player.id]);
       if (!picked) return;
       quipSeq += 1;
       lastQuip = { id: quipSeq, playerId: player.id, text: picked.text };
@@ -187,7 +187,7 @@ const SessionGuts = (function () {
           notify();
           return;
         }
-        await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(p.profileName));
+        await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(p.profileName, state.recentResults && state.recentResults[p.id]));
         const { toLeftIdx, toRightIdx } = GutsRules.defaultPassSelection(state, p, state.passCounts.left, state.passCounts.right);
         GutsRules.submitPassSelection(state, p.id, toLeftIdx, toRightIdx);
         notify();
@@ -255,15 +255,23 @@ const SessionGuts = (function () {
           notify();
           return;
         }
-        await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(p.profileName));
+        await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(p.profileName, state.recentResults && state.recentResults[p.id]));
         const profile = AIProfiles.profileForState(p.profileName, state.recentResults && state.recentResults[p.id]);
         const stayingIn = GutsAIProfiles.decideStayIn(p, state, profile);
         GutsRules.submitStayDecision(state, p.id, stayingIn);
-        // Guts has no raise and no fold in the usual sense -- "stay in"
-        // and "declare out" are the closest equivalents (committing to
-        // the clash vs. bailing out of it), so they reuse those same two
-        // quip buckets rather than inventing new, data-less ones.
-        maybeQuip(p, stayingIn ? "raise" : "fold");
+        // Guts has no raise and no fold in the usual sense -- "declare
+        // out" is a real enough fit for the `fold` bucket (bailing out of
+        // the hand, the same spirit most `fold` lines already carry), but
+        // "stay in" reusing `raise` turned out to be a real content
+        // mismatch, caught by a follow-up review (2026-11-23): a large
+        // share of each character's own `raise` lines literally contain
+        // the word "raise" ("I raise. Somebody's gonna have to convince
+        // me I'm wrong."), which reads as flatly wrong in a game that has
+        // no raising at all. `general` lines are ambient, action-agnostic
+        // color commentary -- exactly what's needed for a commitment
+        // moment with no existing bucket that actually fits it -- so
+        // staying in now draws from there instead.
+        maybeQuip(p, stayingIn ? "general" : "fold");
         notify();
       }
       pending = null;
@@ -312,7 +320,7 @@ const SessionGuts = (function () {
           return;
         }
         exchangeQueue.shift();
-        await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(player.profileName));
+        await sleep(DECIDE_DELAY_MS * AIProfiles.tempoFor(player.profileName, state.recentResults && state.recentResults[player.id]));
         const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
         const cardIndex = GutsAIProfiles.decideBuyExchange(player, state, profile);
         if (cardIndex >= 0) GutsRules.buyExchange(state, playerId, cardIndex);

@@ -58,7 +58,7 @@ const SessionCommunityStud = (function () {
     // comment). This wrapper just owns this session's own resumable
     // quipSeq/lastQuip/state.log bookkeeping.
     function maybeQuip(player, moment) {
-      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE);
+      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE, state.recentResults && state.recentResults[player.id]);
       if (!picked) return;
       quipSeq += 1;
       lastQuip = { id: quipSeq, playerId: player.id, text: picked.text };
@@ -131,7 +131,7 @@ const SessionCommunityStud = (function () {
               notify();
               break;
             }
-            await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
+            await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName, state.recentResults && state.recentResults[bettor.id]));
             const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = CommunityStudAIProfiles.decideBet(bettor, state, profile);
             CommunityStudRules.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);

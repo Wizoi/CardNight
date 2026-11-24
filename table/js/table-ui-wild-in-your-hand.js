@@ -111,8 +111,19 @@ const TableUIWildInYourHand = (function () {
         ? "Everybody folded — the pot carries forward."
         : "Round over.";
       const cycleLine = gvs.state.cycleComplete ? "" : "<div>The pot escalates — deal the next hand to keep the cycle going.</div>";
+      // Same clarity fix as table-ui-guts.js (2026-11-23, reported
+      // directly): net stays the true $ figure -- this is just making
+      // clear that an escalating ante pool isn't automatically your own
+      // loss once your wallet runs out.
+      const humanShortfall = (gvs.state.allInShortfalls || []).find((s) => s.playerId === humanId);
+      const allInLine = humanShortfall
+        ? `<div class="all-in-notice">⚠️ You went all-in for ${money(ChipEconomy.chipsToDollars(humanShortfall.paidChips))} — short of the ${money(
+            ChipEconomy.chipsToDollars(humanShortfall.owedChips)
+          )} ante pool. That's all it actually cost you; the pool climbing further from here isn't money you lost.</div>`
+        : "";
       el.actionPanel.innerHTML = `
         <div>${resultLine}</div>
+        ${allInLine}
         ${cycleLine}
         ${canDeal ? `<button id="deal-next-hand-btn">Deal next hand</button>` : `<div>You're out of chips for this hand. Buy more chips or cash out to continue.</div>`}
       `;
@@ -144,8 +155,18 @@ const TableUIWildInYourHand = (function () {
     if (gvs.pending && gvs.pending.kind === "stayDecision") {
       const human = gvs.players.find((p) => p.id === humanId);
       const hand = WildInYourHandRules.evaluateHand(gvs.state, human);
+      // Same before-the-fact clarity as table-ui-guts.js's own stayDecision
+      // prompt (2026-11-23, reported directly).
+      const walletChips = human && human.wallet ? human.wallet.chips : 0;
+      const atRiskLine =
+        walletChips < gvs.state.antePoolChips
+          ? `<div>If you stay and lose, you'd go all-in for ${money(ChipEconomy.chipsToDollars(walletChips))} (your whole stack) rather than the full ${money(
+              ChipEconomy.chipsToDollars(gvs.state.antePoolChips)
+            )} ante pool.</div>`
+          : "";
       el.actionPanel.innerHTML = `
         <div>Pyramid's fully revealed. Your hand: ${HandEvaluator.describe(hand)}. Stay in (ante already paid) or fold?</div>
+        ${atRiskLine}
         <button data-stay-yes>Stay in</button>
         <button data-stay-no>Fold</button>
       `;

@@ -92,7 +92,11 @@ const StudAIProfiles = (function () {
     if (!profile.raiseWhenLeading && !AIProfiles.breaksPattern(profile)) return false;
     const showing = StudRules.evaluateShowingHand(state, player.id);
     const streetsLeft = StudRules.streetsRemaining(state);
-    return showing.category >= raiseBarForStud(streetsLeft, profile, barAdjustment);
+    const clearsBar = showing.category >= raiseBarForStud(streetsLeft, profile, barAdjustment);
+    // Slow-play (design review finding #10, closed out 2026-11-23):
+    // currently only Subversive's patternBreakRate ever fires this.
+    if (clearsBar && profile.raiseWhenLeading && AIProfiles.shouldSlowPlay(profile)) return false;
+    return clearsBar;
   }
 
   function decideBet(player, state, profile) {
@@ -116,6 +120,9 @@ const StudAIProfiles = (function () {
         AIProfiles.reRaiseChanceAdjustment(br, player.id, profile) +
         AIProfiles.opponentLoosenessAdjustment(state.opponentStats, AIProfiles.liveOpponentIds(state.players, player.id), profile);
       if (!AIProfiles.worthPursuing(showing, best.hand, streetsLeft, profile, chanceBonus)) {
+        // Hero call (design review finding #10, closed out 2026-11-23):
+        // currently only Subversive's patternBreakRate ever fires this.
+        if (AIProfiles.shouldHeroCall(profile)) return { action: "call" };
         return { action: "fold" };
       }
     }

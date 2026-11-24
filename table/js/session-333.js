@@ -51,7 +51,7 @@ const Session333 = (function () {
     // has a full fold/call/raise betting round after every one of its 5
     // reveals. Same shared selection logic as every other family now.
     function maybeQuip(player, moment) {
-      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE);
+      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE, state.recentResults && state.recentResults[player.id]);
       if (!picked) return;
       quipSeq += 1;
       lastQuip = { id: quipSeq, playerId: player.id, text: picked.text };
@@ -126,7 +126,7 @@ const Session333 = (function () {
             notify();
             return;
           }
-          await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
+          await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName, state.recentResults && state.recentResults[bettor.id]));
           const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
           const decision = Rules333AIProfiles.decideBet(bettor, state, profile);
           Rules333.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);

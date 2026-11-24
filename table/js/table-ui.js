@@ -1200,6 +1200,19 @@
           if (lastViewState) render(lastViewState);
         }, QUIP_DISPLAY_MS + 50);
       }
+      // A reaction quip and the winner's own per-hand `win` quip CAN both
+      // fire in the same render pass (a big win triggers both its own win
+      // line and someone else's reaction to it) -- both share this one
+      // activeQuip display slot, so whichever assigns second wins. That's
+      // deliberate, not an unnoticed clobber (caught and considered by a
+      // follow-up review, 2026-11-23): checked second here on purpose, so
+      // the rarer, more narratively interesting reaction always displays
+      // over the winner's own, less surprising self-congratulation on a
+      // same-pass collision, rather than winning or losing by accidental
+      // code order. A genuine priority queue showing BOTH in sequence
+      // wasn't judged worth the real timer-bookkeeping complexity for
+      // what's purely flavor, never game state, on an already-rare
+      // double-fire.
       if (vs.lastReactionQuip && vs.lastReactionQuip.id !== lastShownReactionQuipId) {
         lastShownReactionQuipId = vs.lastReactionQuip.id;
         activeQuip = { playerId: vs.lastReactionQuip.playerId, text: vs.lastReactionQuip.text, expiresAt: Date.now() + QUIP_DISPLAY_MS };

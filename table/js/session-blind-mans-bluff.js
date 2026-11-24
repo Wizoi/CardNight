@@ -50,7 +50,7 @@ const SessionBlindMansBluff = (function () {
     // review finding #2's own list). Same shared selection logic every
     // other family uses, same fold/raise/win moments.
     function maybeQuip(player, moment) {
-      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE);
+      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE, state.recentResults && state.recentResults[player.id]);
       if (!picked) return;
       quipSeq += 1;
       lastQuip = { id: quipSeq, playerId: player.id, text: picked.text };
@@ -121,7 +121,7 @@ const SessionBlindMansBluff = (function () {
             notify();
             return;
           }
-          await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
+          await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName, state.recentResults && state.recentResults[bettor.id]));
           const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
           const decision = BlindMansBluffAIProfiles.decideBet(bettor, state, profile);
           BlindMansBluffRules.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);

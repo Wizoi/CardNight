@@ -359,7 +359,10 @@ const StudRules = (function () {
     }
     const { paid } = ChipEconomy.pay(player.wallet, neededChips);
     state.pot += paid;
-    state.discardPile.push(...state.enterprisePile.map((c) => ({ rank: c.rank, suit: c.suit })));
+    // The Enterprise pile is always face up on the table -- explicit here
+    // (not just omitted) so unseenRankBoost's own faceUp check (see
+    // foldPlayer below) correctly still counts these as seen.
+    state.discardPile.push(...state.enterprisePile.map((c) => ({ rank: c.rank, suit: c.suit, faceUp: true })));
     state.enterprisePile = [];
     refillEnterprisePile(state);
     state.log.push(`${player.name} wipes the Enterprise pile for $${ENTERPRISE_WIPE_PRICE_DOLLARS.toFixed(2)} — 3 fresh cards dealt.`);
@@ -454,11 +457,17 @@ const StudRules = (function () {
     return state.streets.length - state.streetIndex - 1;
   }
 
+  // Preserves `faceUp` (2026-11-23, see the identical note in
+  // rules-midnight-baseball.js's own foldPlayer) so a folded player's
+  // still-face-down hole cards don't get silently credited to
+  // unseenRankBoost as "seen" -- the exact same baseball-family wildcard-
+  // awareness bug, reached through this family's own fold path (Daytime
+  // Baseball, Rainy Day Baseball) instead of Midnight Baseball's.
   function foldPlayer(state, playerId) {
     const player = getPlayer(state, playerId);
     if (!player.folded) {
       player.folded = true;
-      state.discardPile.push(...player.hand.map((c) => ({ rank: c.rank, suit: c.suit })));
+      state.discardPile.push(...player.hand.map((c) => ({ rank: c.rank, suit: c.suit, faceUp: !!c.faceUp })));
     }
   }
 

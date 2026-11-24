@@ -118,8 +118,21 @@ const TableUIGuts = (function () {
         ? `The dummy hand${dummyHandDesc ? ` (${dummyHandDesc})` : ""} beats everyone who stayed in — no winner this round.`
         : "Round over.";
       const cycleLine = gvs.state.cycleComplete ? "" : "<div>The pot escalates — deal the next hand to keep the cycle going.</div>";
+      // Reported directly (2026-11-23): a player watching the pot climb
+      // into the hundreds assumed that was their own personal loss, when
+      // the real dollar accounting always capped what they actually paid
+      // at whatever was left in their wallet. Net ($ actually won/lost)
+      // stays the true figure -- this is a clarifying note, not a change
+      // to that math.
+      const humanShortfall = (gvs.state.allInShortfalls || []).find((s) => s.playerId === humanId);
+      const allInLine = humanShortfall
+        ? `<div class="all-in-notice">⚠️ You went all-in for ${money(ChipEconomy.chipsToDollars(humanShortfall.paidChips))} — short of the ${money(
+            ChipEconomy.chipsToDollars(humanShortfall.owedChips)
+          )} pot match. That's all it actually cost you; the pot climbing further from here isn't money you lost.</div>`
+        : "";
       el.actionPanel.innerHTML = `
         <div>${resultLine}</div>
+        ${allInLine}
         ${cycleLine}
         ${canDeal ? `<button id="deal-next-hand-btn">Deal next hand</button>` : `<div>You're out of chips for this hand. Buy more chips or cash out to continue.</div>`}
       `;
@@ -139,9 +152,25 @@ const TableUIGuts = (function () {
       return;
     }
     if (gvs.pending && gvs.pending.kind === "stayDecision" && gvs.pending.playerId == null) {
-      const hand = GutsRules.evaluateHand(gvs.state, gvs.players.find((p) => p.id === humanId));
+      const human = gvs.players.find((p) => p.id === humanId);
+      const hand = GutsRules.evaluateHand(gvs.state, human);
+      // Reported directly (2026-11-23): the pot shown here is what a
+      // LOSING stayer matches in full if the cycle doesn't resolve this
+      // round -- a player watching it climb into the hundreds can read
+      // that as their own exposure, when the real cap is whatever's left
+      // in their own wallet (no borrowing, ever). Spell out the smaller
+      // of the two up front, before the decision, not just after.
+      const potChips = gvs.state.potAtShowdown != null ? gvs.state.potAtShowdown : gvs.state.pot;
+      const walletChips = human && human.wallet ? human.wallet.chips : 0;
+      const atRiskLine =
+        walletChips < potChips
+          ? `<div>If you stay and lose, you'd go all-in for ${money(ChipEconomy.chipsToDollars(walletChips))} (your whole stack) rather than the full ${money(
+              ChipEconomy.chipsToDollars(potChips)
+            )} pot match.</div>`
+          : "";
       el.actionPanel.innerHTML = `
         <div>Your hand: ${HandEvaluator.describe(hand)}. Stay in (ante already paid) or fold?</div>
+        ${atRiskLine}
         <button data-stay-yes>Stay in</button>
         <button data-stay-no>Fold</button>
       `;

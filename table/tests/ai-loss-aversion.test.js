@@ -34,7 +34,15 @@ function run() {
     });
     const player = { id: "p0", hand: [] };
     const makeState = () => ({
-      streetIndex: 0,
+      // streetIndex 2 (turn, 1 card still to come) rather than preflop --
+      // a follow-up review found the lossAversion shift applied in full
+      // even on the very first preflop action, where toCall/pot is always
+      // lopsided purely from the blind mechanic, folding the tightest
+      // archetypes out of literally every unpaired preflop hand. The fix
+      // halves the shift while 3+ cards/streets are still unknown; this
+      // test is specifically about a late, closer-to-fully-informed
+      // decision, so it deliberately stays past that threshold.
+      streetIndex: 2,
       pot: potSizedBet.pot,
       players: [player],
       bettingRound: { currentBetChips: potSizedBet.toCallChips, committed: { p0: 0 }, raiseCounts: {} },
@@ -77,7 +85,10 @@ function run() {
       pot: potSizedBet.pot,
       players: [player],
       bettingRound: { currentBetChips: potSizedBet.toCallChips, committed: { p0: 0 }, raiseCounts: {} },
-      flipsDone: 4, // 6 flips left -- enough runway, same reasoning as community stud above
+      // 2 flips left -- a late decision, past the lossAversion shift's own
+      // early-street discount threshold (see the hold'em block above for
+      // why that threshold exists).
+      flipsDone: 8,
       raiseIncrementDollars: 0.25,
     });
     const fortressDecision = GameOfLifeAIProfiles.decideBet(player, makeState(), fortress);
@@ -115,12 +126,18 @@ function run() {
     check("Anaconda: Live Wire does NOT fold the same lone pair to the same bet", liveWireDecision.action !== "fold");
 
     // Incidental fix check, isolated from lossAversion: a profile with NO
-    // loss aversion (so the bar stays at plain PAIR, gap=0, myHand already
-    // clears it) would never even reach the revealsLeft credit -- so to
-    // actually exercise the "reveals left is credited" vs. "it isn't"
-    // difference, use a genuinely sub-PAIR hand (no pair at all) with a
-    // profile whose chancePerCard would have been enough to cover the gap
-    // if reveals were (wrongly) still credited once the hand is fixed.
+    // loss aversion (so the bar stays at plain PAIR) facing a genuinely
+    // sub-PAIR hand (no pair at all, gap=1). A follow-up review (2026-11-23)
+    // found the original version of this fix only half-corrected the bug:
+    // scoping the "reveals left" credit to "betting1" alone assumed a real
+    // discard-driven cut was still ahead at that point, but `myHand` is
+    // already computed from the player's CURRENT full (post-pass) hand via
+    // `evaluatePartial`, which already picks the best achievable 5 of 7 --
+    // so the eventual hand value is fully fixed from betting1 onward, same
+    // as betting2/revealingBet. The fix now applies `chancePerCard` as a
+    // flat, unscaled allowance (not multiplied by any reveals-left count)
+    // at every status -- so betting1 and betting2 must now behave
+    // IDENTICALLY for the same hand and profile, not differently.
     const highCardHand = [
       { rank: "2", suit: "H" },
       { rank: "5", suit: "C" },
@@ -129,19 +146,61 @@ function run() {
       { rank: "K", suit: "H" },
     ];
     const highCardPlayer = { id: "p0", hand: highCardHand };
-    const genericProfile = { name: "test", chancePerCard: 1, lossAversion: 0, raiseWhenLeading: false, bluffFrequency: 0 };
-    const stateBetting1 = { ...makeState("betting1"), players: [highCardPlayer] };
-    const stateBetting2 = { ...makeState("betting2"), players: [highCardPlayer] };
-    const decisionBetting1 = AnacondaAIProfiles.decideBet(highCardPlayer, stateBetting1, genericProfile);
+    const tooTightProfile = { name: "test", chancePerCard: 0.5, lossAversion: 0, raiseWhenLeading: false, bluffFrequency: 0 };
+    const looseEnoughProfile = { name: "test", chancePerCard: 1, lossAversion: 0, raiseWhenLeading: false, bluffFrequency: 0 };
+    for (const status of ["betting1", "betting2", "revealingBet"]) {
+      const stateTooTight = { ...makeState(status), players: [highCardPlayer] };
+      const tooTightDecision = AnacondaAIProfiles.decideBet(highCardPlayer, stateTooTight, tooTightProfile);
+      check(
+        `Anaconda (${status}): a profile whose chancePerCard (0.5) is below the gap (1) folds the same sub-pair hand -- no more reveals-left credit inflating it, at any status`,
+        tooTightDecision.action === "fold"
+      );
+
+      const stateLooseEnough = { ...makeState(status), players: [highCardPlayer] };
+      const looseEnoughDecision = AnacondaAIProfiles.decideBet(highCardPlayer, stateLooseEnough, looseEnoughProfile);
+      check(
+        `Anaconda (${status}): a profile whose chancePerCard (1) alone already clears the gap (1) still calls -- the flat allowance itself still works`,
+        looseEnoughDecision.action !== "fold"
+      );
+    }
+  }
+
+  // Real bug, caught by a follow-up review (2026-11-23) and confirmed by
+  // direct simulation: the lossAversion shift applied in full even on a
+  // player's very first preflop action, where toCall/pot is ALWAYS
+  // lopsided purely from the blind-posting mechanic (facing just the big
+  // blind, toCall/pot is roughly 0.67 every single hand, with zero real
+  // aggression behind it) -- this alone pushed the bar up a tier and
+  // folded the tightest archetypes out of literally every unpaired
+  // preflop hand, reintroducing the same class of symptom
+  // ai-holdem-preflop.test.js already fixed once (under-crediting how
+  // many cards are still to come), just from a different cause.
+  {
+    const { HandEvaluator, HoldemAIProfiles, AIProfiles } = load(["deck.js", "hand-evaluator.js", "ai-profiles.js", "ai-holdem-profiles.js"], ["HandEvaluator", "HoldemAIProfiles", "AIProfiles"], {
+      HoldemRules: { bestHighHand: () => ({ category: -1 }), maxRaiseDollars: () => 0 },
+    });
+    const fortress = AIProfiles.profileFor("fortress");
+    const player = { id: "p0", hand: [{ rank: "4", suit: "H" }, { rank: "6", suit: "H" }, { rank: "Q", suit: "C" }, { rank: "7", suit: "D" }] };
+    const preflopState = {
+      streetIndex: 0,
+      pot: 6,
+      players: [player],
+      bettingRound: { currentBetChips: 4, committed: { p0: 0 }, raiseCounts: {} },
+      raiseIncrementDollars: 0.25,
+    };
+    const decision = HoldemAIProfiles.decideBet(player, preflopState, fortress);
     check(
-      "Anaconda: before the second discard, 'reveals left' still credits a real high-card hand enough to call",
-      decisionBetting1.action !== "fold"
+      "Fortress no longer folds an unpaired hand facing just the big blind preflop -- the reported bug, reproduced and fixed",
+      decision.action !== "fold"
     );
-    const decisionBetting2 = AnacondaAIProfiles.decideBet(highCardPlayer, stateBetting2, genericProfile);
-    check(
-      "Anaconda: once the hand is fixed (betting2), the same high-card hand with the same profile folds -- 'reveals left' no longer wrongly credited",
-      decisionBetting2.action === "fold"
-    );
+
+    // The discount is early-street-only: the same hand, same profile, on
+    // the river (0 cards left) should still fold reflexively -- this fix
+    // loosens an early, low-information read, it doesn't disable the
+    // lossAversion shift altogether.
+    const riverState = { ...preflopState, streetIndex: 3 };
+    const riverDecision = HoldemAIProfiles.decideBet(player, riverState, fortress);
+    check("the same still-unpaired hand still folds on the river facing the same bet", riverDecision.action === "fold");
   }
 
   return summary("ai-loss-aversion");

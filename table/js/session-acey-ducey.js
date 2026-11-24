@@ -17,6 +17,13 @@ const SessionAceyDucey = (function () {
     const settings = config.settings;
     const onUpdate = config.onUpdate || (() => {});
     const onHandComplete = config.onHandComplete || (() => {});
+    // Real gap, caught by a follow-up review (2026-11-23): this family
+    // never actually received recentResults at all (every call site below
+    // reads state.recentResults, but nothing ever set it), so Acey
+    // Ducey's AI could never benefit from Storm's tilt or the Streak
+    // Chaser's hot/cold streaks -- the same wiring every other family
+    // already has.
+    const recentResults = config.recentResults || null;
 
     const dealerIndex = config.dealerIndex || 0;
     let handNumber = config.handNumber || 0;
@@ -39,6 +46,7 @@ const SessionAceyDucey = (function () {
       carriedPotChips = config.resumeFrom.extra.carriedPotChips;
       lastQuip = config.resumeFrom.extra.lastQuip;
       quipSeq = config.resumeFrom.extra.quipSeq;
+      if (state) state.recentResults = recentResults;
       if (state && state.status !== "complete" && !pending) processLoop();
     }
 
@@ -57,7 +65,7 @@ const SessionAceyDucey = (function () {
     // lostHand; declining to bet at all reads as the closest existing
     // equivalent to folding.
     function maybeQuip(player, moment) {
-      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE);
+      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE, state.recentResults && state.recentResults[player.id]);
       if (!picked) return;
       quipSeq += 1;
       lastQuip = { id: quipSeq, playerId: player.id, text: picked.text };
@@ -105,6 +113,7 @@ const SessionAceyDucey = (function () {
       topUpAIWalletsIfNeeded();
       handNumber += 1;
       state = AceyDuceyRules.createHandState(players, dealerIndex, settings, carriedPotChips);
+      state.recentResults = recentResults;
       carriedPotChips = 0;
       pending = null;
       notify();
@@ -143,7 +152,7 @@ const SessionAceyDucey = (function () {
             notify();
             return;
           }
-          await sleep(BET_DELAY_MS * AIProfiles.tempoFor(player.profileName));
+          await sleep(BET_DELAY_MS * AIProfiles.tempoFor(player.profileName, state.recentResults && state.recentResults[player.id]));
           const profile = AIProfiles.profileForState(player.profileName, state.recentResults && state.recentResults[player.id]);
           const betDollars = AceyDuceyAIProfiles.decideBet(player, state, profile);
           AceyDuceyRules.resolveBet(state, playerId, betDollars);

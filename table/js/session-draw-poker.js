@@ -56,7 +56,7 @@ const SessionDrawPoker = (function () {
     // comment). This wrapper just owns this session's own resumable
     // quipSeq/lastQuip/state.log bookkeeping.
     function maybeQuip(player, moment) {
-      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE);
+      const picked = TableQuips.pickQuip(player, moment, QUIP_CHANCE, state.recentResults && state.recentResults[player.id]);
       if (!picked) return;
       quipSeq += 1;
       lastQuip = { id: quipSeq, playerId: player.id, text: picked.text };
@@ -131,7 +131,7 @@ const SessionDrawPoker = (function () {
               notify();
               return;
             }
-            await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName));
+            await sleep(BET_DELAY_MS * AIProfiles.tempoFor(bettor.profileName, state.recentResults && state.recentResults[bettor.id]));
             const profile = AIProfiles.profileForState(bettor.profileName, state.recentResults && state.recentResults[bettor.id]);
             const decision = DrawPokerAIProfiles.decideBet(bettor, state, profile);
             RulesDrawPoker.submitBet(state, bettorId, decision.action, decision.raiseDollars || 0);
@@ -151,7 +151,7 @@ const SessionDrawPoker = (function () {
               notify();
               return;
             }
-            await sleep(DRAW_DELAY_MS * AIProfiles.tempoFor(player.profileName));
+            await sleep(DRAW_DELAY_MS * AIProfiles.tempoFor(player.profileName, state.recentResults && state.recentResults[player.id]));
             const discardIdx = DrawPokerAIProfiles.decideDraw(player);
             RulesDrawPoker.resolveDraw(state, playerId, discardIdx);
             notify();

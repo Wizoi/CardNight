@@ -89,22 +89,36 @@ const AnacondaAIProfiles = (function () {
     const toCallChips = br.currentBetChips - br.committed[player.id];
     const cards = player.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: c.rank === "JOKER" }));
     const myHand = HandEvaluator.evaluatePartial(cards);
-    const revealsLeft = 5 - state.revealsDone;
-    // Incidental mechanics bug, flagged alongside design review finding #4
-    // (not an archetype-tuning issue): revealsLeft used to stand in for
-    // "chances to improve" at every betting point, but a player's own hand
-    // is fully fixed the moment the second discard resolves ("betting2"
-    // onward) -- the 5 reveal rounds after that only change what OPPONENTS
-    // can see, never this player's own cards. Crediting "3 reveals left"
-    // as 3 more chances to improve a fixed hand made the fold gate
-    // archetype-sensitive to a signal that doesn't exist post-discard2 (a
-    // Fortress folding high-card with "3 reveals left," a Live Wire never
-    // doing so, on a hand neither of them can actually still change).
-    // Only "betting1" (before the second discard still has a real, if
-    // player-controlled rather than random, cut ahead of it) keeps the
-    // credit.
-    const cardsStillUnfixed = state.status === "betting1" ? revealsLeft : 0;
-
+    const revealsLeft = 5 - state.revealsDone; // still used by raiseBarFor below
+    // Incidental mechanics bug, originally flagged alongside design review
+    // finding #4 and only half-fixed at the time (caught in a follow-up
+    // review, 2026-11-23): `revealsLeft` used to stand in for "chances to
+    // improve" at every betting point, and the first pass at this only
+    // scoped that credit to "betting1" on the theory that the still-ahead
+    // second discard left real uncertainty there. It doesn't: `myHand` is
+    // computed via `evaluatePartial` over the player's CURRENT full hand,
+    // which already picks the best achievable 5-card combination from
+    // whatever's in it (the same best-of-N logic `bestHand` uses
+    // elsewhere) -- so by the time passing resolves and betting1 begins,
+    // a player's own eventual hand value is already fully determined.
+    // Discard2 can only ever keep or match that same already-found best-5
+    // (removing 2 of the 7 cards can't improve on a selection already
+    // optimal over all 7), and the 5 reveal rounds after that only change
+    // what OPPONENTS can see. There is no stage in Anaconda, after the
+    // initial deal-and-pass, where a player's own achievable category can
+    // still change by chance -- so there's genuinely nothing left to
+    // credit, at any status, not just post-"betting2". Multiplying by a
+    // "reveals left" count stops making sense at all once that count is
+    // always 0 -- so unlike every OTHER family's fold gate (where
+    // cardsLeft legitimately represents real future improvement chances),
+    // Anaconda's own chancePerCard is applied as a flat, unscaled
+    // allowance instead: "how much benefit of the doubt this archetype
+    // gives a close-but-not-quite KNOWN hand," not "how many more flips
+    // might help" (there are none). This still differentiates archetypes
+    // by their relative looseness (Live Wire's high chancePerCard still
+    // tolerates a real gap; Fortress's low one barely tolerates any), it
+    // just no longer multiplies that tolerance by a nonexistent reveal
+    // count.
     if (AIProfiles.shouldBluff(profile)) {
       const maxRaise = RulesAnaconda.maxRaiseDollars(state, player.id);
       if (maxRaise > 0) return { action: "raise", raiseDollars: AIProfiles.scaledRaiseDollars(AIProfiles.bluffRaiseTier(profile), state.raiseIncrementDollars, maxRaise) };
@@ -117,7 +131,13 @@ const AnacondaAIProfiles = (function () {
         AIProfiles.potOddsChanceBonus(toCallChips, state.pot) +
         AIProfiles.reRaiseChanceAdjustment(br, player.id, profile) +
         AIProfiles.opponentLoosenessAdjustment(state.opponentStats, AIProfiles.liveOpponentIds(state.players, player.id), profile);
-      if (gap > 0 && cardsStillUnfixed * (profile.chancePerCard + chanceBonus) < gap) return { action: "fold" };
+      if (gap > 0 && profile.chancePerCard + chanceBonus < gap) {
+        // Hero call (design review finding #10, closed out 2026-11-23):
+        // currently only Subversive's patternBreakRate ever fires this --
+        // calling anyway despite a read that says fold.
+        if (AIProfiles.shouldHeroCall(profile)) return { action: "call" };
+        return { action: "fold" };
+      }
     }
     const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));
     const bar = raiseBarFor(revealsLeft, profile, barAdjustment);

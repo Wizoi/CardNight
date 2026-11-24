@@ -509,9 +509,9 @@ const TableNight = (function () {
       // priority judgment between the two event types.
       if (!reactionQuip && typeof TableQuips !== "undefined") {
         if (!p.isHuman && outcome === "won" && netChips >= REACT_BIG_WIN_THRESHOLD_CHIPS) {
-          reactionQuip = TableQuips.pickReaction(players, p.id, "reactOpponentBigWin");
+          reactionQuip = TableQuips.pickReaction(players, p.id, "reactOpponentBigWin", recentResultsByPlayerId);
         } else if (p.isHuman && outcome === "lostAtShowdown" && netChips <= REACT_BAD_BEAT_THRESHOLD_CHIPS) {
-          reactionQuip = TableQuips.pickReaction(players, p.id, "reactHumanBadBeat");
+          reactionQuip = TableQuips.pickReaction(players, p.id, "reactHumanBadBeat", recentResultsByPlayerId);
         }
       }
     }

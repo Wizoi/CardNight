@@ -5085,6 +5085,19 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
   font-weight: 700;
 }
 
+.all-in-notice {
+  display: block;
+  margin: 0.5rem 0;
+  padding: 0.6rem 0.9rem;
+  border-radius: 10px;
+  background: rgba(224, 49, 49, 0.14);
+  border: 1px solid rgba(255, 107, 107, 0.4);
+  color: #ffc9c9;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
 /* Grayed-out Folded / Out-of-Play Hand Display (#human-hand & .seat-folded) */
 #human-hand.human-hand-folded .card {
   filter: grayscale(0.7) brightness(0.78) contrast(0.95);
