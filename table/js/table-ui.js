@@ -32,6 +32,14 @@
   const QUIP_DISPLAY_MS = 4200;
   let activeQuip = null;
   let lastShownQuipId = 0;
+  // Design review finding #9 (2026-11-23): a reaction quip comes from
+  // table-night.js itself (an opponent's big win, or the human's own bad
+  // beat), not any one family's own orchestrator -- a separate id stream
+  // from the per-hand lastQuip above, but shown through the exact same
+  // activeQuip/speech-bubble mechanism every table-ui-<family>.js's
+  // renderSeats already draws from, since it's still just "a quote above
+  // a specific seat."
+  let lastShownReactionQuipId = 0;
   let autoPickTimer = null;
   let cutForDealAutoTimer = null;
   // Human-picker variant-choice step: set while showing the "choose variants
@@ -1188,6 +1196,13 @@
       if (gvs.lastQuip && gvs.lastQuip.id !== lastShownQuipId) {
         lastShownQuipId = gvs.lastQuip.id;
         activeQuip = { playerId: gvs.lastQuip.playerId, text: gvs.lastQuip.text, expiresAt: Date.now() + QUIP_DISPLAY_MS };
+        setTimeout(() => {
+          if (lastViewState) render(lastViewState);
+        }, QUIP_DISPLAY_MS + 50);
+      }
+      if (vs.lastReactionQuip && vs.lastReactionQuip.id !== lastShownReactionQuipId) {
+        lastShownReactionQuipId = vs.lastReactionQuip.id;
+        activeQuip = { playerId: vs.lastReactionQuip.playerId, text: vs.lastReactionQuip.text, expiresAt: Date.now() + QUIP_DISPLAY_MS };
         setTimeout(() => {
           if (lastViewState) render(lastViewState);
         }, QUIP_DISPLAY_MS + 50);

@@ -63,7 +63,10 @@ function run() {
     minWin = Math.min(minWin, p.phrasesByMoment.win.length);
     if (p.phrasesByMoment.raise.length === 0) zeroRaiseIds.push(p.id);
   }
-  check("total phrase count across all characters is unchanged at 1478 (no loss/duplication from re-bucketing)", totalPhrases === 1478);
+  check(
+    "total phrase count across all characters is 1514 (1478 from the original re-bucketing pass + 36 new reactOpponentBigWin/reactHumanBadBeat lines added 2026-11-23 for finding #9)",
+    totalPhrases === 1514
+  );
   check("every bucketed line is accounted for exactly once per character (sum of buckets == sum of phrases)", totalBucketed === totalPhrases);
   check("every character has at least 1 fold line (min across roster: 3)", minFold >= 1);
   check("every character has at least 1 win line (min across roster: 1 -- was 0 for 22/30 before this pass)", minWin >= 1);
@@ -74,6 +77,26 @@ function run() {
     `only the 2 known characters have 0 raise lines (fortress--she-her, statistician--they-them): got [${zeroRaiseIds.join(", ")}]`,
     zeroRaiseIds.length === 2 && zeroRaiseIds.includes("fortress--she-her") && zeroRaiseIds.includes("statistician--they-them")
   );
+
+  // Design review finding #9 (2026-11-23): reaction quip moments
+  // (reactOpponentBigWin, reactHumanBadBeat) written only for the 9
+  // characters the review names -- Diplomat, Steady Hand, Live Wire,
+  // 3 pronoun variants each. Every other character correctly has none at
+  // all (TableQuips.pickQuip falls back to `general` for them, same as
+  // any moment with nothing bucketed).
+  const REACTION_ARCHETYPES = ["diplomat", "steady-hand", "live-wire"];
+  let charactersWithReactions = 0;
+  for (const p of TABLE_PEOPLE) {
+    const hasReactions = (p.phrasesByMoment.reactOpponentBigWin || []).length > 0 || (p.phrasesByMoment.reactHumanBadBeat || []).length > 0;
+    const shouldHaveReactions = REACTION_ARCHETYPES.includes(p.archetypeId);
+    check(`${p.id}: reaction quip lines present only if the archetype is one of Diplomat/Steady Hand/Live Wire`, hasReactions === shouldHaveReactions);
+    if (hasReactions) {
+      check(`${p.id}: has at least 1 reactOpponentBigWin line`, (p.phrasesByMoment.reactOpponentBigWin || []).length >= 1);
+      check(`${p.id}: has at least 1 reactHumanBadBeat line`, (p.phrasesByMoment.reactHumanBadBeat || []).length >= 1);
+      charactersWithReactions += 1;
+    }
+  }
+  check("exactly 9 characters have reaction quip lines (3 archetypes x 3 pronoun variants)", charactersWithReactions === 9);
 
   return summary("table-quips");
 }

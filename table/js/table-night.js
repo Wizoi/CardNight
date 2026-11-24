@@ -54,6 +54,25 @@ const TableNight = (function () {
   // this a significant loss," not an exact ledger).
   let lastKnownChipsByPlayerId = {};
   const RECENT_RESULTS_LIMIT = 5;
+  // Reaction quips (2026-11-23, design review finding #9): "No archetype
+  // can react to another player, so the Diplomat's compliments and the
+  // Steady Hand's reassurance never happen." A seat that WASN'T involved
+  // reacts in character to an opponent's big win or the human's own bad
+  // beat, computed right alongside recentResultsByPlayerId above (same
+  // per-hand netChips signal, already available there for free) and shown
+  // via the exact same speech-bubble mechanism every per-hand quip
+  // already uses (table-ui.js's activeQuip) -- not a new UI surface, just
+  // a second id stream feeding the same one. Purely transient/cosmetic,
+  // so deliberately not persisted through snapshot()/restore() the same
+  // way autoPickForAI's own one-shot quip isn't either.
+  let lastReactionQuip = null;
+  let reactionQuipSeq = 0;
+  const REACT_BIG_WIN_THRESHOLD_CHIPS = 8; // $2.00 at the default 25-cent chip
+  // Reuses the exact same "significant loss" bar Storm's own tilt trigger
+  // already established (#3) -- one consistent definition of "that was a
+  // real bad beat," not two different ones invented for two different
+  // features.
+  const REACT_BAD_BEAT_THRESHOLD_CHIPS = -4;
   // Whoever holds the dealer button for the upcoming game is also the picker
   // for it -- games.md doesn't document a picker mechanic at all (it's an
   // app-only meta-layer), but "the next dealer picks" is the natural fit,
@@ -330,6 +349,8 @@ const TableNight = (function () {
     playerBettingStats = {};
     recentResultsByPlayerId = {};
     lastKnownChipsByPlayerId = {};
+    lastReactionQuip = null;
+    reactionQuipSeq = 0;
     cutForDealState = null;
     activeGameId = null;
     activeVariantChoices = null;
@@ -471,6 +492,7 @@ const TableNight = (function () {
   // (stayed in, wasn't folded, wasn't the winner). netChips is this
   // hand's own chip delta since the last hand this player was part of.
   function recordHandOutcomes(winnerId) {
+    let reactionQuip = null;
     for (const p of players) {
       const prevChips = lastKnownChipsByPlayerId[p.id];
       const currentChips = p.wallet.chips;
@@ -481,7 +503,19 @@ const TableNight = (function () {
       if (arr.length > RECENT_RESULTS_LIMIT) arr.shift();
       recentResultsByPlayerId[p.id] = arr;
       lastKnownChipsByPlayerId[p.id] = currentChips;
+
+      // At most one reaction per hand -- whichever qualifying player the
+      // loop reaches first wins, a deliberate simple tie-break, not a
+      // priority judgment between the two event types.
+      if (!reactionQuip && typeof TableQuips !== "undefined") {
+        if (!p.isHuman && outcome === "won" && netChips >= REACT_BIG_WIN_THRESHOLD_CHIPS) {
+          reactionQuip = TableQuips.pickReaction(players, p.id, "reactOpponentBigWin");
+        } else if (p.isHuman && outcome === "lostAtShowdown" && netChips <= REACT_BAD_BEAT_THRESHOLD_CHIPS) {
+          reactionQuip = TableQuips.pickReaction(players, p.id, "reactHumanBadBeat");
+        }
+      }
     }
+    return reactionQuip;
   }
 
   function onHandComplete(result) {
@@ -489,7 +523,11 @@ const TableNight = (function () {
     if (result.winnerId) {
       handsWonByPlayerId[result.winnerId] = (handsWonByPlayerId[result.winnerId] || 0) + 1;
     }
-    recordHandOutcomes(result.winnerId);
+    const reactionQuip = recordHandOutcomes(result.winnerId);
+    if (reactionQuip) {
+      reactionQuipSeq += 1;
+      lastReactionQuip = { id: reactionQuipSeq, ...reactionQuip };
+    }
     // Mirror the outgoing orchestrator's own "carry to next hand" state
     // against the game it belongs to (see carriedPotByGameId above) -- an
     // overwrite, not an accumulator, so it always reflects "what's currently
@@ -773,6 +811,7 @@ const TableNight = (function () {
       activeGameId,
       gameList: GameRegistry.list(),
       orchestratorViewState: activeOrchestrator ? activeOrchestrator.getViewState() : null,
+      lastReactionQuip,
     };
   }
 

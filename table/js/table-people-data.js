@@ -94,6 +94,10 @@ const TABLE_PEOPLE = [
       "That's twice you've caught me leaning the wrong way tonight.",
       "Raise. I've got a good feeling and a good story, take your pick.",
       "Every time I think I've got this table figured, somebody proves me wrong. I love that.",
+      "Now THAT's a pot. Round's still on me, but you're buying next.",
+      "Look at you. I had a feeling about that hand the second you sat up straight.",
+      "Hey. That one stung, I saw it on your face. You'll get it back.",
+      "Don't let that one follow you into the next hand, alright? I mean that.",
     ],
     phrasesByMoment: {
       fold: [
@@ -137,6 +141,14 @@ const TABLE_PEOPLE = [
         "I got overtaken right there and I'm not even mad, that was well played.",
         "Lost the lead right there — fair's fair, that was the better hand.",
         "Somebody just took the lead from me and I respect the nerve.",
+      ],
+      reactOpponentBigWin: [
+        "Now THAT's a pot. Round's still on me, but you're buying next.",
+        "Look at you. I had a feeling about that hand the second you sat up straight.",
+      ],
+      reactHumanBadBeat: [
+        "Hey. That one stung, I saw it on your face. You'll get it back.",
+        "Don't let that one follow you into the next hand, alright? I mean that.",
       ],
       general: [
         "You've been awful quiet over there, Priya — rough week, or just a good hand?",
@@ -240,6 +252,10 @@ const TABLE_PEOPLE = [
       "I'll call. Curiosity's winning out over caution here.",
       "That's the kind of hand that makes the rest of the night interesting.",
       "I fold, and I'm going to be thinking about why for a while.",
+      "That's a win worth sitting with for a second. Well played, genuinely.",
+      "Look at that. I had a read on you and it was right, for once in a good way.",
+      "That one hurt, I could tell. Take a breath before the next hand.",
+      "I noticed that landed harder than you let on. You don't have to pretend otherwise with me.",
     ],
     phrasesByMoment: {
       fold: [
@@ -277,6 +293,14 @@ const TABLE_PEOPLE = [
       overtaken: [
         "I just lost the lead there, and honestly, that was earned.",
         "Somebody took the lead from me, and I'm choosing to be gracious about it.",
+      ],
+      reactOpponentBigWin: [
+        "That's a win worth sitting with for a second. Well played, genuinely.",
+        "Look at that. I had a read on you and it was right, for once in a good way.",
+      ],
+      reactHumanBadBeat: [
+        "That one hurt, I could tell. Take a breath before the next hand.",
+        "I noticed that landed harder than you let on. You don't have to pretend otherwise with me.",
       ],
       general: [
         "Take your time — I'm not going anywhere, and neither is this hand.",
@@ -384,6 +408,10 @@ const TABLE_PEOPLE = [
       "I raise — mostly to see who flinches next.",
       "Lost that lead fair and square, nothing to argue with there.",
       "I'm folding, but I'm walking away with a read I didn't have before.",
+      "Nice piece of work right there — I mean that, not just making conversation.",
+      "That's a read I didn't see coming. Respect.",
+      "Rough one. You want to talk about it or just keep moving?",
+      "That landed hard, I know. Doesn't have to follow you to the next hand.",
     ],
     phrasesByMoment: {
       fold: [
@@ -424,6 +452,14 @@ const TABLE_PEOPLE = [
       overtaken: [
         "Lost the lead just now, and I'll say it, that was the better read.",
         "Somebody just took the lead off me — respect, that was earned.",
+      ],
+      reactOpponentBigWin: [
+        "Nice piece of work right there — I mean that, not just making conversation.",
+        "That's a read I didn't see coming. Respect.",
+      ],
+      reactHumanBadBeat: [
+        "Rough one. You want to talk about it or just keep moving?",
+        "That landed hard, I know. Doesn't have to follow you to the next hand.",
       ],
       general: [
         "Hey, before we get into this hand — how are you actually doing tonight?",
@@ -959,6 +995,10 @@ const TABLE_PEOPLE = [
       "Quiet round's over, I'm making noise again.",
       "I'll match it blind — I didn't come here to think.",
       "Sparks don't apologize for the short circuit, and neither do I.",
+      "THAT's what I'm talking about! Finally, somebody else brought the noise!",
+      "Whoa — okay, NOW we're getting somewhere. Deal it again.",
+      "Ohh, that's a rough one — shake it off, get back in there!",
+      "That hurt to watch and I loved every second of it, no offense.",
     ],
     phrasesByMoment: {
       fold: [
@@ -995,6 +1035,14 @@ const TABLE_PEOPLE = [
         "Somebody just took my lead — good, now it's interesting again.",
         "Lost the lead? Watch me go get it back the loud way.",
         "You took the lead off me, fine, I'll take it back twice as loud.",
+      ],
+      reactOpponentBigWin: [
+        "THAT's what I'm talking about! Finally, somebody else brought the noise!",
+        "Whoa — okay, NOW we're getting somewhere. Deal it again.",
+      ],
+      reactHumanBadBeat: [
+        "Ohh, that's a rough one — shake it off, get back in there!",
+        "That hurt to watch and I loved every second of it, no offense.",
       ],
       general: [
         "Current's flowing, boys, don't touch me now.",
@@ -1099,6 +1147,10 @@ const TABLE_PEOPLE = [
       "Deal it faster, neng, I'm not built for slow nights twice.",
       "I fold the boring hand so this one gets to be the story.",
       "Somebody take my lead again, I dare you, it just makes it better.",
+      "Ooh, diba! Now THAT's a pot, finally some drama from someone else.",
+      "Look at you go, mama — I'm almost jealous, almost.",
+      "Ouch, neng. That one's gonna sting for a minute — get back in there.",
+      "That's a rough one, diba, but at least you were in it till the end.",
     ],
     phrasesByMoment: {
       fold: [
@@ -1134,6 +1186,14 @@ const TABLE_PEOPLE = [
       overtaken: [
         "You took my lead? Good, now I get to be loud about it.",
         "Lost the lead, fine, that's just my cue.",
+      ],
+      reactOpponentBigWin: [
+        "Ooh, diba! Now THAT's a pot, finally some drama from someone else.",
+        "Look at you go, mama — I'm almost jealous, almost.",
+      ],
+      reactHumanBadBeat: [
+        "Ouch, neng. That one's gonna sting for a minute — get back in there.",
+        "That's a rough one, diba, but at least you were in it till the end.",
       ],
       general: [
         "Both, baby. I said both.",
@@ -1239,6 +1299,10 @@ const TABLE_PEOPLE = [
       "I read the room like pressure, not like odds.",
       "Deal it, I didn't come this far for a small pot.",
       "I've got the intensity for one more front tonight, deal it.",
+      "Now THAT'S weather. Good on you for chasing it down.",
+      "That's the kind of pot I drove four hundred miles for. Nice.",
+      "Rough front to get caught in. Shake it off, there's more coming.",
+      "That one had some real pressure behind it. You rode it out fine.",
     ],
     phrasesByMoment: {
       fold: [
@@ -1267,6 +1331,14 @@ const TABLE_PEOPLE = [
       overtaken: [
         "Lost the lead — good, now there's something to chase again.",
         "Lost the lead again, that's fine, I like it better from behind.",
+      ],
+      reactOpponentBigWin: [
+        "Now THAT'S weather. Good on you for chasing it down.",
+        "That's the kind of pot I drove four hundred miles for. Nice.",
+      ],
+      reactHumanBadBeat: [
+        "Rough front to get caught in. Shake it off, there's more coming.",
+        "That one had some real pressure behind it. You rode it out fine.",
       ],
       general: [
         "I didn't drive four hundred miles for a nothing hand, deal it.",
@@ -1803,6 +1875,10 @@ const TABLE_PEOPLE = [
       "I fold hands like this all night if I have to. It costs me nothing.",
       "Deal it. I'm not in any rush to see what's coming.",
       "Whatever's next, I'll meet it the same way I met the last one.",
+      "Good hand. I'll say the same thing about the next one, win or lose.",
+      "Nice landing. Smooth, no drama — I respect that.",
+      "Rough one. You'll land the next approach just fine.",
+      "That one stings. Won't matter by the time we deal again.",
     ],
     phrasesByMoment: {
       fold: [
@@ -1834,6 +1910,14 @@ const TABLE_PEOPLE = [
       thinking: [],
       overtaken: [
         "Somebody just took the lead from me. That's how the hand goes sometimes.",
+      ],
+      reactOpponentBigWin: [
+        "Good hand. I'll say the same thing about the next one, win or lose.",
+        "Nice landing. Smooth, no drama — I respect that.",
+      ],
+      reactHumanBadBeat: [
+        "Rough one. You'll land the next approach just fine.",
+        "That one stings. Won't matter by the time we deal again.",
       ],
       general: [
         "Turbulence is turbulence. You ride it out or you don't.",
@@ -1943,6 +2027,10 @@ const TABLE_PEOPLE = [
       "That's not a reason to raise. That's a reason to sit and wait.",
       "I'll take my time on this one. Slow and right beats fast and sorry.",
       "Whatever comes next, I'll meet it the same as I met the last one.",
+      "Good hand. I'll say the same about mine whenever it comes.",
+      "Nice win. Stack it even, like it's any other night — that's the move.",
+      "Bad beat. Doesn't make you owed the next hand, but it's alright to feel it for a second.",
+      "That one's rough. Won't matter by hand fifty, I promise you that.",
     ],
     phrasesByMoment: {
       fold: [
@@ -1976,6 +2064,14 @@ const TABLE_PEOPLE = [
       ],
       thinking: [],
       overtaken: [],
+      reactOpponentBigWin: [
+        "Good hand. I'll say the same about mine whenever it comes.",
+        "Nice win. Stack it even, like it's any other night — that's the move.",
+      ],
+      reactHumanBadBeat: [
+        "Bad beat. Doesn't make you owed the next hand, but it's alright to feel it for a second.",
+        "That one's rough. Won't matter by hand fifty, I promise you that.",
+      ],
       general: [
         "Thirty years at this room and the cards still don't owe me anything.",
         "Half the pot spends just as good as the whole one.",
@@ -2082,6 +2178,10 @@ const TABLE_PEOPLE = [
       "That's not a signal to raise. That's a signal to sit still a second.",
       "I'll take my time here. Slow and right beats fast and wrong.",
       "Whatever's next, I'll meet it the same way I met the last one.",
+      "Good hand. I'd say the same whether you won it big or small.",
+      "Nice one. No need to make it bigger than it already is.",
+      "That one landed hard. It'll stop mattering faster than it feels like right now.",
+      "You get one sentence about that beat, then we're moving on — I mean that kindly.",
     ],
     phrasesByMoment: {
       fold: [
@@ -2114,6 +2214,14 @@ const TABLE_PEOPLE = [
       ],
       thinking: [],
       overtaken: [],
+      reactOpponentBigWin: [
+        "Good hand. I'd say the same whether you won it big or small.",
+        "Nice one. No need to make it bigger than it already is.",
+      ],
+      reactHumanBadBeat: [
+        "That one landed hard. It'll stop mattering faster than it feels like right now.",
+        "You get one sentence about that beat, then we're moving on — I mean that kindly.",
+      ],
       general: [
         "That's not a crisis. I know what an actual crisis looks like.",
         "My grandmother taught me bridge before I could spell it. Same nerve, different game.",

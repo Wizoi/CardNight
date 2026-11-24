@@ -59,5 +59,37 @@ const TableQuips = (function () {
     return { personName: person.name, text };
   }
 
-  return { DEFAULT_QUIP_CHANCE, pickQuip };
+  // Reaction quips (2026-11-23, design review finding #9): "No archetype
+  // can react to another player, so the Diplomat's compliments and the
+  // Steady Hand's reassurance never happen." Every other quip here is the
+  // acting player talking about their own action; a reaction is the one
+  // genuinely cross-player case -- fired from a seat that WASN'T involved
+  // in the event, about something that just happened to someone else.
+  // Deliberately does NOT fall back to `general` the way pickQuip does:
+  // a reaction misfiring as unrelated self-talk is exactly the kind of
+  // misfire the original quip classifier was built to avoid, so a
+  // character with no real lines for this specific reaction moment (21
+  // of 30 -- only Diplomat/Steady Hand/Live Wire have any) simply never
+  // reacts, rather than saying something generic that happens to be
+  // wrong for the moment.
+  function pickReaction(players, excludePlayerId, moment) {
+    const eligible = players.filter((p) => !p.isHuman && p.id !== excludePlayerId && p.tablePersonId);
+    for (let i = eligible.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = eligible[i];
+      eligible[i] = eligible[j];
+      eligible[j] = tmp;
+    }
+    for (const player of eligible) {
+      if (Math.random() > effectiveChance(player, null)) continue;
+      const person = TablePeople.getById(player.tablePersonId);
+      const pool = person && person.phrasesByMoment && person.phrasesByMoment[moment];
+      if (!pool || !pool.length) continue;
+      const text = pool[Math.floor(Math.random() * pool.length)];
+      return { personName: person.name, text, playerId: player.id };
+    }
+    return null;
+  }
+
+  return { DEFAULT_QUIP_CHANCE, pickQuip, pickReaction };
 })();
