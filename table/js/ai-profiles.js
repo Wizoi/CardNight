@@ -51,6 +51,13 @@ const AIProfiles = (function () {
       reRaiseChanceAdjustment: -0.4, // a renewed raise reads as real strength worth respecting
       opponentAdaptSensitivity: 0.3,
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.TWO_PAIR, // guts games: a fully-known hand needs to be genuinely strong to risk the ante
+      // Multiplies potRiskShift's "pot in antes" term (2026-11-23, design
+      // review finding #5) -- a flat shift applied the same tightening to
+      // every archetype regardless of how much a growing pot should
+      // actually deter THIS one. Fortress-like tight profiles get more
+      // than 1x (feel the escalation more); Live Wire-like loose profiles
+      // get 0 (an escalating pot barely registers).
+      gutsPotRiskSensitivity: 1.5,
       pressYourLuckStandThreshold: 3, // 5.5-21/7-27: stands once already within this far of either target, rather than pushing for exact
       aceyDuceyMinWinProb: 0.5, // Acey Ducey: only bets when the gap between the two shown cards looks genuinely safe
       aceyDuceyBetFraction: 0.25, // ...and even then, risks only a quarter of the pot
@@ -69,6 +76,7 @@ const AIProfiles = (function () {
       reRaiseChanceAdjustment: -0.15,
       opponentAdaptSensitivity: 0.3,
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
+      gutsPotRiskSensitivity: 1,
       pressYourLuckStandThreshold: 1.5,
       aceyDuceyMinWinProb: 0.3,
       aceyDuceyBetFraction: 0.5,
@@ -87,6 +95,7 @@ const AIProfiles = (function () {
       reRaiseChanceAdjustment: 0.1, // doesn't back down from renewed aggression
       opponentAdaptSensitivity: 0.15, // mostly plays its own game regardless of who's across the table
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD, // stays in almost every guts hand -- fits the reckless archetype
+      gutsPotRiskSensitivity: 0, // an escalating pot barely registers -- fits the reckless archetype
       pressYourLuckStandThreshold: 0.5, // keeps hitting until right on top of a target or busted
       aceyDuceyMinWinProb: 0.15,
       aceyDuceyBetFraction: 1, // goes for broke on any decent-looking gap
@@ -131,6 +140,7 @@ const AIProfiles = (function () {
       reRaiseChanceAdjustment: -0.2, // process-driven -- respects a genuine renewed signal
       opponentAdaptSensitivity: 0.5, // explicit-probability-driven -- the most genuinely read-adaptive profile in the roster
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.TWO_PAIR,
+      gutsPotRiskSensitivity: 1, // explicit-probability-driven -- weighs the growing pot the same way it weighs everything else
       pressYourLuckStandThreshold: 2,
       aceyDuceyMinWinProb: 0.4,
       aceyDuceyBetFraction: 0.35,
@@ -167,6 +177,7 @@ const AIProfiles = (function () {
       reRaiseChanceAdjustment: 0.3, // never backs down -- if anything, digs in harder
       opponentAdaptSensitivity: 0, // raises on nothing regardless of who's across the table -- doesn't adapt at all
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD,
+      gutsPotRiskSensitivity: 0, // raises on nothing regardless of who's across the table or how big the pot's gotten
       pressYourLuckStandThreshold: 0.25,
       aceyDuceyMinWinProb: 0.1,
       aceyDuceyBetFraction: 1,
@@ -203,6 +214,7 @@ const AIProfiles = (function () {
       reRaiseChanceAdjustment: -0.5, // folds hard to any renewed aggression -- loss aversion at its most acute
       opponentAdaptSensitivity: 0.2, // plays its own tight game regardless, but a looser table still nudges it slightly looser
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.TRIPS,
+      gutsPotRiskSensitivity: 1.5, // extreme loss aversion -- feels an escalating pot more than almost anyone in the roster
       pressYourLuckStandThreshold: 4,
       aceyDuceyMinWinProb: 0.65,
       aceyDuceyBetFraction: 0.15,
@@ -242,6 +254,11 @@ const AIProfiles = (function () {
       reRaiseChanceAdjustment: -0.1,
       opponentAdaptSensitivity: 0.4, // skilled and confident -- reads the table for real
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
+      // Baseline (even-keeled) value -- profileForState's tilt overlay
+      // drops this to 0 after a bad beat (2026-11-23, design review
+      // finding #5's own "Storm dropping to 0 while tilted" note): a
+      // tilted player isn't weighing the escalating pot rationally at all.
+      gutsPotRiskSensitivity: 1,
       pressYourLuckStandThreshold: 1.2,
       aceyDuceyMinWinProb: 0.25,
       aceyDuceyBetFraction: 0.6,
@@ -280,6 +297,7 @@ const AIProfiles = (function () {
       reRaiseChanceAdjustment: -0.2, // small-ball -- avoids blowing up a pot against renewed aggression
       opponentAdaptSensitivity: 0.5, // plays cheap hands specifically to gather information -- adaptive by design
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
+      gutsPotRiskSensitivity: 0.75,
       pressYourLuckStandThreshold: 1.5,
       aceyDuceyMinWinProb: 0.3,
       aceyDuceyBetFraction: 0.4,
@@ -322,6 +340,7 @@ const AIProfiles = (function () {
       reRaiseChanceAdjustment: -0.1, // textbook-steady, dead-middle reaction to match
       opponentAdaptSensitivity: 0.35, // textbook-solid play reads the table without showing it
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
+      gutsPotRiskSensitivity: 1, // dead-middle here too, matching every other textbook-steady knob
       pressYourLuckStandThreshold: 1.5,
       aceyDuceyMinWinProb: 0.3,
       aceyDuceyBetFraction: 0.5,
@@ -362,6 +381,7 @@ const AIProfiles = (function () {
       reRaiseChanceAdjustment: -0.15, // disciplined, process-driven response to a real signal
       opponentAdaptSensitivity: 0.45, // process-driven -- updates its read on someone as evidence accumulates
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
+      gutsPotRiskSensitivity: 1, // process-driven like the Calculator -- weighs the growing pot as real evidence
       pressYourLuckStandThreshold: 1.8,
       aceyDuceyMinWinProb: 0.35,
       aceyDuceyBetFraction: 0.4,
@@ -402,6 +422,7 @@ const AIProfiles = (function () {
       reRaiseChanceAdjustment: 0.15, // loose enough to keep chasing rather than back off
       opponentAdaptSensitivity: 0.1, // driven by its own streaks, not by reading the table
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD,
+      gutsPotRiskSensitivity: 0.25, // a hot/due streak matters far more to this archetype than how big the pot's gotten
       pressYourLuckStandThreshold: 0.75,
       aceyDuceyMinWinProb: 0.2,
       aceyDuceyBetFraction: 0.7,
@@ -449,6 +470,7 @@ const AIProfiles = (function () {
       reRaiseChanceAdjustment: 0, // contrarian, not predictably timid or predictably stubborn either way
       opponentAdaptSensitivity: 0.2, // some awareness, but plays unconventionally regardless of what it implies
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.HIGH_CARD,
+      gutsPotRiskSensitivity: 0.25, // stays in on nearly anything, by design -- an escalating pot barely registers
       pressYourLuckStandThreshold: 0.4,
       aceyDuceyMinWinProb: 0.12,
       aceyDuceyBetFraction: 0.85,
@@ -491,6 +513,7 @@ const AIProfiles = (function () {
       reRaiseChanceAdjustment: -0.05, // even-keeled, barely reacts either way
       opponentAdaptSensitivity: 0.4, // decades of internalized reads -- genuinely adapts, just doesn't show it
       gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR,
+      gutsPotRiskSensitivity: 1, // the same flat constant as lossAversion -- identical process in a huge pot and a tiny one
       pressYourLuckStandThreshold: 1.7,
       aceyDuceyMinWinProb: 0.35,
       aceyDuceyBetFraction: 0.35,
@@ -544,6 +567,9 @@ const AIProfiles = (function () {
         bluffFrequency: base.bluffFrequency * 2,
         reRaiseChanceAdjustment: base.reRaiseChanceAdjustment + 0.3,
         opponentAdaptSensitivity: 0,
+        // Design review finding #5's own note: a tilted player isn't
+        // rationally weighing an escalating Guts pot at all.
+        gutsPotRiskSensitivity: 0,
       };
     }
 

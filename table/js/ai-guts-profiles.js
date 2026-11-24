@@ -44,22 +44,45 @@ const GutsAIProfiles = (function () {
   // solo winner" bug this project has hit before, just from a different
   // cause. Scaled in "ante units" (pot / ante) rather than raw dollars so
   // it behaves the same regardless of a game's own ante size.
-  function potRiskShift(state) {
+  //
+  // Scaled per-profile by `gutsPotRiskSensitivity` (2026-11-23, design
+  // review finding #5) -- this used to apply the same tightening to
+  // every archetype regardless of temperament, which was a big part of
+  // why the whole family collapsed ten archetypes into three behaviors
+  // (the review's own framing). Fortress-like profiles (sensitivity 1.5)
+  // feel a growing pot more than the flat shift used to credit them for;
+  // Live Wire-like profiles (0) don't feel it at all. The +2 cap is still
+  // applied AFTER scaling, so this can't itself create the stalled-cycle
+  // failure mode the cap exists to prevent.
+  function potRiskShift(state, profile) {
     const anteChips = ChipEconomy.dollarsToChips(state.anteDollars || 0.5);
     if (anteChips <= 0) return 0;
     const potInAntes = state.pot / anteChips;
-    return Math.min(2, Math.floor(potInAntes / 4));
+    const sensitivity = profile.gutsPotRiskSensitivity == null ? 1 : profile.gutsPotRiskSensitivity;
+    return Math.min(2, Math.floor((potInAntes / 4) * sensitivity));
   }
 
   function decideStayIn(player, state, profile) {
     const hand = GutsRules.evaluateHand(state, player);
-    const shift = (state.gameConfig.categoryShift || 0) + potRiskShift(state);
+    const shift = (state.gameConfig.categoryShift || 0) + potRiskShift(state, profile);
+    let staying;
     if (hand.category > HandEvaluator.CATEGORY.HIGH_CARD || shift > 0) {
-      return hand.category >= profile.gutsMinCategoryToStay + shift;
+      staying = hand.category >= profile.gutsMinCategoryToStay + shift;
+    } else if (profile.gutsMinCategoryToStay > HandEvaluator.CATEGORY.HIGH_CARD) {
+      staying = false;
+    } else {
+      const topRankValue = hand.tiebreakers && hand.tiebreakers[0];
+      staying = topRankValue >= Deck.RANK_VALUES.J;
     }
-    if (profile.gutsMinCategoryToStay > HandEvaluator.CATEGORY.HIGH_CARD) return false;
-    const topRankValue = hand.tiebreakers && hand.tiebreakers[0];
-    return topRankValue >= Deck.RANK_VALUES.J;
+    // A small per-profile chance to stay in anyway on a hand that doesn't
+    // actually clear the bar -- this IS how you bluff in Guts (2026-11-23,
+    // design review finding #5): there's no raise to size, just the in/out
+    // declare itself, so the existing bluffFrequency knob (Subversive,
+    // Live Wire) is reused rather than adding a parallel field for the
+    // same underlying trait. Only ever upgrades a fold into a stay, never
+    // the reverse.
+    if (!staying && AIProfiles.shouldBluff(profile)) return true;
+    return staying;
   }
 
   // 3 Buy 5 / 5 Buy 5's optional one-card exchange: worth it only if there's

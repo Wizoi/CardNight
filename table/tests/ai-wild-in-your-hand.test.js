@@ -22,18 +22,23 @@ function run() {
   // bar by Row 3 and at the real declare.
   const stubbedHand = { category: HandEvaluator.CATEGORY.TWO_PAIR, tiebreakers: [9] };
   const { WildInYourHandAIProfiles } = load(
-    ["deck.js", "hand-evaluator.js", "ai-profiles.js", "ai-wild-in-your-hand-profiles.js"],
+    ["deck.js", "hand-evaluator.js", "chip-economy.js", "ai-profiles.js", "ai-wild-in-your-hand-profiles.js"],
     ["WildInYourHandAIProfiles"],
     { WildInYourHandRules: { evaluateHand: () => stubbedHand } }
   );
 
-  const profile = { name: "test", gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR };
+  // gutsPotRiskSensitivity: 0 and bluffFrequency: 0 keep this test focused
+  // on the row-bet-vs-declare looseness it was originally written to cover
+  // (2026-11-23, design review finding #5 added both fields to real
+  // profiles' own potRiskShift/bluff-stay behavior -- see
+  // ai-loss-aversion... ai-guts-pot-risk.test.js for THOSE checks).
+  const profile = { name: "test", gutsMinCategoryToStay: HandEvaluator.CATEGORY.PAIR, gutsPotRiskSensitivity: 0, bluffFrequency: 0 };
   const gameConfig = { categoryShift: 2 };
   const player = { id: "p0", hand: [] };
 
-  const state0 = { gameConfig, rowIndex: 0 };
-  const state1 = { gameConfig, rowIndex: 1 };
-  const state2 = { gameConfig, rowIndex: 2 };
+  const state0 = { gameConfig, rowIndex: 0, anteDollars: 0.5, antePoolChips: 2 };
+  const state1 = { gameConfig, rowIndex: 1, anteDollars: 0.5, antePoolChips: 2 };
+  const state2 = { gameConfig, rowIndex: 2, anteDollars: 0.5, antePoolChips: 2 };
 
   check("Row 1 (2 rows still to come): worth the cheap call under the fully loosened bar", WildInYourHandAIProfiles.decideRowBet(player, state0, profile) === true);
   check("Row 2 (1 row still to come): still worth it, partially loosened", WildInYourHandAIProfiles.decideRowBet(player, state1, profile) === true);

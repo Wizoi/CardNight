@@ -13,9 +13,23 @@
 const WildInYourHandAIProfiles = (function () {
   const PYRAMID_ROWS = 3;
 
+  // Scaled per-profile by gutsPotRiskSensitivity, same reasoning as
+  // ai-guts-profiles.js's own potRiskShift (2026-11-23, design review
+  // finding #5) -- against the ante POOL (state.antePoolChips) rather
+  // than state.pot, since that's the exact amount a declare-stage loser
+  // actually has to match here (row-betting chips sit in state.pot too,
+  // but aren't part of what escalates the ante-pool match).
+  function potRiskShift(state, profile) {
+    const anteChips = ChipEconomy.dollarsToChips(state.anteDollars || 0.5);
+    if (anteChips <= 0) return 0;
+    const potInAntes = state.antePoolChips / anteChips;
+    const sensitivity = profile.gutsPotRiskSensitivity == null ? 1 : profile.gutsPotRiskSensitivity;
+    return Math.min(2, Math.floor((potInAntes / 4) * sensitivity));
+  }
+
   function worthContinuing(player, state, profile, shiftOverride) {
     const hand = WildInYourHandRules.evaluateHand(state, player);
-    const shift = shiftOverride != null ? shiftOverride : state.gameConfig.categoryShift || 0;
+    const shift = shiftOverride != null ? shiftOverride : (state.gameConfig.categoryShift || 0) + potRiskShift(state, profile);
     if (hand.category > HandEvaluator.CATEGORY.HIGH_CARD || shift > 0) {
       return hand.category >= profile.gutsMinCategoryToStay + shift;
     }
@@ -45,8 +59,14 @@ const WildInYourHandAIProfiles = (function () {
     return worthContinuing(player, state, profile, loosenedShift);
   }
 
+  // A small per-profile chance to stay in despite not clearing the bar --
+  // the real risk decision here, unlike decideRowBet's cheap 50c
+  // information call just above (2026-11-23, design review finding #5;
+  // see ai-guts-profiles.js's decideStayIn for the identical reasoning).
   function decideDeclare(player, state, profile) {
-    return worthContinuing(player, state, profile);
+    const staying = worthContinuing(player, state, profile);
+    if (!staying && AIProfiles.shouldBluff(profile)) return true;
+    return staying;
   }
 
   return { decideRowBet, decideDeclare };
