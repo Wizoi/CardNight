@@ -12,9 +12,13 @@
 const CommunityStudAIProfiles = (function () {
   const CALL_WORTHY_CATEGORY = HandEvaluator.CATEGORY.PAIR;
 
-  function worthContinuing(myHand, revealsLeft, profile, chanceBonus) {
-    if (myHand.category >= CALL_WORTHY_CATEGORY) return true;
-    const gap = CALL_WORTHY_CATEGORY - myHand.category;
+  // callWorthyCategory tightens with the bet's size relative to the pot,
+  // per-profile (2026-11-23, design review finding #4) -- see
+  // AIProfiles.callWorthyCategoryFor's own comment.
+  function worthContinuing(myHand, revealsLeft, profile, chanceBonus, toCallChips, potChips) {
+    const callWorthyCategory = AIProfiles.callWorthyCategoryFor(CALL_WORTHY_CATEGORY, profile, toCallChips, potChips);
+    if (myHand.category >= callWorthyCategory) return true;
+    const gap = callWorthyCategory - myHand.category;
     return revealsLeft * (profile.chancePerCard + (chanceBonus || 0)) >= gap;
   }
 
@@ -57,7 +61,7 @@ const CommunityStudAIProfiles = (function () {
       AIProfiles.potOddsChanceBonus(toCallChips, state.pot) +
       AIProfiles.reRaiseChanceAdjustment(br, player.id, profile) +
       AIProfiles.opponentLoosenessAdjustment(state.opponentStats, AIProfiles.liveOpponentIds(state.players, player.id), profile);
-    if (toCallChips > 0 && !worthContinuing(myHand, revealsLeft, profile, chanceBonus)) {
+    if (toCallChips > 0 && !worthContinuing(myHand, revealsLeft, profile, chanceBonus, toCallChips, state.pot)) {
       return { action: "fold" };
     }
     const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));

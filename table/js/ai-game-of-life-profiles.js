@@ -19,9 +19,13 @@ const GameOfLifeAIProfiles = (function () {
     return state.goodRow.some((c) => !c.flipped) ? "good" : "bad";
   }
 
-  function worthContinuing(myHand, flipsLeft, profile, chanceBonus) {
-    if (myHand.category >= CALL_WORTHY_CATEGORY) return true;
-    const gap = CALL_WORTHY_CATEGORY - myHand.category;
+  // callWorthyCategory tightens with the bet's size relative to the pot,
+  // per-profile (2026-11-23, design review finding #4) -- see
+  // AIProfiles.callWorthyCategoryFor's own comment.
+  function worthContinuing(myHand, flipsLeft, profile, chanceBonus, toCallChips, potChips) {
+    const callWorthyCategory = AIProfiles.callWorthyCategoryFor(CALL_WORTHY_CATEGORY, profile, toCallChips, potChips);
+    if (myHand.category >= callWorthyCategory) return true;
+    const gap = callWorthyCategory - myHand.category;
     return flipsLeft * (profile.chancePerCard + (chanceBonus || 0)) >= gap;
   }
 
@@ -52,7 +56,7 @@ const GameOfLifeAIProfiles = (function () {
       AIProfiles.potOddsChanceBonus(toCallChips, state.pot) +
       AIProfiles.reRaiseChanceAdjustment(br, player.id, profile) +
       AIProfiles.opponentLoosenessAdjustment(state.opponentStats, AIProfiles.liveOpponentIds(state.players, player.id), profile);
-    if (toCallChips > 0 && !worthContinuing(myHand, flipsLeft, profile, chanceBonus)) {
+    if (toCallChips > 0 && !worthContinuing(myHand, flipsLeft, profile, chanceBonus, toCallChips, state.pot)) {
       return { action: "fold" };
     }
     const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));

@@ -90,6 +90,20 @@ const AnacondaAIProfiles = (function () {
     const cards = player.hand.map((c) => ({ rank: c.rank, suit: c.suit, isWild: c.rank === "JOKER" }));
     const myHand = HandEvaluator.evaluatePartial(cards);
     const revealsLeft = 5 - state.revealsDone;
+    // Incidental mechanics bug, flagged alongside design review finding #4
+    // (not an archetype-tuning issue): revealsLeft used to stand in for
+    // "chances to improve" at every betting point, but a player's own hand
+    // is fully fixed the moment the second discard resolves ("betting2"
+    // onward) -- the 5 reveal rounds after that only change what OPPONENTS
+    // can see, never this player's own cards. Crediting "3 reveals left"
+    // as 3 more chances to improve a fixed hand made the fold gate
+    // archetype-sensitive to a signal that doesn't exist post-discard2 (a
+    // Fortress folding high-card with "3 reveals left," a Live Wire never
+    // doing so, on a hand neither of them can actually still change).
+    // Only "betting1" (before the second discard still has a real, if
+    // player-controlled rather than random, cut ahead of it) keeps the
+    // credit.
+    const cardsStillUnfixed = state.status === "betting1" ? revealsLeft : 0;
 
     if (AIProfiles.shouldBluff(profile)) {
       const maxRaise = RulesAnaconda.maxRaiseDollars(state, player.id);
@@ -97,12 +111,13 @@ const AnacondaAIProfiles = (function () {
     }
 
     if (toCallChips > 0) {
-      const gap = HandEvaluator.CATEGORY.PAIR - myHand.category;
+      const callWorthyCategory = AIProfiles.callWorthyCategoryFor(HandEvaluator.CATEGORY.PAIR, profile, toCallChips, state.pot);
+      const gap = callWorthyCategory - myHand.category;
       const chanceBonus =
         AIProfiles.potOddsChanceBonus(toCallChips, state.pot) +
         AIProfiles.reRaiseChanceAdjustment(br, player.id, profile) +
         AIProfiles.opponentLoosenessAdjustment(state.opponentStats, AIProfiles.liveOpponentIds(state.players, player.id), profile);
-      if (gap > 0 && revealsLeft * (profile.chancePerCard + chanceBonus) < gap) return { action: "fold" };
+      if (gap > 0 && cardsStillUnfixed * (profile.chancePerCard + chanceBonus) < gap) return { action: "fold" };
     }
     const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));
     const bar = raiseBarFor(revealsLeft, profile, barAdjustment);

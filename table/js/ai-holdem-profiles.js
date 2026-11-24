@@ -40,9 +40,15 @@ const HoldemAIProfiles = (function () {
     return 0;
   }
 
-  function worthContinuing(myHand, cardsLeft, profile, chanceBonus) {
-    if (myHand.category >= CALL_WORTHY_CATEGORY) return true;
-    const gap = CALL_WORTHY_CATEGORY - myHand.category;
+  // callWorthyCategory tightens with the bet's size relative to the pot,
+  // per-profile (2026-11-23, design review finding #4) -- see
+  // AIProfiles.callWorthyCategoryFor's own comment for why this matters:
+  // without it, the tightest archetype called an unlimited hold'em bet
+  // with any pair at all.
+  function worthContinuing(myHand, cardsLeft, profile, chanceBonus, toCallChips, potChips) {
+    const callWorthyCategory = AIProfiles.callWorthyCategoryFor(CALL_WORTHY_CATEGORY, profile, toCallChips, potChips);
+    if (myHand.category >= callWorthyCategory) return true;
+    const gap = callWorthyCategory - myHand.category;
     return cardsLeft * (profile.chancePerCard + (chanceBonus || 0)) >= gap;
   }
 
@@ -96,7 +102,7 @@ const HoldemAIProfiles = (function () {
       AIProfiles.potOddsChanceBonus(toCallChips, state.pot) +
       AIProfiles.reRaiseChanceAdjustment(br, player.id, profile) +
       AIProfiles.opponentLoosenessAdjustment(state.opponentStats, AIProfiles.liveOpponentIds(state.players, player.id), profile);
-    if (toCallChips > 0 && !worthContinuing(myHand, cardsStillToReveal(state.streetIndex), profile, chanceBonus)) {
+    if (toCallChips > 0 && !worthContinuing(myHand, cardsStillToReveal(state.streetIndex), profile, chanceBonus, toCallChips, state.pot)) {
       return { action: "fold" };
     }
     const barAdjustment = AIProfiles.opponentCountBarAdjustment(AIProfiles.liveOpponentCount(state.players, player.id));

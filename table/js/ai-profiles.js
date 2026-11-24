@@ -40,6 +40,12 @@ const AIProfiles = (function () {
       label: "Cautious",
       buyWildOnlyOnCategoryGain: true, // only pays for a 9 if it changes the hand's category, not just a kicker
       chancePerCard: 0.5, // how many "hand categories" of gap one more unknown flip is assumed worth closing
+      // How many extra call-worthy category tiers a bet this big demands, scaled
+      // by toCall/pot inside worthContinuing (2026-11-23, design review finding
+      // #4) -- loss aversion (Kahneman & Tversky) "grows with stake size," so a
+      // pot-sized bet should genuinely spook a tight profile, not just a flat
+      // category bar that ignores how much is actually being risked.
+      lossAversion: 2,
       raiseWhenLeading: false,
       bluffFrequency: 0, // never raises on a hand that doesn't actually warrant it
       reRaiseChanceAdjustment: -0.4, // a renewed raise reads as real strength worth respecting
@@ -56,6 +62,7 @@ const AIProfiles = (function () {
       label: "Balanced",
       buyWildOnlyOnCategoryGain: false,
       chancePerCard: 1,
+      lossAversion: 1,
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR, // won't raise on a lead this thin
       bluffFrequency: 0.05,
@@ -73,6 +80,7 @@ const AIProfiles = (function () {
       label: "Aggressive",
       buyWildOnlyOnCategoryGain: false,
       chancePerCard: 1.5,
+      lossAversion: 0, // bet size doesn't change the calculus -- fits the reckless archetype
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.PAIR, // presses even a modest lead
       bluffFrequency: 0.15,
@@ -116,6 +124,7 @@ const AIProfiles = (function () {
       },
       buyWildOnlyOnCategoryGain: true,
       chancePerCard: 0.75,
+      lossAversion: 1, // explicit-probability-driven -- a bet's actual size is itself part of the calculation
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
       bluffFrequency: 0.08, // selective and purposeful even when bluffing, not never
@@ -151,6 +160,7 @@ const AIProfiles = (function () {
       },
       buyWildOnlyOnCategoryGain: false,
       chancePerCard: 1.8,
+      lossAversion: 0, // calls an unlimited bet with any pair -- fits "plays like a calling station" on purpose
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.HIGH_CARD,
       bluffFrequency: 0.25, // the loosest in the roster -- "raises on nothing" is close to literal
@@ -187,6 +197,7 @@ const AIProfiles = (function () {
       },
       buyWildOnlyOnCategoryGain: true,
       chancePerCard: 0.3,
+      lossAversion: 2, // the tightest in the roster -- a big bet should spook it the most
       raiseWhenLeading: false,
       bluffFrequency: 0, // nothing clears the bar to risk a chip, bluffed or otherwise
       reRaiseChanceAdjustment: -0.5, // folds hard to any renewed aggression -- loss aversion at its most acute
@@ -224,6 +235,7 @@ const AIProfiles = (function () {
       },
       buyWildOnlyOnCategoryGain: false,
       chancePerCard: 1.1,
+      lossAversion: 1,
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.PAIR,
       bluffFrequency: 0.1,
@@ -261,6 +273,7 @@ const AIProfiles = (function () {
       },
       buyWildOnlyOnCategoryGain: false,
       chancePerCard: 1.1,
+      lossAversion: 0.75,
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
       bluffFrequency: 0.05,
@@ -302,6 +315,7 @@ const AIProfiles = (function () {
       },
       buyWildOnlyOnCategoryGain: false,
       chancePerCard: 1,
+      lossAversion: 1, // dead-middle here too, matching every other textbook-steady knob
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
       bluffFrequency: 0.1, // a real, unpredictable bluff rate is the whole point of "gives away nothing"
@@ -341,6 +355,7 @@ const AIProfiles = (function () {
       },
       buyWildOnlyOnCategoryGain: true,
       chancePerCard: 0.9,
+      lossAversion: 1, // process-driven like the Calculator -- a bet's size is real evidence, weighed the same every time
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
       bluffFrequency: 0.05,
@@ -380,6 +395,7 @@ const AIProfiles = (function () {
       },
       buyWildOnlyOnCategoryGain: false,
       chancePerCard: 1.3,
+      lossAversion: 0.25, // a hot/due streak matters far more to this archetype than the bet's actual size
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.PAIR,
       bluffFrequency: 0.15,
@@ -423,6 +439,7 @@ const AIProfiles = (function () {
       },
       buyWildOnlyOnCategoryGain: false,
       chancePerCard: 1.4,
+      lossAversion: 0.25, // stays in on nearly anything, by design -- bet size barely registers
       raiseWhenLeading: false,
       // With raiseWhenLeading off, bluffing is this profile's ONLY path to
       // ever raising at all -- fitting, since an unpredictable raise
@@ -463,6 +480,11 @@ const AIProfiles = (function () {
       },
       buyWildOnlyOnCategoryGain: true,
       chancePerCard: 0.85,
+      // A flat constant, deliberately never scaled by anything else in this
+      // profile (tilt, streaks, the table's mood) -- Brunson-style, the same
+      // identical process in a huge pot and a tiny one (2026-11-23, design
+      // review finding #6's distinguishing mechanism for this archetype).
+      lossAversion: 1,
       raiseWhenLeading: true,
       raiseMinCategory: HandEvaluator.CATEGORY.TWO_PAIR,
       bluffFrequency: 0.05,
@@ -712,6 +734,24 @@ const AIProfiles = (function () {
     return 0;
   }
 
+  // Loss aversion "grows with stake size" (2026-11-23, design review
+  // finding #4) -- a flat CALL_WORTHY_CATEGORY bar read the exact same way
+  // facing a $1 bet into a $20 pot as it did facing a $20 bet into a $1
+  // pot, so the tightest archetype in the roster called an unlimited
+  // hold'em bet with any pair, board-shared pairs included. Raises the
+  // call-worthy bar by `floor(lossAversion * toCall / potBeforeCall)`
+  // tiers -- a bet that's cheap relative to the pot barely moves the bar;
+  // a genuinely pot-sized or larger bet moves it several tiers for a
+  // profile with real lossAversion, and not at all for one with none
+  // (Live Wire, Aggressive). `potBeforeCall` is `state.pot` at the moment
+  // of the decision, the same "pot before this call" convention
+  // potOddsChanceBonus already uses.
+  function callWorthyCategoryFor(baseCategory, profile, toCallChips, potBeforeCall) {
+    if (!profile.lossAversion || toCallChips <= 0 || potBeforeCall <= 0) return baseCategory;
+    const shift = Math.floor((profile.lossAversion * toCallChips) / potBeforeCall);
+    return Math.min(HandEvaluator.CATEGORY.STRAIGHT_FLUSH, baseCategory + shift);
+  }
+
   // A shallow, one-hand-deep reaction: is this player facing a raise AFTER
   // already putting some chips into THIS SAME betting round? Genuinely
   // different from just "toCallChips > 0" (which is also true on a
@@ -847,6 +887,7 @@ const AIProfiles = (function () {
     opponentCountBarAdjustment,
     liveOpponentCount,
     liveOpponentIds,
+    callWorthyCategoryFor,
     potOddsChanceBonus,
     facingReRaise,
     reRaiseChanceAdjustment,
