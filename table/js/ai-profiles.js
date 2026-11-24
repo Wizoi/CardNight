@@ -701,7 +701,16 @@ const AIProfiles = (function () {
     if (remaining === 0) return false;
     const showing = MidnightBaseball.evaluateShowingHand(state, player.id);
     const board = MidnightBaseball.currentBestHand(state).hand;
-    return worthPursuing(showing, board, remaining, profile);
+    // Real gap, reported directly (2026-11-23): this used to judge every
+    // remaining flip as equally likely to help, blind to the family's own
+    // buyable wilds (3s/9s) and bonus-card buys (4s) -- see
+    // baseball-family-wildcards.js's wildcardChanceBonus for the full
+    // reasoning, grounded in the user's own point that keeping a moderate
+    // hand in the game a bit longer is the actual DESIGN PURPOSE of
+    // having wilds and flip-ups at all, not just an edge case to tune
+    // around.
+    const chanceBonus = typeof BaseballWildcards !== "undefined" ? BaseballWildcards.wildcardChanceBonus(state) : 0;
+    return worthPursuing(showing, board, remaining, profile, chanceBonus);
   }
 
   // A fully-revealed hand has no more upside (every card is already shown)

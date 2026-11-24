@@ -60,5 +60,69 @@ const BaseballWildcards = (function () {
     return { paidChips: paid, drew: bonus };
   }
 
-  return { BUY3_DOLLARS, BUY9_DOLLARS, BUY4_DOLLARS, resolveBuy3, resolveBuy9, resolveBuy4 };
+  // Real gap, reported directly (2026-11-23): an AI's "is this hand worth
+  // continuing to chase" decision (ai-profiles.js's worthPursuing) used a
+  // single flat per-archetype optimism constant for every remaining
+  // unflipped card, blind to the fact that this family's own 3s/9s (wild,
+  // once bought) and 4s (buy an extra card) make some remaining flips
+  // genuinely more valuable than an average card -- a hand with several
+  // unflipped cards left shouldn't be judged as if every one of them is
+  // equally likely to be a plain, unhelpful card. The user's own framing
+  // of why this matters, not just a stats nitpick: "one of the reasons
+  // for having wilds and flipups in the game is to keep even moderate
+  // players in a bit longer... should be considered" -- the house rule's
+  // whole point is giving a middling hand a real reason to stick around,
+  // so the AI should weigh that the same way a player watching the table
+  // would, not fold reflexively the moment a showing hand looks weak.
+  //
+  // unseenRankBoost counts how many of the CARDS NOBODY HAS LOOKED AT YET
+  // (not just this player's own remaining face-down cards, but every card
+  // at the table that hasn't been turned face up, wherever it physically
+  // sits right now) match the given rank(s), as a fraction of the whole
+  // unseen pool -- exactly the odds a neutral outside observer would
+  // assign to "the next card revealed, by anyone, is one of these ranks."
+  // This deliberately only ever reads cards that are ALREADY face-up (or
+  // already folded into the discard pile) to build the "seen" count --
+  // never this player's own still-face-down cards, the same "never judge
+  // from the AI's own hidden cards" discipline ai-profiles.js's file
+  // header already documents for every other decision in this project.
+  function unseenRankBoost(state, ranks, totalInDeck) {
+    let seenTotal = 0;
+    let seenMatching = 0;
+    for (const p of state.players) {
+      for (const c of p.hand) {
+        if (!c.faceUp) continue;
+        seenTotal += 1;
+        if (ranks.includes(c.rank)) seenMatching += 1;
+      }
+    }
+    for (const c of state.discardPile || []) {
+      seenTotal += 1;
+      if (ranks.includes(c.rank)) seenMatching += 1;
+    }
+    const unseenTotal = 52 - seenTotal;
+    if (unseenTotal <= 0) return 0;
+    const unseenMatching = Math.max(0, totalInDeck - seenMatching);
+    return unseenMatching / unseenTotal;
+  }
+
+  // The combined "a remaining flip might genuinely help" signal this
+  // family's AI decisions read: the odds of hitting a buyable wild (3 or
+  // 9) weighted more heavily (it directly upgrades the showing hand),
+  // plus the odds of hitting a 4 (only an OPTION to buy one more card,
+  // so weighted at half that) -- additive, in the same chanceBonus units
+  // worthPursuing already expects on top of a profile's flat
+  // chancePerCard. Both terms naturally taper toward 0 as a hand
+  // progresses and the relevant ranks actually get seen, the same way a
+  // real player's read would sharpen as the table fills in.
+  const WILD_RANK_WEIGHT = 2; // a bought 3/9 is a genuine wildcard -- weighted as a real, not marginal, upgrade
+  const BONUS_RANK_WEIGHT = 1; // a 4 is only the OPTION to buy one more chance, worth meaningfully less
+
+  function wildcardChanceBonus(state) {
+    const wildBoost = unseenRankBoost(state, ["3", "9"], 8);
+    const bonusBoost = unseenRankBoost(state, ["4"], 4);
+    return wildBoost * WILD_RANK_WEIGHT + bonusBoost * BONUS_RANK_WEIGHT;
+  }
+
+  return { BUY3_DOLLARS, BUY9_DOLLARS, BUY4_DOLLARS, resolveBuy3, resolveBuy9, resolveBuy4, unseenRankBoost, wildcardChanceBonus };
 })();
