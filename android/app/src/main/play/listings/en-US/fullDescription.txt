@@ -1,0 +1,13 @@
+Luck of the Deal brings a real poker night to your phone — sit down at a table of AI opponents, each with their own distinct playing style, and work through 27 different home-poker variants: classic Texas Hold'em relatives (Omaha, Seattle, Boise, Jersey Hold'em), stud games (Daytime Baseball, Follow the Queen, Seven and What Makes It), guts games (Deep or Double Screw, 3-5-7 Guts), and more.
+
+This is a play-chips game. There is no real-money wagering, no purchase ever has cash value, and nothing can be cashed out. Chips are for keeping score across a session, exactly like poker chips at a real kitchen-table game night.
+
+What's in the box:
+- 27 fully-implemented house poker variants, each with its own real rules, wildcards, and betting structure
+- 13 distinct AI opponent personalities — from tight-and-cautious to loose-and-aggressive, bluffing, reading the table, and reacting to how a hand goes
+- 30 named "regulars" to fill the other seats, each with their own backstory and in-character table talk
+- A full poker-night structure: cut for deal, a rotating game picker, day-over-day chip history, and a "Regulars" tracker across sittings
+- Play fully offline once installed — no account, no internet connection required
+- A quick first-time walkthrough covers the touch controls before your first hand
+
+Whether you already know these house rules from your own group's poker nights or you're discovering a new variant for the first time, Luck of the Deal is built for picking up and playing a hand right now.
