@@ -286,19 +286,25 @@ const TableFX = (function () {
     return soundMuted;
   }
 
+  // All of this used to be split between an always-visible header toolbar
+  // (#game-bar-stats, in front of Pot/chips/⋯) and a settings block inside
+  // #more-menu, with the theme select duplicated across both and kept in
+  // sync on change. Consolidated into a single settings block inside
+  // #more-menu (2026-11-23, part of the header decluttering requested
+  // directly -- "icon for more info is huge... speed buttons look really
+  // big... showing player chips is redundant"): none of this is a
+  // per-hand action, it's a once-a-session preference, so it doesn't need
+  // permanent header real estate at all. No more duplicate theme select to
+  // keep in sync, either.
   function ensureToolbarControls() {
-    const statsBar = document.getElementById("game-bar-stats");
-    if (!statsBar || document.getElementById("table-fx-controls")) return;
+    const moreMenu = document.getElementById("more-menu");
+    if (!moreMenu || moreMenu.querySelector(".fx-menu-settings")) return;
 
     // On mobile screens, collapse the bottom play-by-play log drawer by default to save vertical space
     const logDrawer = document.getElementById("log-drawer");
     if (logDrawer && typeof window !== "undefined" && window.innerWidth <= 768) {
       logDrawer.open = false;
     }
-
-    const wrap = document.createElement("div");
-    wrap.id = "table-fx-controls";
-    wrap.className = "fx-toolbar";
 
     const themeOptions = THEMES.map(
       (t) => `<option value="${t.id}" ${t.id === currentTheme ? "selected" : ""}>${t.icon} ${t.label}</option>`
@@ -313,90 +319,69 @@ const TableFX = (function () {
         `<button type="button" class="fx-speed-btn ${s.id === currentSpeed ? "fx-speed-active" : ""}" data-fx-speed="${s.id}" title="AI Turn Speed: ${s.label}">${s.id.toUpperCase()}</button>`
     ).join("");
 
-    wrap.innerHTML = `
-      <select id="fx-theme-select" class="fx-theme-select fx-desktop-only-select" title="Table Vibe & Lighting Theme" aria-label="Table Theme">
-        ${themeOptions}
-      </select>
-      <select id="fx-layout-select" class="fx-theme-select fx-layout-select fx-desktop-only-select" title="Responsive Form Factor (Auto / Desktop / Phone Landscape / Phone Portrait)" aria-label="Layout Mode">
-        ${layoutOptions}
-      </select>
+    const menuSettings = document.createElement("div");
+    menuSettings.className = "fx-menu-settings";
+    menuSettings.innerHTML = `
+      <div class="fx-menu-setting-lbl">Card &amp; Table Size</div>
+      <div class="fx-menu-size-row">
+        <button type="button" class="fx-size-btn" data-fx-size-step="-1" title="Decrease card &amp; text size">&minus; Size</button>
+        <button type="button" id="fx-size-readout" class="fx-size-readout" data-fx-size-reset title="Tap to reset size to 100%">${Math.round(currentScale * 100)}%</button>
+        <button type="button" class="fx-size-btn" data-fx-size-step="1" title="Increase card &amp; text size">+ Size</button>
+      </div>
+      <div class="fx-menu-setting-lbl">AI Turn Speed</div>
       <div class="fx-speed-group" role="group" aria-label="AI Turn Speed">
         ${speedBtns}
       </div>
-      <button type="button" id="fx-sound-btn" class="fx-icon-btn" title="${soundMuted ? "Unmute Table Sounds" : "Mute Table Sounds"}" aria-label="Toggle Sound">
-        ${soundMuted ? "🔇" : "🔊"}
+      <label class="fx-menu-setting-lbl">Table Vibe
+        <select id="fx-menu-theme-select" class="fx-theme-select">${themeOptions}</select>
+      </label>
+      <label class="fx-menu-setting-lbl">Layout
+        <select id="fx-menu-layout-select" class="fx-theme-select">${layoutOptions}</select>
+      </label>
+      <button type="button" id="fx-sound-btn" class="fx-icon-btn fx-menu-sound-btn" title="${soundMuted ? "Unmute Table Sounds" : "Mute Table Sounds"}" aria-label="Toggle Sound">
+        ${soundMuted ? "🔇 Sound Off" : "🔊 Sound On"}
       </button>
     `;
+    moreMenu.appendChild(menuSettings);
+    applyUiScale(currentScale);
 
-    statsBar.insertBefore(wrap, statsBar.firstChild);
-
-    // Add Card & UI Size (- Size / + Size) and Table Vibe controls inside #more-menu
-    const moreMenu = document.getElementById("more-menu");
-    if (moreMenu && !moreMenu.querySelector(".fx-menu-settings")) {
-      const menuSettings = document.createElement("div");
-      menuSettings.className = "fx-menu-settings";
-      menuSettings.innerHTML = `
-        <div class="fx-menu-setting-lbl">Card &amp; Table Size</div>
-        <div class="fx-menu-size-row">
-          <button type="button" class="fx-size-btn" data-fx-size-step="-1" title="Decrease card &amp; text size">&minus; Size</button>
-          <button type="button" id="fx-size-readout" class="fx-size-readout" data-fx-size-reset title="Tap to reset size to 100%">${Math.round(currentScale * 100)}%</button>
-          <button type="button" class="fx-size-btn" data-fx-size-step="1" title="Increase card &amp; text size">+ Size</button>
-        </div>
-        <label class="fx-menu-setting-lbl">Table Vibe
-          <select id="fx-menu-theme-select" class="fx-theme-select">${themeOptions}</select>
-        </label>
-      `;
-      moreMenu.appendChild(menuSettings);
-      applyUiScale(currentScale);
-      menuSettings.addEventListener("click", (e) => {
-        const sizeStepBtn = e.target.closest("[data-fx-size-step]");
-        if (sizeStepBtn) {
-          stepUiScale(Number(sizeStepBtn.getAttribute("data-fx-size-step")));
-          return;
-        }
-        const resetBtn = e.target.closest("[data-fx-size-reset]");
-        if (resetBtn) {
-          applyUiScale(1);
-          Sound.chipClink();
-        }
-      });
-      const menuThemeSelect = menuSettings.querySelector("#fx-menu-theme-select");
-      menuThemeSelect.addEventListener("change", () => {
-        applyTheme(menuThemeSelect.value);
-        const topSelect = wrap.querySelector("#fx-theme-select");
-        if (topSelect) topSelect.value = menuThemeSelect.value;
+    menuSettings.addEventListener("click", (e) => {
+      const sizeStepBtn = e.target.closest("[data-fx-size-step]");
+      if (sizeStepBtn) {
+        stepUiScale(Number(sizeStepBtn.getAttribute("data-fx-size-step")));
+        return;
+      }
+      const resetBtn = e.target.closest("[data-fx-size-reset]");
+      if (resetBtn) {
+        applyUiScale(1);
         Sound.chipClink();
-      });
-    }
-
-    const themeSelect = wrap.querySelector("#fx-theme-select");
-    themeSelect.addEventListener("change", () => {
-      applyTheme(themeSelect.value);
-      const menuSelect = document.getElementById("fx-menu-theme-select");
-      if (menuSelect) menuSelect.value = themeSelect.value;
-      Sound.chipClink();
-    });
-
-    const layoutSelect = wrap.querySelector("#fx-layout-select");
-    layoutSelect.addEventListener("change", () => {
-      applyLayoutMode(layoutSelect.value);
-      Sound.cardFlip();
-    });
-
-    wrap.addEventListener("click", (e) => {
+        return;
+      }
       const speedBtn = e.target.closest("[data-fx-speed]");
       if (speedBtn) {
         applySpeed(speedBtn.dataset.fxSpeed);
-        wrap.querySelectorAll(".fx-speed-btn").forEach((b) => b.classList.toggle("fx-speed-active", b === speedBtn));
+        menuSettings.querySelectorAll(".fx-speed-btn").forEach((b) => b.classList.toggle("fx-speed-active", b === speedBtn));
         Sound.cardFlip();
         return;
       }
       const soundBtn = e.target.closest("#fx-sound-btn");
       if (soundBtn) {
         const muted = toggleSound();
-        soundBtn.textContent = muted ? "🔇" : "🔊";
+        soundBtn.textContent = muted ? "🔇 Sound Off" : "🔊 Sound On";
         soundBtn.title = muted ? "Unmute Table Sounds" : "Mute Table Sounds";
       }
+    });
+
+    const menuThemeSelect = menuSettings.querySelector("#fx-menu-theme-select");
+    menuThemeSelect.addEventListener("change", () => {
+      applyTheme(menuThemeSelect.value);
+      Sound.chipClink();
+    });
+
+    const menuLayoutSelect = menuSettings.querySelector("#fx-menu-layout-select");
+    menuLayoutSelect.addEventListener("change", () => {
+      applyLayoutMode(menuLayoutSelect.value);
+      Sound.cardFlip();
     });
   }
 
@@ -826,6 +811,18 @@ const TableFX = (function () {
       if (state.gameConfig && state.gameConfig.lowestCardWild) wildParts.push("LOWEST HOLE CARD WILD");
       if (state.wildRanks && state.wildRanks.length) wildParts.push(`${state.wildRanks.join(", ")}s WILD`);
       const wildDesc = wildParts.length ? wildParts.join(" · ") : "NO WILDS";
+      // A dealer's-choice extra flip-up wildcard is drawn but deliberately
+      // kept OUT of wildDesc/the log until passing resolves (so nobody can
+      // pass cards around knowing what it'll be) -- but that left the board
+      // saying nothing about it at all in the meantime, with the only hint
+      // buried in a log line below the fold. Reported directly: a player
+      // should at least be able to anticipate "something's still pending"
+      // even while its actual rank stays hidden. Only ever true during
+      // "passing" -- it's resolved (and folded into wildDesc above) by the
+      // time status moves on.
+      const pendingFlipUpBadge = state.flipWildcardsPending
+        ? `<span class="c3-wild-pill">🔺 ${state.flippedWildcards.length > 1 ? "Extra wildcards" : "An extra wildcard"} pending — revealed after passing</span>`
+        : "";
 
       let dummyHtml = "";
       if (state.dummyHand) {
@@ -849,6 +846,7 @@ const TableFX = (function () {
         <div class="concept3-board board-guts-arena">
           <div class="c3-board-top-row">
             <span class="c3-wild-pill">★ ${wildDesc}</span>
+            ${pendingFlipUpBadge}
             <span class="c3-leader-pill">🔥 Losers Match the Pot!</span>
           </div>
           <div class="guts-medallions-stage">
@@ -1703,9 +1701,24 @@ const TableFX = (function () {
         </div>
       `;
     }
+    // Real bug, reported directly (2026-11-23): "games like Omaha are
+    // having jokers, they should not include jokers" -- no actual Joker
+    // was ever dealt into a real hand (this is a purely decorative preview
+    // on the game-selected transition screen, not live game state), but
+    // this generic fallback's center "★W" card did falsely illustrate a
+    // wildcard for every game that falls through to it without its own
+    // custom preview above -- including the whole hold'em family, which
+    // games.md documents as having no wildcard concept at all, directly
+    // contradicting the "Pure 2+3 Hold'em" badge shown right next to it.
+    // This fallback covers a mix of games (some with a genuine, just not
+    // fixed-position, wildcard like Follow the Queen's rolling queen; many
+    // with none at all, like the hold'em family, Anaconda, Blind Man's
+    // Bluff), so a plain 5-card hand with no wild marker is accurate for
+    // all of them -- a per-game wild badge/pill already states the real
+    // rule where one exists, this illustration doesn't need to repeat it.
     return `
       <div class="mini-board-preview mini-stud">
-        <b class="mc-card">A♠</b><b class="mc-card mc-center">★W</b><b class="mc-card">K♥</b><b class="mc-card">Q♦</b><b class="mc-card">J♣</b>
+        <b class="mc-card">A♠</b><b class="mc-card">K♥</b><b class="mc-card">Q♦</b><b class="mc-card">J♣</b><b class="mc-card">10♠</b>
       </div>
     `;
   }
@@ -2244,16 +2257,19 @@ const TableFX = (function () {
           seatEl.classList.add("seat-is-human");
         }
 
-        // Format Concept 4 Archetype Header ("THE FORTRESS" / "Arthur")
+        // Condensed seat header: first name only, no archetype title --
+        // per the user's request (2026-11-23) to free up vertical space on
+        // the seat tile for a 2-column pic/chips-and-name layout (see
+        // style.css's .seat grid). The archetype is still shown in full
+        // ("The Fortress") in the roster picker, where there's room for it
+        // and it actually matters for a seat-assignment decision; at the
+        // table itself a first name is enough to tell seats apart.
         const nameEl = seatEl.querySelector(".seat-name");
         if (nameEl && !player.isHuman && !nameEl.dataset.c4Enhanced) {
           nameEl.dataset.c4Enhanced = "true";
           const hasDealer = !!nameEl.querySelector(".dealer-badge");
-          const archetypeTitle = (player.archetypeLabel || "TABLE REGULAR").toUpperCase();
-          nameEl.innerHTML = `
-            <div class="c4-archetype-title">${archetypeTitle}</div>
-            <div class="c4-person-name">${hasDealer ? '<span class="dealer-badge" title="Dealer">D</span> ' : ""}${player.name}</div>
-          `;
+          const firstName = (player.name || "").split(" ")[0];
+          nameEl.innerHTML = `${hasDealer ? '<span class="dealer-badge" title="Dealer">D</span> ' : ""}${firstName}`;
         }
 
         // Add compact SVG chip stack next to seat chips

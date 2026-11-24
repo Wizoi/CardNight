@@ -143,21 +143,14 @@
 
   <div id="table-view" hidden>
     <div id="game-bar">
-      <div id="game-bar-identity">
+      <button type="button" id="game-bar-identity" aria-expanded="false" title="Tap for how to describe this game">
         <div id="game-icon-display"></div>
         <div id="game-name-block">
-          <div id="game-name-eyebrow">Now playing</div>
           <span id="game-name-display"></span>
         </div>
-        <button type="button" id="game-script-toggle-btn" aria-expanded="false" title="How to describe this game">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-        </button>
-      </div>
+      </button>
       <div id="game-bar-stats">
-        <div id="chips-block">
-          <span id="wallet-display"></span>
-          <button type="button" id="rebuy-btn" hidden>Buy more</button>
-        </div>
+        <button type="button" id="rebuy-btn" hidden>Buy more</button>
         <div id="pot-hero">
           <div class="pot-hero-text">
             <span id="pot-hero-label">Pot</span>

@@ -898,13 +898,22 @@ fieldset {
   padding: 0.55rem 0.85rem 1rem;
 }
 
+/* Single-row header (2026-11-23, replacing a two-row layout), per direct
+   feedback: the title read small next to a 44px-touch-target info button
+   that visually dominated it, the AI-speed buttons took up a lot of width
+   for a once-a-session setting, and the chips figure duplicated the
+   player's own seat tile. #game-bar-identity is now the clickable "how to
+   describe this game" toggle itself (a real <button>, not a wrapper with
+   a separate icon button inside it) -- the touch target is the whole
+   icon+title row, so it can stay a comfortable size without needing a
+   visually dominant dedicated control next to it. */
 #game-bar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.65rem;
-  padding: 0.5rem 0.9rem;
+  gap: 0.5rem;
+  padding: 0.45rem 0.7rem;
   margin-bottom: 0.55rem;
   background: linear-gradient(180deg, rgba(44, 22, 12, 0.94), rgba(24, 12, 7, 0.96));
   border: 1px solid var(--gold);
@@ -915,14 +924,33 @@ fieldset {
 #game-bar-identity {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.55rem;
   min-width: 0;
+  flex: 1 1 auto;
+  min-height: 44px;
+  margin: 0;
+  padding: 0.1rem 0.3rem 0.1rem 0.1rem;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  box-shadow: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+#game-bar-identity:hover:not(:disabled) {
+  background: rgba(212, 175, 55, 0.1);
+  transform: none;
+}
+
+#game-bar-identity:disabled {
+  cursor: default;
 }
 
 #game-icon-display {
   flex: none;
-  min-width: 2.35rem;
-  min-height: 2.35rem;
+  min-width: 2.1rem;
+  min-height: 2.1rem;
   padding: 0.2rem 0.35rem;
   border-radius: 999px;
   background: rgba(212, 175, 55, 0.18);
@@ -930,24 +958,19 @@ fieldset {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   line-height: 1;
 }
 
 #game-name-block {
   min-width: 0;
-}
-
-#game-name-eyebrow {
-  font-size: 0.62rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--cream);
-  opacity: 0.72;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 #game-name-display {
-  font-size: 1.05rem;
+  font-size: 1.2rem;
   font-weight: 800;
   color: var(--gold-soft);
   white-space: nowrap;
@@ -955,56 +978,38 @@ fieldset {
   text-overflow: ellipsis;
 }
 
-#game-script-toggle-btn[hidden] {
+/* A small chevron instead of a separate icon button -- just enough
+   affordance that the title row is tappable, without competing with the
+   title itself for visual weight. */
+#game-name-block::after {
+  content: "▾";
+  flex: none;
+  font-size: 0.7rem;
+  color: var(--gold-soft);
+  opacity: 0.75;
+  transition: transform 0.15s ease;
+}
+
+#game-bar-identity[aria-expanded="true"] #game-name-block::after {
+  transform: rotate(180deg);
+}
+
+#game-bar-identity:disabled #game-name-block::after {
   display: none;
 }
 
-#game-script-toggle-btn {
-  /* Was 1.85rem (29.6px) -- under the 44px touch-target guideline for a
-     control shown on every game's header. Raised on both desktop and
-     mobile (not just bumped at one breakpoint) since a round icon button
-     at a consistent size is simpler than two different ones. Found in
-     the step-4 mobile-UX survey (2026-11-20). */
-  flex: none;
-  width: 2.75rem;
-  height: 2.75rem;
-  min-height: 0;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: rgba(212, 175, 55, 0.16);
-  border: 1px solid var(--gold);
-  color: var(--gold-soft);
-  box-shadow: none;
-}
-
-#game-script-toggle-btn[aria-expanded="true"] {
-  background: var(--gold-soft);
-  color: var(--ink);
-}
-
-#game-script-toggle-btn svg {
-  width: 1.05rem;
-  height: 1.05rem;
-}
-
-/* FX Toolbar (Theme, Layout Mode, AI Pace, Sound) */
+/* The header toolbar this comment used to describe (Theme, Layout Mode, AI
+   Pace, Sound) was removed 2026-11-23 -- none of those are per-hand
+   actions, so they moved into the "more" menu's settings block instead
+   (see ensureToolbarControls in table-fx.js and the #more-menu-scoped
+   speed/sound rules below). #game-bar-stats now just holds the
+   conditional rebuy button, Pot, and the menu button itself. */
 #game-bar-stats {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: 0.55rem;
-}
-
-.fx-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem;
 }
 
 .fx-theme-select {
@@ -1015,35 +1020,6 @@ fieldset {
   color: var(--cream);
   border: 1px solid rgba(212, 175, 55, 0.45);
   cursor: pointer;
-}
-
-.fx-speed-group {
-  display: inline-flex;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.fx-speed-btn {
-  /* min-height was 0 (no floor at all) -- a real tap target even though
-     this is a one-time-per-session setting, not a per-hand action. Found
-     in the step-4 mobile-UX survey (2026-11-20). */
-  min-height: 44px;
-  margin: 0;
-  padding: 0.24rem 0.45rem;
-  font-size: 0.68rem;
-  font-weight: 700;
-  background: transparent;
-  color: var(--cream);
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-.fx-speed-btn.fx-speed-active {
-  background: var(--gold-soft);
-  color: var(--ink);
 }
 
 .fx-icon-btn {
@@ -1058,20 +1034,6 @@ fieldset {
   border: 1px solid rgba(212, 175, 55, 0.4);
   border-radius: 8px;
   box-shadow: none;
-}
-
-#chips-block {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.15rem;
-}
-
-#wallet-display {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--cream);
-  white-space: nowrap;
 }
 
 #rebuy-btn {
@@ -1331,10 +1293,29 @@ fieldset {
   margin-bottom: 0.65rem;
 }
 
+/* 2-column seat layout (2026-11-23, per the user's request): pic on the
+   left, chip stack + condensed first name stacked on the right -- instead
+   of the old single-column pic-then-name-then-chips stack, which cost more
+   vertical space than a shortened, title-free name needs. .seat-avatar/
+   .seat-chips/.seat-name are emitted as plain sibling elements by every
+   per-family table-ui-*.js (in avatar/name/chips source order) -- CSS
+   Grid's named areas place them visually without needing that source order
+   to match, so this is a single shared change rather than touching all 15
+   files. Everything else a per-family/enhancement script adds to a seat
+   (the committed-bet badge, Guts in/out medallion, fold/status text, the
+   "Thinking..." label, the telemetry row, debug line) isn't part of the
+   named areas below and so falls into the grid's own auto-placed rows --
+   the blanket full-width rule right after this one keeps every one of
+   those spanning both columns instead of getting squeezed into just one. */
 .seat {
   position: relative;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "avatar chips"
+    "avatar name";
+  column-gap: 0.5rem;
+  row-gap: 0.1rem;
   align-items: center;
   background: linear-gradient(180deg, rgba(12, 34, 26, 0.88), rgba(5, 18, 13, 0.94));
   border: 1.5px solid rgba(212, 175, 55, 0.42);
@@ -1343,6 +1324,10 @@ fieldset {
   text-align: center;
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.42);
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.seat > *:not(.seat-avatar):not(.seat-chips):not(.seat-name):not(.seat-quip) {
+  grid-column: 1 / -1;
 }
 
 .seat.seat-is-human {
@@ -1382,36 +1367,20 @@ fieldset {
 }
 
 .seat-avatar {
+  grid-area: avatar;
   display: flex;
   justify-content: center;
-  margin-bottom: 0.32rem;
+  margin-bottom: 0;
 }
 
 .seat-name {
+  grid-area: name;
   font-size: 0.8rem;
   font-weight: 700;
   line-height: 1.18;
-  margin-bottom: 0.18rem;
+  margin-bottom: 0;
   color: var(--cream);
   max-width: 100%;
-}
-
-.c4-archetype-title {
-  font-size: 0.62rem;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  color: var(--gold-soft);
-  text-transform: uppercase;
-  line-height: 1.1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.c4-person-name {
-  font-size: 0.84rem;
-  font-weight: 800;
-  color: var(--cream);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1478,6 +1447,7 @@ fieldset {
 }
 
 .seat-chips {
+  grid-area: chips;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1485,7 +1455,7 @@ fieldset {
   color: var(--gold-soft);
   font-size: 0.76rem;
   font-weight: 700;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0;
 }
 
 .chip-stack-svg {
@@ -4822,6 +4792,48 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
   width: 100%;
 }
 
+/* AI Turn Speed + Sound now live inside the ⋯ menu's settings block
+   (2026-11-23 header decluttering) rather than the always-visible header
+   toolbar -- #more-menu's own blanket `button { width: 100%; text-align:
+   left }` rule (meant for its plain list items) would otherwise break
+   these two's compact/grouped look, the same reason .fx-size-btn already
+   needed its own #more-menu-scoped override just above. */
+.fx-speed-group {
+  display: inline-flex;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 0.25rem 0 0.65rem;
+}
+
+#more-menu .fx-speed-btn {
+  flex: 1 1 0;
+  min-height: 40px;
+  margin: 0;
+  padding: 0.3rem 0.4rem;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: transparent;
+  color: var(--cream);
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+#more-menu .fx-speed-btn.fx-speed-active {
+  background: var(--gold-soft);
+  color: var(--ink);
+}
+
+#more-menu .fx-menu-sound-btn {
+  display: flex;
+  align-items: center;
+  margin-top: 0.3rem;
+}
+
 .fx-exit-top-btn:hover,
 .pv-exit-main-btn:hover {
   transform: translateY(-1px);
@@ -5114,11 +5126,6 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
    Eliminates wasted vertical/horizontal space across Setup, Picker, Cut & Table
    ============================================================================ */
 @media (max-width: 768px) {
-  /* Hide desktop theme/layout dropdowns from top bar (available in ⋯ menu) */
-  .fx-desktop-only-select {
-    display: none !important;
-  }
-
   /* 1. Compact Top Game Bar (#game-bar) */
   #table-view {
     padding: 0.25rem 0.35rem 0.6rem;
@@ -5147,36 +5154,16 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
     height: 26px !important;
   }
 
-  #game-name-eyebrow {
-    display: none;
-  }
-
   #game-name-display {
-    font-size: 0.88rem;
+    font-size: 1rem;
   }
 
-  /* #game-script-toggle-btn's own width/height shrink was removed here
-     (2026-11-20, step-4 mobile-UX survey) -- it kept the desktop 1.85rem
-     icon button, already a touch target, shrinking FURTHER on the
-     narrower/touch-primary screens that need it least. Likewise
-     #game-bar-stats's gap no longer shrinks below desktop's 0.55rem --
-     these are separate controls (menu/script-toggle/speed/sound), and a
-     tighter gap between them is a mis-tap risk, not a space saver, now
-     that each is a real 44px target. */
-
-  .fx-speed-btn {
-    padding: 0.18rem 0.32rem;
-    font-size: 0.68rem;
-  }
-
-  .fx-icon-btn {
-    padding: 0.18rem 0.34rem;
-    font-size: 0.74rem;
-  }
-
-  #wallet-display {
-    font-size: 0.74rem;
-  }
+  /* #game-bar-stats no longer shrinks its gap below desktop's 0.55rem on
+     mobile (2026-11-20, step-4 mobile-UX survey) -- a tighter gap between
+     the rebuy button/Pot/menu is a mis-tap risk, not a space saver, now
+     that each is a real 44px target. Still true after the 2026-11-23
+     header decluttering (speed/sound moved into the ⋯ menu, where their
+     own #more-menu-scoped rules apply regardless of this media query). */
 
   #pot-hero {
     padding: 0.16rem 0.48rem;
@@ -5229,11 +5216,6 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
     --avatar-px: 34px !important;
   }
 
-  .c4-archetype-title {
-    font-size: 0.6rem;
-  }
-
-  .c4-person-name,
   .seat-name {
     font-size: 0.68rem;
   }
@@ -5507,7 +5489,6 @@ html[data-ui-scale="1.45"] .seat-cards .card + .card {
   --avatar-px: calc(56px * var(--ui-scale, 1)) !important;
 }
 
-.c4-person-name,
 .seat-name {
   font-size: calc(0.8rem * var(--ui-scale, 1));
 }
@@ -5583,7 +5564,6 @@ html[data-ui-scale="1.45"] .seat-cards .card + .card {
     --avatar-px: calc(36px * var(--ui-scale, 1)) !important;
   }
 
-  .c4-person-name,
   .seat-name {
     font-size: calc(0.68rem * var(--ui-scale, 1));
   }

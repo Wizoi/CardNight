@@ -102,15 +102,14 @@
     el.rosterGrid = document.getElementById("roster-grid");
     el.rosterCloseBtn = document.getElementById("roster-close-btn");
 
+    el.gameBarIdentity = document.getElementById("game-bar-identity");
     el.gameIconDisplay = document.getElementById("game-icon-display");
     el.gameNameDisplay = document.getElementById("game-name-display");
     el.rulesLink = document.getElementById("rules-link");
     el.gameScriptDetails = document.getElementById("game-script-details");
-    el.gameScriptToggleBtn = document.getElementById("game-script-toggle-btn");
     el.gameScriptBody = document.getElementById("game-script-body");
     el.gameScriptVariants = document.getElementById("game-script-variants");
     el.potDisplay = document.getElementById("pot-display");
-    el.walletDisplay = document.getElementById("wallet-display");
     el.rebuyBtn = document.getElementById("rebuy-btn");
     el.cashoutBtn = document.getElementById("cashout-btn");
     el.historyBtn = document.getElementById("history-btn");
@@ -525,23 +524,22 @@
     } else {
       el.gameIconDisplay.textContent = data ? data.icon : "";
     }
-    el.gameScriptToggleBtn.hidden = !data;
+    // The title itself is the toggle now (no separate (i) button -- see
+    // the 2026-11-23 header redesign below), so there's no dedicated
+    // element to hide when a game has no script; just gate the toggle's
+    // own interactivity on whether there's anything to show.
+    el.gameBarIdentity.disabled = !data;
     if (data) {
       el.gameScriptBody.innerHTML = scriptHtml(data, vs.activeGameId);
     }
     renderGameScriptVariants(entry, vs.orchestratorViewState);
-    el.gameScriptToggleBtn.setAttribute("aria-expanded", String(gameScriptExpanded));
+    el.gameBarIdentity.setAttribute("aria-expanded", String(gameScriptExpanded));
     el.gameScriptDetails.hidden = !data || !gameScriptExpanded;
   }
 
   function renderHeader(vs) {
     renderGameBanner(vs);
     const human = vs.players.find((p) => p.id === vs.humanId);
-    // "Bought in" dropped from the always-visible header as part of the
-    // 2026-08-29 redesign (still fully tracked in History) -- the compact
-    // chips-block only has room for the one figure that matters turn to
-    // turn.
-    el.walletDisplay.textContent = `Chips: ${money(ChipEconomy.chipsToDollars(human.wallet.chips))}`;
     const gvs = vs.orchestratorViewState;
     // Once a hand's complete, several games zero out state.pot right after
     // payout (it's been awarded, not vanished) -- potAtShowdown, where a game
@@ -1466,9 +1464,10 @@
       }
     });
 
-    el.gameScriptToggleBtn.addEventListener("click", () => {
+    el.gameBarIdentity.addEventListener("click", () => {
+      if (el.gameBarIdentity.disabled) return;
       gameScriptExpanded = !gameScriptExpanded;
-      el.gameScriptToggleBtn.setAttribute("aria-expanded", String(gameScriptExpanded));
+      el.gameBarIdentity.setAttribute("aria-expanded", String(gameScriptExpanded));
       el.gameScriptDetails.hidden = !gameScriptExpanded;
     });
 
