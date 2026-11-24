@@ -1257,7 +1257,7 @@ const TableFX = (function () {
     wildInYourHand: "Lowest Card Wild · 3-2-1 Pyramid Board · Row Bets",
     omaha: "4 Hole Cards · Must Use 2 Hole + 3 Board · Optional Hi-Lo",
     seattle: "4 Hole Cards · Must Use 3 Hole + 2 Board · Optional Hi-Lo",
-    boise: "5 Hole Cards · Use (2 Hole + 3 Board) or (3 Hole + 2 Board)",
+    boise: "4 Hole Cards · Use (2 Hole + 3 Board) or (3 Hole + 2 Board)",
     jerseyHoldem: "5 Hole Cards · Flexible 2+3 or 3+2 Combo · Optional Hi-Lo",
     fiveFiveTwentyOne: "Press Your Luck · Dual Targets: 5.5 Low & 21 High",
     sevenTwentySeven: "Press Your Luck · Dual Targets: 7 Low & 27 High",
@@ -1490,7 +1490,7 @@ const TableFX = (function () {
         bgFill = "url(#embNavy)";
         innerArt = `
           <polygon points="12,44 25,18 36,36 43,24 52,44" fill="#74c0fc" stroke="url(#embGold)" stroke-width="1.6"/>
-          <text x="32" y="54" text-anchor="middle" font-size="8.5" font-weight="900" fill="#ffe066">5 HOLE</text>
+          <text x="32" y="54" text-anchor="middle" font-size="8.5" font-weight="900" fill="#ffe066">4 HOLE</text>
         `;
         break;
       case "jerseyHoldem":
@@ -1605,7 +1605,7 @@ const TableFX = (function () {
     wildInYourHand: { shelf: "guts", cards: "5 Hole + 6 Pyramid", wilds: 5, wildTxt: "Lowest Hole + Board Wilds", vol: 3, volTxt: "Row Challenges" },
     omaha: { shelf: "holdem", cards: "4 Hole + 5 Board", wilds: 0, wildTxt: "Pure 2+3 Hold'em", vol: 2, volTxt: "Hi-Lo Split Option" },
     seattle: { shelf: "holdem", cards: "4 Hole + 5 Board", wilds: 0, wildTxt: "Pure 3+2 Hold'em", vol: 2, volTxt: "Hi-Lo Split Option" },
-    boise: { shelf: "holdem", cards: "5 Hole + 5 Board", wilds: 0, wildTxt: "Flex 2+3 or 3+2", vol: 2, volTxt: "Big Hand Combos" },
+    boise: { shelf: "holdem", cards: "4 Hole + 5 Board", wilds: 0, wildTxt: "Flex 2+3 or 3+2", vol: 2, volTxt: "Big Hand Combos" },
     jerseyHoldem: { shelf: "holdem", cards: "5 Hole + 5 Board", wilds: 0, wildTxt: "Flex 2+3 or 3+2", vol: 2, volTxt: "Hi-Lo Split Option" },
     fiveFiveTwentyOne: { shelf: "target", cards: "Press-Your-Luck Hit/Stand", wilds: 1, wildTxt: "Face=0.5 · Ace=1 or 11", vol: 2, volTxt: "5.5 Low / 21 High" },
     sevenTwentySeven: { shelf: "target", cards: "Press-Your-Luck Hit/Stand", wilds: 1, wildTxt: "Face=0.5 · Ace=1 or 11", vol: 2, volTxt: "7 Low / 27 High" },
