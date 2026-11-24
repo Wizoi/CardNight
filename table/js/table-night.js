@@ -15,6 +15,13 @@ const TableNight = (function () {
   let today = null;
   let handsWonByPlayerId = {}; // across every game played this whole night
   let nightHandsPlayed = 0; // never resets; what actually lands in history
+  // How many times each gameId has been picked so far THIS night (human or
+  // AI picker, both count) -- used only to weight autoPickForAI's own
+  // choice away from games that have already come up a lot (see there).
+  // Deliberately in-memory/per-night only, not written to history-store.js
+  // -- the user explicitly didn't want game-pick history persisted across
+  // nights (2026-11-23), just less lopsided picks within one.
+  let gamePickCounts = {};
   // Genuine cross-hand opponent modeling (2026-08-29) -- the first real
   // exception to "every AI decision is a pure function of current game
   // state" anywhere in this project. Tracks every fold/call/raise decision
@@ -168,6 +175,7 @@ const TableNight = (function () {
       dealMode,
       handsWonByPlayerId,
       nightHandsPlayed,
+      gamePickCounts,
       playerBettingStats,
       cutForDealState,
       activeGameId,
@@ -194,6 +202,7 @@ const TableNight = (function () {
     dealerIndex = saved.dealerIndex;
     nightHandsPlayed = saved.nightHandsPlayed;
     handsWonByPlayerId = saved.handsWonByPlayerId;
+    gamePickCounts = saved.gamePickCounts || {};
     playerBettingStats = saved.playerBettingStats || {};
     cutForDealState = saved.cutForDealState;
     activeGameId = saved.activeGameId;
@@ -291,6 +300,7 @@ const TableNight = (function () {
     dealerIndex = 0;
     nightHandsPlayed = 0;
     handsWonByPlayerId = {};
+    gamePickCounts = {};
     playerBettingStats = {};
     cutForDealState = null;
     activeGameId = null;
@@ -482,6 +492,7 @@ const TableNight = (function () {
     if (activeOrchestrator) {
       refundAbandonedHand(activeOrchestrator.getViewState());
     }
+    gamePickCounts[gameId] = (gamePickCounts[gameId] || 0) + 1;
     activeGameId = gameId;
     activeVariantChoices = variantChoices || null;
     gameMemoryByGameId[gameId] = {};
@@ -537,17 +548,46 @@ const TableNight = (function () {
     notify();
   }
 
-  // AI pickers choose uniformly at random among every registered game for
-  // now -- a natural later upgrade is weighting by archetype/house-favorite
-  // data once games.md's "house favorite rating" field has real values. An
-  // AI dealer also gambles on a random variant option per game (2026-08-29,
-  // user's explicit request -- previously always played each option's own
-  // default/standard rule) -- table-ui.js is responsible for showing the
-  // human what was picked, including any variants, before the table view
-  // appears.
+  // AI pickers used to choose uniformly at random among all 27 registered
+  // games -- reported directly (2026-11-23) as feeling lopsided: Omaha came
+  // up repeatedly in one night while Midnight Baseball and Seattle never
+  // did. Confirmed by reading the old code (not assumed) that this was
+  // genuinely uniform, not a bug -- it's just what uniform random looks
+  // like at realistic sample sizes: over ~15-20 picks across 27 equally-
+  // likely games, most games are expected to come up zero times by chance
+  // alone, while a couple "happen" to repeat.
+  //
+  // Fixed with inverse-frequency weighting, scoped to just this night
+  // (gamePickCounts resets in init(), isn't persisted -- the user didn't
+  // want pick history saved across nights, just corrected within one). A
+  // "shuffle bag" approach (never repeat until every game's had a turn,
+  // the same technique Tetris's 7-bag randomizer uses to avoid clustering)
+  // was considered and rejected: the user explicitly didn't want full
+  // uniqueness forced, just a table that doesn't feel so lopsided. Inverse-
+  // frequency weighting gives that instead -- a game's odds shrink every
+  // time it's picked, but never to zero, so a repeat is still possible,
+  // just increasingly unlikely until other games catch up.
+  const PICK_WEIGHT_EXPONENT = 1.5; // higher = stronger anti-repeat pull; tune against how lopsided a real night still feels
+
+  function weightedRandomGame(list) {
+    const weights = list.map((g) => 1 / Math.pow((gamePickCounts[g.id] || 0) + 1, PICK_WEIGHT_EXPONENT));
+    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+    let roll = Math.random() * totalWeight;
+    for (let i = 0; i < list.length; i++) {
+      roll -= weights[i];
+      if (roll <= 0) return list[i];
+    }
+    return list[list.length - 1]; // floating-point rounding fallback
+  }
+
+  // An AI dealer also gambles on a random variant option per game
+  // (2026-08-29, user's explicit request -- previously always played each
+  // option's own default/standard rule) -- table-ui.js is responsible for
+  // showing the human what was picked, including any variants, before the
+  // table view appears.
   function autoPickForAI() {
     const list = GameRegistry.list();
-    const choice = list[Math.floor(Math.random() * list.length)];
+    const choice = weightedRandomGame(list);
     const variantChoices = GameRegistry.randomVariantChoices(choice);
     chooseNextGame(choice.id, variantChoices);
     return { choice, variantChoices };

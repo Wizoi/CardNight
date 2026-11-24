@@ -77,6 +77,41 @@ function run() {
   check("human.standing is reset", human2.standing === false);
   check("human.bestShowingHand is reset", human2.bestShowingHand == null);
 
+  // Real design fix, reported directly (2026-11-23): AI picks felt
+  // lopsided over a real night (Omaha repeatedly, Midnight Baseball and
+  // Seattle never) -- confirmed by reading the old code that this was
+  // genuinely uniform random, not a bug, just what uniform random looks
+  // like at realistic sample sizes across 27 games. autoPickForAI now
+  // weights inversely by how many times a game's already been picked
+  // THIS night (gamePickCounts, incremented by chooseNextGame) -- a game
+  // picked a lot should become dramatically less likely, without ever
+  // being mathematically impossible to pick again.
+  {
+    // Each trial re-inits fresh and re-inflates omaha's count back to 8
+    // before the ONE sample that actually counts -- autoPickForAI()
+    // itself calls chooseNextGame, which increments gamePickCounts for
+    // whatever it just picked, so looping many samples in a row without
+    // resetting would let every OTHER game accumulate picks too as the
+    // loop runs, diluting the comparison baseline trial over trial. This
+    // isolates "is an already-8x-picked game less likely than uniform
+    // RIGHT NOW" instead of measuring a baseline that's drifting under it.
+    const counts = {};
+    const TRIALS = 150;
+    for (let i = 0; i < TRIALS; i++) {
+      TableNight.init({ humanName: "Kevin", seatCount: 5, dealMode: "dealersChoice" }, () => {});
+      for (let j = 0; j < 8; j++) TableNight.chooseNextGame("omaha", {});
+      const result = TableNight.autoPickForAI();
+      counts[result.choice.id] = (counts[result.choice.id] || 0) + 1;
+    }
+    const omahaShare = (counts.omaha || 0) / TRIALS;
+    const gameCount = TableNight.getViewState().gameList.length;
+    const uniformShare = 1 / gameCount;
+    check(
+      `a game already picked 8 times is picked far less than its uniform share (omaha: ${(omahaShare * 100).toFixed(1)}% over ${TRIALS} trials, uniform would be ${(uniformShare * 100).toFixed(1)}%)`,
+      omahaShare < uniformShare * 0.5
+    );
+  }
+
   return summary("table-night");
 }
 
