@@ -68,11 +68,16 @@ jobs:
       - name: Strip alpha channel and report sizes (Apple rejects screenshots with alpha)
         run: |
           cd "$RUNNER_TEMP/screenshots"
+          # --setProperty hasAlpha no doesn't work for PNG output (confirmed:
+          # "Error 13: an unknown error occurred" on a real run, 2026-11-25).
+          # Converting to JPEG sidesteps it entirely -- JPEG has no alpha
+          # channel by definition, so there's nothing to strip.
           for f in *.png; do
-            sips -s format png --setProperty hasAlpha no "$f" --out "flat-$f"
+            sips -s format jpeg "$f" --out "${f%.png}.jpg"
             echo "--- $f ---"
-            sips -g pixelWidth -g pixelHeight "flat-$f"
+            sips -g pixelWidth -g pixelHeight "${f%.png}.jpg"
           done
+          rm -f *.png
 
       - name: Upload screenshots
         if: always()
