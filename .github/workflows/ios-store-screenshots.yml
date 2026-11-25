@@ -1,0 +1,83 @@
+name: iOS App Store screenshots
+
+on:
+  workflow_dispatch:
+
+jobs:
+  screenshots:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build the web bundle and sync iOS assets
+        run: |
+          npm ci
+          node tools/build-table.js
+          npx cap sync ios
+
+      - name: Pin the Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app
+
+      - name: List available simulator device types (diagnostic)
+        run: xcrun simctl list devicetypes | grep -i "iphone 1\|ipad pro"
+
+      - name: Build for the simulator
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -derivedDataPath "$RUNNER_TEMP/build" \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee "$RUNNER_TEMP/simbuild.log"
+          APP_PATH=$(find "$RUNNER_TEMP/build" -name "App.app" -path "*iphonesimulator*" | head -1)
+          echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
+          echo "Built app at: $APP_PATH"
+
+      - name: Capture iPhone 6.3" screenshot
+        run: |
+          DEVICE="iPhone 16 Pro"
+          xcrun simctl boot "$DEVICE" || true
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcrun simctl install "$DEVICE" "$APP_PATH"
+          xcrun simctl launch "$DEVICE" com.luckofthedeal.app
+          sleep 8
+          mkdir -p "$RUNNER_TEMP/screenshots"
+          xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/iphone-6.3-setup.png"
+          xcrun simctl shutdown "$DEVICE" || true
+
+      - name: Capture iPad 13" screenshot
+        run: |
+          DEVICE="iPad Pro 13-inch (M4)"
+          xcrun simctl boot "$DEVICE" || true
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcrun simctl install "$DEVICE" "$APP_PATH"
+          xcrun simctl launch "$DEVICE" com.luckofthedeal.app
+          sleep 8
+          xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/ipad-13-setup.png"
+          xcrun simctl shutdown "$DEVICE" || true
+
+      - name: Strip alpha channel and report sizes (Apple rejects screenshots with alpha)
+        run: |
+          cd "$RUNNER_TEMP/screenshots"
+          for f in *.png; do
+            sips -s format png --setProperty hasAlpha no "$f" --out "flat-$f"
+            echo "--- $f ---"
+            sips -g pixelWidth -g pixelHeight "flat-$f"
+          done
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-store-screenshots
+          path: ${{ runner.temp }}/screenshots/
+          if-no-files-found: warn
