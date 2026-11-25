@@ -1,0 +1,48 @@
+name: iOS build diagnostic (temporary)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Xcode version
+        run: xcodebuild -version
+
+      - name: List available Xcode versions on this runner
+        run: ls /Applications | grep -i xcode
+
+      - name: List schemes/targets in the project
+        run: xcodebuild -list -project ios/App/App.xcodeproj
+
+      - name: Resolve Swift package dependencies
+        run: xcodebuild -resolvePackageDependencies -project ios/App/App.xcodeproj
+
+      - name: List schemes again after resolving packages
+        run: xcodebuild -list -project ios/App/App.xcodeproj
+
+      - name: Try a plain unsigned archive build
+        run: |
+          xcodebuild archive \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            ARCHS=arm64 \
+            ONLY_ACTIVE_ARCH=YES \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            | tee "$RUNNER_TEMP/archive.log"
+
+      - name: Upload archive log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: archive-log
+          path: ${{ runner.temp }}/archive.log
