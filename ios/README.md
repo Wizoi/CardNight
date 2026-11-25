@@ -107,3 +107,62 @@ closely:
   SmugView's `ios-store-screenshots.yml`/`store-screenshots.sh` pattern
   (iOS Simulator + alpha-channel check) is the template to adapt, not
   built yet here.
+
+## Session handoff, 2026-11-25 -- paused for the user's weekly usage limit
+
+**Done and verified this session, confirmed working end to end:**
+- `ios/` scaffolded via `npx cap add ios` (no CocoaPods needed, SPM-based).
+- The real `ios-testflight.yml` pipeline (modeled on SmugView's) -- **its
+  very first real run succeeded**, build uploaded to App Store Connect
+  cleanly in 2m23s (run 45670798963). Two quick fixes were needed along
+  the way and are already committed: CI Node bumped 20 -> 22 (Capacitor
+  CLI 8.6.2 requires it), and `ITSAppUsesNonExemptEncryption: false` added
+  to `Info.plist` so the export-compliance question doesn't need
+  re-answering on every future upload (manual answer for the current
+  build: "None of the algorithms mentioned above" -- no custom encryption
+  of any kind, app works fully offline).
+- App Store Connect app record created (app id 6839309502), SKU and User
+  Access ("Full Access") set.
+- `ASC_KEY_ID`/`ASC_ISSUER_ID`/`ASC_KEY_P8` secrets and a `testflight`
+  GitHub Environment both set up on this repo (a fresh Admin-role API
+  key, not reused from SmugView, per the user's own call).
+- Monetization deliberately deferred, same reasoning as Android: no Paid
+  Applications Agreement signed, no IAP products created -- nothing to
+  attach them to yet.
+
+**In progress, not yet confirmed working -- pick this up first tomorrow**:
+`ios-store-screenshots.yml` (run 45673201016, still queued when this
+session paused). Targets the `iPhone 16 Pro` (6.3" category) and `iPad Pro
+13-inch (M4)` simulators -- confirm the device-type diagnostic step's
+output actually lists those exact names on this runner image before
+trusting the rest of the run; adjust the `DEVICE=` strings if not.
+
+**New design direction from the user, not yet built**: a composited
+"split-screen" screenshot for App Store Connect's **"Duo"** asset
+category (sizes 2853x2007 landscape / 2007x2853 portrait -- exact device
+this maps to on Apple's side still unconfirmed, the name doesn't match
+any iPhone/iPad simulator device type known as of this session) --
+**one half showing the roster/header (the "Tonight's Table Lineup"
+setup screen), the other half showing a live dealt hand at the table.**
+The user explicitly asked for the **same split-screen treatment on
+Android's own two-pane/foldable phone screenshot category too** (Google
+Play's tablet/foldable screenshot slot) -- this is a new cross-platform
+asset, not yet started on either side.
+
+Practical path forward, not yet executed: this doesn't need a literal
+"Duo" simulator device at all -- it's a straightforward image composite
+(crop/scale two existing real screenshots side-by-side or top/bottom)
+built with an image tool. **`magick`/ImageMagick is NOT installed on the
+Windows dev machine** (confirmed: `where magick` found nothing, and
+`/c/Windows/system32/convert.exe` is Windows' own NTFS-conversion utility,
+not ImageMagick's `convert` -- a real naming collision to watch for).
+`ffmpeg` IS available locally and can do basic image compositing/scaling
+if a dedicated image tool isn't installed first. Source screenshots
+already on disk and reusable: `android/store-listing/screenshots/01-setup-tonights-table.jpg`
+(roster/header view) and `02-midnight-baseball-live-hand.jpg` (live table
+view) -- real captures from a previous session where the browser tool's
+viewport resize actually worked (this session's own browser tool had a
+fixed-size display that couldn't produce a narrow mobile viewport at
+all, confirmed by testing two very different target sizes that both
+landed identically at 1512x811 -- flagged as a per-session tooling
+quirk, not a permanent constraint).
