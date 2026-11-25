@@ -1,0 +1,150 @@
+name: iOS TestFlight upload
+
+on:
+  workflow_dispatch:
+    inputs:
+      marketing_version:
+        description: "Marketing version (CFBundleShortVersionString), e.g. 0.1"
+        required: false
+        default: "0.1"
+      build_offset:
+        description: "Added to the run number for the build number, in case the run-number counter was ever reset"
+        required: false
+        default: "0"
+
+env:
+  TEAM_ID: R28G4S7F77
+  BUNDLE_ID: com.luckofthedeal.app
+
+jobs:
+  testflight:
+    runs-on: macos-15
+    timeout-minutes: 60
+    environment: testflight
+    concurrency:
+      group: ios-testflight
+      cancel-in-progress: false
+    steps:
+      - name: Check the secrets before spending macOS minutes
+        run: |
+          if [ -z "${{ secrets.ASC_KEY_ID }}" ] || [ -z "${{ secrets.ASC_ISSUER_ID }}" ] || [ -z "${{ secrets.ASC_KEY_P8 }}" ]; then
+            echo "::error::ASC_KEY_ID / ASC_ISSUER_ID / ASC_KEY_P8 must all be set as repo secrets"
+            exit 1
+          fi
+          echo "::add-mask::${{ secrets.ASC_KEY_ID }}"
+          echo "::add-mask::${{ secrets.ASC_ISSUER_ID }}"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build the web bundle and sync iOS assets
+        run: |
+          npm ci
+          node tools/build-table.js
+          npx cap sync ios
+
+      - name: Pin the Xcode version
+        run: sudo xcode-select -s /Applications/Xcode_26.2.app
+
+      - name: Compute the build number
+        id: version
+        run: |
+          build_number=$(( ${{ github.run_number }} + ${{ inputs.build_offset }} ))
+          echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
+          echo "Marketing version: ${{ inputs.marketing_version }}, build number: $build_number"
+
+      - name: Archive without signing
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            ARCHS=arm64 \
+            ONLY_ACTIVE_ARCH=YES \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
+            MARKETING_VERSION="${{ inputs.marketing_version }}" \
+            CURRENT_PROJECT_VERSION="${{ steps.version.outputs.build_number }}" \
+            2>&1 | tee "$RUNNER_TEMP/archive.log"
+          echo "--- verifying the archive actually contains the synced web assets ---"
+          ls "$RUNNER_TEMP/App.xcarchive/Products/Applications/App.app/public/index.html"
+
+      - name: Export a signed IPA
+        run: |
+          set -o pipefail
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>destination</key>
+            <string>export</string>
+            <key>teamID</key>
+            <string>$TEAM_ID</string>
+            <key>signingStyle</key>
+            <string>automatic</string>
+            <key>uploadSymbols</key>
+            <true/>
+          </dict>
+          </plist>
+          PLIST
+
+          mkdir -p "$RUNNER_TEMP/asc"
+          umask 077
+          printf '%s' "${{ secrets.ASC_KEY_P8 }}" | base64 --decode > "$RUNNER_TEMP/asc/AuthKey_${{ secrets.ASC_KEY_ID }}.p8"
+          head -1 "$RUNNER_TEMP/asc/AuthKey_${{ secrets.ASC_KEY_ID }}.p8" | grep -q "BEGIN PRIVATE KEY"
+
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/asc/AuthKey_${{ secrets.ASC_KEY_ID }}.p8" \
+            -authenticationKeyID "${{ secrets.ASC_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.ASC_ISSUER_ID }}" \
+            2>&1 | tee "$RUNNER_TEMP/export.log"
+
+      - name: Upload the IPA to App Store Connect
+        run: |
+          set -o pipefail
+          mkdir -p ~/.appstoreconnect/private_keys
+          cp "$RUNNER_TEMP/asc/AuthKey_${{ secrets.ASC_KEY_ID }}.p8" ~/.appstoreconnect/private_keys/
+          ipa=$(find "$RUNNER_TEMP/export" -name "*.ipa" | head -1)
+          echo "Uploading $ipa"
+          xcrun altool --upload-app -f "$ipa" -t ios \
+            --apiKey "${{ secrets.ASC_KEY_ID }}" \
+            --apiIssuer "${{ secrets.ASC_ISSUER_ID }}" \
+            2>&1 | tee "$RUNNER_TEMP/upload.log"
+          if grep -q "UPLOAD FAILED" "$RUNNER_TEMP/upload.log"; then
+            echo "::error::altool reported UPLOAD FAILED -- see the log above"
+            exit 1
+          fi
+
+      - name: Delete the API key file
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/asc/AuthKey_${{ secrets.ASC_KEY_ID }}.p8"
+          rm -f ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-logs
+          path: |
+            ${{ runner.temp }}/archive.log
+            ${{ runner.temp }}/export.log
+            ${{ runner.temp }}/upload.log
+          if-no-files-found: ignore
