@@ -37,3 +37,16 @@ android/keystore.properties
 play-service-account.json
 *.apk
 *.aab
+
+# iOS/Xcode (Android roadmap step 11 -- iOS via Capacitor). Secrets/build
+# output only; the generated ios/App/App.xcodeproj project itself IS
+# committed, same as android/.
+ios/App/Pods/
+ios/App/build/
+ios/App/DerivedData/
+ios/**/*.xcuserstate
+ios/**/xcuserdata/
+*.p8
+*.mobileprovision
+*.p12
+ios/App/ExportOptions.plist
