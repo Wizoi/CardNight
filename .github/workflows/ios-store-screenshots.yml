@@ -56,9 +56,9 @@ jobs:
           xcrun simctl bootstatus "$DEVICE" -b
           xcrun simctl install "$DEVICE" "$APP_PATH"
           xcrun simctl launch "$DEVICE" com.luckofthedeal.app
-          sleep 7
+          sleep 10
           xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/iphone-6.3-opening.png"
-          sleep 20
+          sleep 45
           xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/iphone-6.3-ingame.png"
           xcrun simctl shutdown "$DEVICE" || true
 
@@ -69,9 +69,9 @@ jobs:
           xcrun simctl bootstatus "$DEVICE" -b
           xcrun simctl install "$DEVICE" "$APP_PATH"
           xcrun simctl launch "$DEVICE" com.luckofthedeal.app
-          sleep 7
+          sleep 10
           xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/ipad-13-opening.png"
-          sleep 20
+          sleep 45
           xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/ipad-13-ingame.png"
           xcrun simctl shutdown "$DEVICE" || true
 
