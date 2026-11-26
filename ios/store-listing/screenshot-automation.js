@@ -29,6 +29,20 @@
   document.getElementById('tutorial-skip-btn')?.click();
   await wait(500);
 
+  // Force "My Choice Every Hand" -- the real default is "Dealer's Choice
+  // Rotation", which can hand the cut-for-deal winner (human or AI) any
+  // of the 27 games, including ones needing a mid-hand decision this
+  // script doesn't know how to drive (confirmed live: a run landed on
+  // Anaconda's discard-3-cards screen and sat there for the rest of the
+  // run). Forcing human-choice mode lets the script reliably pick
+  // Midnight Baseball below, which needs no such decision.
+  const humanChoiceRadio = document.querySelector('input[name="deal-mode"][value="humanChoice"]');
+  if (humanChoiceRadio) {
+    humanChoiceRadio.click();
+    humanChoiceRadio.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  await wait(300);
+
   // Clean setup/roster screen sits here for a while -- CI takes "opening
   // screen" screenshot somewhere in this window before the script moves
   // on. Widened from an initial 5s after a real device run's timing
