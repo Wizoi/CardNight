@@ -2308,12 +2308,21 @@ const TableFX = (function () {
         const isTurn = seatEl.classList.contains("seat-active") && (!state || state.status !== "complete");
         if (isWinner) seatEl.classList.add("seat-winner");
 
-        // Add Concept 4 "Thinking..." top label when active turn
-        if (isTurn && !seatEl.querySelector(".c4-thinking-label")) {
+        // Add Concept 4 "Thinking..." top label when active turn -- and
+        // remove it otherwise. Previously add-only: once a seat's turn
+        // ended, its label was never cleared, so a seat that had acted
+        // earlier in the hand could still show "Thinking..." right
+        // alongside the seat whose actual turn it now is (reported
+        // directly, with a screenshot showing both "You" and "Trey"
+        // labeled "Thinking..." at once).
+        const existingThinkLbl = seatEl.querySelector(".c4-thinking-label");
+        if (isTurn && !existingThinkLbl) {
           const thinkLbl = document.createElement("div");
           thinkLbl.className = "c4-thinking-label";
           thinkLbl.textContent = "Thinking...";
           seatEl.insertBefore(thinkLbl, seatEl.firstChild);
+        } else if (!isTurn && existingThinkLbl) {
+          existingThinkLbl.remove();
         }
 
         const moodBadge = seatEl.querySelector(".avatar-mood-badge");

@@ -5214,7 +5214,16 @@ html[data-layout-mode="portrait"] .prop-target-gauges {
   }
 
   #seats {
-    grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+    /* Fixed 2 columns, not auto-fit -- matches the deliberate fix at the
+       narrower (max-width: 640px) and (orientation: portrait) breakpoint
+       above, which this rule was otherwise silently overriding back to
+       auto-fit at real phone widths (both match in that range; this
+       rule, being later in the file, won the cascade). auto-fit with
+       minmax(84px, 1fr) packs 3-4 columns at typical phone widths --
+       too narrow for a chip amount + name to fit without clipping
+       (reported directly, with a screenshot showing "$19" instead of
+       "$19.50" and "Meer" instead of "Meera"). */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.28rem;
     margin-bottom: 0.35rem;
   }
@@ -5519,11 +5528,24 @@ html[data-ui-scale="1.45"] .seat-cards .card + .card {
 }
 
 @media (max-width: 768px) {
-  /* Default mobile (85% / 100%): 4 seats across (2 rows of 4 when 8 are playing) */
+  /* Default mobile (85% / 100%): 2 seats across, not 4. The "4 across"
+     original assumption didn't hold up against real seat content -- a
+     chip amount ("$19.50") plus a name share one ~84-95px-wide column at
+     4-across, which isn't enough room for both and silently clips
+     instead of wrapping (reported directly, with a screenshot showing
+     "$19" and "Meer" instead of "$19.50" and "Meera"). This also matches
+     the already-correct, deliberately-chosen 2-column fix at the
+     narrower (max-width: 640px) and (orientation: portrait) breakpoint
+     above -- that rule and this one were previously disagreeing for the
+     exact same real phone widths, and this one (being later in the
+     file) was winning the cascade. Verified directly: 2 columns gives
+     each seat ~174px at a typical narrow phone width, comfortably
+     fitting avatar + chips + name with no clipping.
+  */
   #seats,
   html[data-ui-scale="0.85"] #seats,
   html[data-ui-scale="1"] #seats {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   /* Mobile at 115%: 3 seats across so enlarged cards stay inside the seat box */
