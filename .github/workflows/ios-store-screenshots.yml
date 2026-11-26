@@ -48,46 +48,45 @@ jobs:
           echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
           echo "Built app at: $APP_PATH"
 
-      - name: Capture iPhone 6.3" screenshots (opening screen + in-game)
+      - name: Capture iPhone 6.3" screenshots (spray across the whole run)
         run: |
           DEVICE="iPhone 16 Pro"
-          mkdir -p "$RUNNER_TEMP/screenshots"
+          mkdir -p "$RUNNER_TEMP/screenshots/iphone-series"
           xcrun simctl boot "$DEVICE" || true
           xcrun simctl bootstatus "$DEVICE" -b
           xcrun simctl install "$DEVICE" "$APP_PATH"
           xcrun simctl launch "$DEVICE" com.luckofthedeal.app
-          sleep 10
-          xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/iphone-6.3-opening.png"
-          sleep 45
-          xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/iphone-6.3-ingame.png"
+          for i in $(seq -w 1 18); do
+            sleep 3
+            xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/iphone-series/frame-$i.png"
+          done
           xcrun simctl shutdown "$DEVICE" || true
 
-      - name: Capture iPad 13" screenshots (opening screen + in-game)
+      - name: Capture iPad 13" screenshots (spray across the whole run)
         run: |
           DEVICE="iPad Pro 13-inch (M4)"
+          mkdir -p "$RUNNER_TEMP/screenshots/ipad-series"
           xcrun simctl boot "$DEVICE" || true
           xcrun simctl bootstatus "$DEVICE" -b
           xcrun simctl install "$DEVICE" "$APP_PATH"
           xcrun simctl launch "$DEVICE" com.luckofthedeal.app
-          sleep 10
-          xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/ipad-13-opening.png"
-          sleep 45
-          xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/ipad-13-ingame.png"
+          for i in $(seq -w 1 18); do
+            sleep 3
+            xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/ipad-series/frame-$i.png"
+          done
           xcrun simctl shutdown "$DEVICE" || true
 
-      - name: Strip alpha channel and report sizes (Apple rejects screenshots with alpha)
+      - name: Strip alpha channel (Apple rejects screenshots with alpha)
         run: |
           cd "$RUNNER_TEMP/screenshots"
           # --setProperty hasAlpha no doesn't work for PNG output (confirmed:
           # "Error 13: an unknown error occurred" on a real run, 2026-11-25).
           # Converting to JPEG sidesteps it entirely -- JPEG has no alpha
           # channel by definition, so there's nothing to strip.
-          for f in *.png; do
+          find . -name "*.png" | while read -r f; do
             sips -s format jpeg "$f" --out "${f%.png}.jpg"
-            echo "--- $f ---"
-            sips -g pixelWidth -g pixelHeight "${f%.png}.jpg"
           done
-          rm -f *.png
+          find . -name "*.png" -delete
 
       - name: Upload screenshots
         if: always()
