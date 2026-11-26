@@ -21,6 +21,12 @@ jobs:
           node tools/build-table.js
           npx cap sync ios
 
+      - name: Inject the screenshot-only automation script
+        run: |
+          cp ios/store-listing/screenshot-automation.js ios/App/App/public/screenshot-automation.js
+          sed -i '' 's#</body>#<script src="screenshot-automation.js"></script></body>#' ios/App/App/public/index.html
+          grep -o 'screenshot-automation' ios/App/App/public/index.html
+
       - name: Pin the Xcode version
         run: sudo xcode-select -s /Applications/Xcode_26.2.app
 
@@ -42,27 +48,31 @@ jobs:
           echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
           echo "Built app at: $APP_PATH"
 
-      - name: Capture iPhone 6.3" screenshot
+      - name: Capture iPhone 6.3" screenshots (opening screen + in-game)
         run: |
           DEVICE="iPhone 16 Pro"
+          mkdir -p "$RUNNER_TEMP/screenshots"
           xcrun simctl boot "$DEVICE" || true
           xcrun simctl bootstatus "$DEVICE" -b
           xcrun simctl install "$DEVICE" "$APP_PATH"
           xcrun simctl launch "$DEVICE" com.luckofthedeal.app
-          sleep 8
-          mkdir -p "$RUNNER_TEMP/screenshots"
-          xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/iphone-6.3-setup.png"
+          sleep 7
+          xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/iphone-6.3-opening.png"
+          sleep 20
+          xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/iphone-6.3-ingame.png"
           xcrun simctl shutdown "$DEVICE" || true
 
-      - name: Capture iPad 13" screenshot
+      - name: Capture iPad 13" screenshots (opening screen + in-game)
         run: |
           DEVICE="iPad Pro 13-inch (M4)"
           xcrun simctl boot "$DEVICE" || true
           xcrun simctl bootstatus "$DEVICE" -b
           xcrun simctl install "$DEVICE" "$APP_PATH"
           xcrun simctl launch "$DEVICE" com.luckofthedeal.app
-          sleep 8
-          xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/ipad-13-setup.png"
+          sleep 7
+          xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/ipad-13-opening.png"
+          sleep 20
+          xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/ipad-13-ingame.png"
           xcrun simctl shutdown "$DEVICE" || true
 
       - name: Strip alpha channel and report sizes (Apple rejects screenshots with alpha)
