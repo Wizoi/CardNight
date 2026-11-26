@@ -27,7 +27,14 @@ const TableUIMidnightBaseball = (function () {
     el.seats.innerHTML = gvs.players
       .map((p, i) => {
         const isDealer = i === gvs.dealerIndex;
-        const isTurn = p.id === currentTurnId || p.id === currentBettorId;
+        // Whichever phase is actually active decides who's "active" --
+        // never both at once. Previously `|| p.id === currentBettorId`,
+        // which could mark two different seats simultaneously whenever
+        // the reveal-turn tracker and the betting round's own current
+        // bettor pointed at different players (reported directly, with
+        // a screenshot showing both "You" and "Ingrid" labeled
+        // "Thinking..." during an open betting round).
+        const isTurn = gvs.state && gvs.state.bettingRound ? p.id === currentBettorId : p.id === currentTurnId;
         const faceUp = gvs.state ? p.hand.filter((c) => c.faceUp) : [];
         const faceDown = gvs.state ? p.hand.filter((c) => !c.faceUp) : [];
         const profileBadge = p.isHuman
