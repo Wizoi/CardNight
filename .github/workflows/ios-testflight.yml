@@ -18,7 +18,7 @@ env:
 
 jobs:
   testflight:
-    runs-on: macos-15
+    runs-on: xcode-27
     timeout-minutes: 60
     environment: testflight
     concurrency:
@@ -48,7 +48,7 @@ jobs:
           npx cap sync ios
 
       - name: Pin the Xcode version
-        run: sudo xcode-select -s /Applications/Xcode_26.2.app
+        run: sudo xcode-select -s /Applications/Xcode_27.1.app
 
       - name: Compute the build number
         id: version
