@@ -94,6 +94,29 @@ jobs:
           done
           xcrun simctl shutdown "$DEVICE" || true
 
+      - name: Capture an iPhone Duo screenshot (verifies the wide-screen CSS -- not an App Store asset)
+        run: |
+          # Not a submission asset -- Apple doesn't have a screenshot size
+          # class for this device yet. This is purely to directly verify,
+          # on Apple's own real foldable simulator, the two-pane wide-
+          # screen/foldable CSS landed earlier (gated on min-width + min-
+          # aspect-ratio, plus the horizontal-viewport-segments/env()
+          # enhancement for a device that reports real hinge geometry) --
+          # the actual payoff of this whole Xcode-27 SDK bump, which this
+          # project's own build toolchain had no way to render correctly
+          # under Xcode 26.2 regardless of CSS.
+          DEVICE="iPhone Duo"
+          mkdir -p "$RUNNER_TEMP/screenshots/duo-verification"
+          xcrun simctl boot "$DEVICE" || true
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcrun simctl install "$DEVICE" "$APP_PATH"
+          xcrun simctl launch "$DEVICE" com.luckofthedeal.app
+          for i in $(seq -w 1 18); do
+            sleep 3
+            xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/duo-verification/frame-$i.png"
+          done
+          xcrun simctl shutdown "$DEVICE" || true
+
       - name: Strip alpha channel (Apple rejects screenshots with alpha)
         run: |
           cd "$RUNNER_TEMP/screenshots"
