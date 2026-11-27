@@ -33,6 +33,9 @@ jobs:
       - name: List available simulator device types (diagnostic)
         run: xcrun simctl list devicetypes | grep -i "iphone 1\|ipad pro"
 
+      - name: List pre-created simulator device instances (diagnostic)
+        run: xcrun simctl list devices available | grep -i "iphone\|ipad pro"
+
       - name: Build for the simulator
         run: |
           set -o pipefail
