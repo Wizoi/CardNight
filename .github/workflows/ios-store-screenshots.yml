@@ -53,7 +53,18 @@ jobs:
 
       - name: Capture iPhone 6.3" screenshots (spray across the whole run)
         run: |
-          DEVICE="iPhone 16 Pro"
+          # "iPhone 16 Pro" (and every other device this project had already
+          # used) is no longer among the Xcode-27 image's pre-created
+          # simulator INSTANCES (simctl boot/install/launch need a named
+          # instance, not just a device TYPE -- confirmed directly via a
+          # live diagnostic run, not guessed at: the type still exists, no
+          # instance by that name does). "iPhone 17" is this image's base-
+          # model successor line, matching "16 Pro"'s rough 6.3" screenshot
+          # size class closely enough for this automation's purposes -- the
+          # exact Apple screenshot-size-class mapping for the newest device
+          # names is worth double-checking before these screenshots are
+          # actually submitted to App Store Connect.
+          DEVICE="iPhone 17"
           mkdir -p "$RUNNER_TEMP/screenshots/iphone-series"
           xcrun simctl boot "$DEVICE" || true
           xcrun simctl bootstatus "$DEVICE" -b
@@ -67,7 +78,11 @@ jobs:
 
       - name: Capture iPad 13" screenshots (spray across the whole run)
         run: |
-          DEVICE="iPad Pro 13-inch (M4)"
+          # Direct generational successor to the M4 model this used to name
+          # (same 13-inch display/resolution, confirmed pre-created on this
+          # image via the same diagnostic) -- a safe one-to-one swap, unlike
+          # the iPhone case above.
+          DEVICE="iPad Pro 13-inch (M5)"
           mkdir -p "$RUNNER_TEMP/screenshots/ipad-series"
           xcrun simctl boot "$DEVICE" || true
           xcrun simctl bootstatus "$DEVICE" -b
