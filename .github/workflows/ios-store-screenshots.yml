@@ -6,7 +6,11 @@ on:
 jobs:
   screenshots:
     runs-on: xcode-27
-    timeout-minutes: 30
+    # A real run confirmed the "iPhone Duo" simulator's cold install+launch
+    # alone took ~5.5 minutes (vs. under a minute for the iPhone/iPad
+    # devices) -- the original 30-minute budget left no margin and the run
+    # was cancelled mid-step, not failed on its own merits.
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -111,9 +115,22 @@ jobs:
           xcrun simctl bootstatus "$DEVICE" -b
           xcrun simctl install "$DEVICE" "$APP_PATH"
           xcrun simctl launch "$DEVICE" com.luckofthedeal.app
-          for i in $(seq -w 1 18); do
-            sleep 3
-            xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/duo-verification/frame-$i.png"
+          sleep 5
+          # A real run showed this is a true dual-display device --
+          # "simctl io screenshot" refuses to guess which physical panel to
+          # capture (`Cannot choose between 2 displays`), reporting
+          # --display=1 (1398x2034, portrait) and --display=3 (2007x2853,
+          # portrait) as the two options. Which one represents the folded
+          # cover screen vs. the full unfolded/spanned view isn't yet known
+          # -- capturing both, a couple of frames apart in case anything
+          # settles after launch, rather than guessing and missing the one
+          # that actually shows the wide-screen CSS.
+          for display in 1 3; do
+            for i in 1 2; do
+              sleep 2
+              xcrun simctl io "$DEVICE" screenshot --display=$display \
+                "$RUNNER_TEMP/screenshots/duo-verification/display$display-frame$i.png" || true
+            done
           done
           xcrun simctl shutdown "$DEVICE" || true
 
