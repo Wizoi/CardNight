@@ -28,10 +28,30 @@ const HistoryStore = (function () {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
-  // Upserts a day's entry by date so re-saving mid-session (e.g. after each
-  // rebuy) always leaves exactly one row per calendar day.
+  // One per SITTING, not one per calendar day -- a real nightId generated
+  // once when a night starts (table-night.js's init()), not derived from
+  // the date at all. Two real bugs this fixes, both caught by a live
+  // design review rather than guessed at: (1) a second sitting on the same
+  // calendar day used to silently overwrite the first's already-recorded
+  // result, since both upserted under the same bare date key; (2) resuming
+  // a saved night after midnight used to re-derive "today" fresh on
+  // restore, splitting one sitting's history across two different date
+  // rows and double-counting it in regularsSummary below. table-night.js
+  // now generates this once in init() and carries it through snapshot()/
+  // restore() unchanged for the sitting's whole lifetime.
+  function generateNightId() {
+    return `night-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+
+  // Upserts a sitting's entry by nightId so re-saving mid-session (e.g.
+  // after each rebuy) always leaves exactly one row per sitting. Entries
+  // from before nightId existed have none -- matched by date instead, so
+  // those legacy rows keep their original one-row-per-day behavior rather
+  // than silently duplicating the moment this code ships.
   function upsertDay(history, dayEntry) {
-    const idx = history.days.findIndex((d) => d.date === dayEntry.date);
+    const idx = dayEntry.nightId
+      ? history.days.findIndex((d) => d.nightId === dayEntry.nightId)
+      : history.days.findIndex((d) => d.date === dayEntry.date && !d.nightId);
     if (idx >= 0) history.days[idx] = dayEntry;
     else history.days.push(dayEntry);
     history.days.sort((a, b) => (a.date < b.date ? 1 : -1));
@@ -74,6 +94,38 @@ const HistoryStore = (function () {
     return Array.from(byId.values()).sort((a, b) => (a.lastPlayedDate < b.lastPlayedDate ? 1 : -1));
   }
 
+  // The single biggest gap a live design review found in the History
+  // view: no lifetime summary anywhere, so a player had to add up every
+  // row by hand to answer "am I up or down overall?" -- the first thing
+  // any real bankroll tracker leads with. Purely additive, computed fresh
+  // from history.days each time rather than stored, so it can't drift out
+  // of sync with the rows it's summarizing. Only counts SETTLED nights
+  // (cashedOutDollars != null) for win/loss/best/worst -- a night still
+  // "(in progress)" has no final result yet to count one way or the
+  // other, the same reasoning the History view's own "(in progress)"
+  // label already uses.
+  function lifetimeSummary(history) {
+    const settled = history.days.filter((d) => d.cashedOutDollars != null);
+    const totalNet = history.days.reduce((s, d) => s + d.net, 0);
+    const nightsPlayed = history.days.length;
+    const winningNights = settled.filter((d) => d.net > 0).length;
+    let bestNight = null;
+    let worstNight = null;
+    for (const d of settled) {
+      if (!bestNight || d.net > bestNight.net) bestNight = d;
+      if (!worstNight || d.net < worstNight.net) worstNight = d;
+    }
+    return {
+      totalNet,
+      nightsPlayed,
+      settledNights: settled.length,
+      winningNights,
+      winRatePct: settled.length ? Math.round((winningNights / settled.length) * 100) : null,
+      bestNight,
+      worstNight,
+    };
+  }
+
   function exportAsJSON(history) {
     return JSON.stringify(history, null, 2);
   }
@@ -90,5 +142,5 @@ const HistoryStore = (function () {
     URL.revokeObjectURL(url);
   }
 
-  return { load, save, todayDateString, upsertDay, getDay, regularsSummary, exportAsJSON, downloadExport };
+  return { load, save, todayDateString, generateNightId, upsertDay, getDay, regularsSummary, lifetimeSummary, exportAsJSON, downloadExport };
 })();

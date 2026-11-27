@@ -88,6 +88,7 @@
     el.setupView = document.getElementById("setup-view");
     el.tableView = document.getElementById("table-view");
     el.historyView = document.getElementById("history-view");
+    el.lifetimeSummary = document.getElementById("lifetime-summary");
     el.cutForDealView = document.getElementById("cutfordeal-view");
     el.pickerView = document.getElementById("picker-view");
 
@@ -372,7 +373,10 @@
   }
 
   function money(dollars) {
-    return `$${dollars.toFixed(2)}`;
+    // Matches the exit modal's own sign convention ("-$3.50", not the
+    // plain-toFixed "$-3.50" this used to produce) -- a real
+    // inconsistency caught by live design review, not guessed at.
+    return dollars < 0 ? `-$${Math.abs(dollars).toFixed(2)}` : `$${dollars.toFixed(2)}`;
   }
 
   const LOW_CHIPS_DOLLARS = 5; // "about to run out" threshold for showing the rebuy button
@@ -615,6 +619,7 @@
   }
 
   function renderHistory(vs) {
+    renderLifetimeSummary(vs);
     if (!vs.history.days.length) {
       el.historyList.innerHTML = `<div>No history yet.</div>`;
       return;
@@ -635,6 +640,40 @@
         </tbody>
       </table>
       </div>
+    `;
+  }
+
+  // The lifetime strip a live design review flagged as the single biggest
+  // missing piece: "am I up or down overall?" shouldn't require adding up
+  // every row by hand. Purely a presentation of HistoryStore.lifetimeSummary
+  // -- no new persistence, so it can't drift from the rows below it.
+  function renderLifetimeSummary(vs) {
+    if (!el.lifetimeSummary) return;
+    const s = HistoryStore.lifetimeSummary(vs.history);
+    if (!s.nightsPlayed) {
+      el.lifetimeSummary.innerHTML = "";
+      return;
+    }
+    const netClass = s.totalNet > 0 ? "net-positive" : s.totalNet < 0 ? "net-negative" : "";
+    const nightsLabel = s.nightsPlayed === 1 ? "1 night" : `${s.nightsPlayed} nights`;
+    const winRateHtml =
+      s.winRatePct != null
+        ? `<div class="lifetime-stat"><div class="lifetime-stat-value">${s.winRatePct}%</div><div class="lifetime-stat-label">Winning nights (${s.winningNights}/${s.settledNights})</div></div>`
+        : "";
+    const bestHtml = s.bestNight
+      ? `<div class="lifetime-stat"><div class="lifetime-stat-value net-positive">${money(s.bestNight.net)}</div><div class="lifetime-stat-label">Best night (${s.bestNight.date})</div></div>`
+      : "";
+    const worstHtml = s.worstNight
+      ? `<div class="lifetime-stat"><div class="lifetime-stat-value ${s.worstNight.net < 0 ? "net-negative" : ""}">${money(s.worstNight.net)}</div><div class="lifetime-stat-label">Worst night (${s.worstNight.date})</div></div>`
+      : "";
+    el.lifetimeSummary.innerHTML = `
+      <div class="lifetime-stat">
+        <div class="lifetime-stat-value ${netClass}">${money(s.totalNet)}</div>
+        <div class="lifetime-stat-label">Lifetime net &middot; ${nightsLabel}</div>
+      </div>
+      ${winRateHtml}
+      ${bestHtml}
+      ${worstHtml}
     `;
   }
 
@@ -1286,6 +1325,7 @@
       render(vs);
     });
     el.discardSavedNightBtn.addEventListener("click", () => {
+      TableNight.finalizeAbandonedSnapshot();
       TableNight.clearSnapshot();
       el.resumeBanner.hidden = true;
     });
@@ -1536,10 +1576,14 @@
 
     el.historyBtn.addEventListener("click", () => {
       historyReturnView = "table";
+      el.backToTableBtn.textContent = "Back to table";
       showView("history");
     });
     el.setupHistoryBtn.addEventListener("click", () => {
       historyReturnView = "setup";
+      // The button used to always say "Back to table," wrong when History
+      // was opened from the setup screen -- caught by live design review.
+      el.backToTableBtn.textContent = "Back to setup";
       showView("history");
       const history = TableNight.peekHistory();
       renderHistory({ history });

@@ -45,7 +45,7 @@ const Tutorial = (function () {
       icon: "⋯",
       title: "The rest of the controls",
       body:
-        "The pot and your chip stack are always shown at the top. Tap the ⓘ next to the game name for a plain-English explanation to read aloud. Tap ⋯ to change games, see the chip history &amp; regulars ledger, or cash out back to the main screen.",
+        "The pot is always shown at the top -- your own chip stack is on your seat tile, right at the table. Tap the ⓘ next to the game name for a plain-English explanation to read aloud. Tap ⋯ to change games, see the chip history &amp; regulars ledger, or cash out back to the main screen.",
     },
     {
       icon: "👍",

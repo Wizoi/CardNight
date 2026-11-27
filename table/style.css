@@ -4342,8 +4342,55 @@ fieldset {
   text-align: left;
 }
 
+/* The Regulars table's 2nd column (Archetype) is a text label like "The
+   Fortress," not a number -- shouldn't inherit the blanket right-align
+   meant for numeric columns (a real misalignment caught by live design
+   review, not guessed at). The Chip Ledger's own 2nd column ("Bought
+   in") IS numeric and correctly stays right-aligned, which is why this
+   is scoped to #regulars-list specifically rather than every table here. */
+#regulars-list th:nth-child(2), #regulars-list td:nth-child(2) {
+  text-align: left;
+}
+
 .net-positive { color: var(--success); font-weight: 700; }
 .net-negative { color: var(--danger); font-weight: 700; }
+
+/* Lifetime summary strip above the Chip Ledger table -- the single
+   biggest gap a live design review flagged (see history-store.js's
+   lifetimeSummary): a player had to add up every row by hand to answer
+   "am I up or down overall?" Empty (no nights yet) renders nothing, so
+   it never shows a misleading zero/blank row above an empty ledger. */
+#lifetime-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+#lifetime-summary:empty {
+  margin-bottom: 0;
+}
+
+.lifetime-stat {
+  flex: 1 1 140px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 10px;
+  padding: 0.6rem 0.5rem;
+}
+
+.lifetime-stat-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.lifetime-stat-label {
+  font-size: 0.72rem;
+  opacity: 0.8;
+  margin-top: 0.15rem;
+}
 
 #roster-modal[hidden] { display: none; }
 

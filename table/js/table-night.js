@@ -13,6 +13,12 @@ const TableNight = (function () {
   let settings = null;
   let history = null;
   let today = null;
+  // Generated once in init() (or restored unchanged in restore()) and
+  // carried through this sitting's whole lifetime, identifying its history
+  // row by sitting rather than by calendar date -- see history-store.js's
+  // generateNightId() for the two real bugs this fixes.
+  let nightId = null;
+  let nightStartedAtMs = null;
   let handsWonByPlayerId = {}; // across every game played this whole night
   let nightHandsPlayed = 0; // never resets; what actually lands in history
   // How many times each gameId has been picked so far THIS night (human or
@@ -202,6 +208,49 @@ const TableNight = (function () {
     }
   }
 
+  // Settles a saved-but-never-cashed-out night's history row before it's
+  // abandoned -- walking away without cashing out used to leave that row
+  // showing "(in progress)" forever, since only an explicit cashOut() ever
+  // set cashedOutDollars (a real bug, caught by live design review, not
+  // guessed at). Treats "abandoned" the same way a real poker night would:
+  // whatever's still on the table when you walk away is what you walked
+  // away with. Reads the raw saved snapshot directly rather than this
+  // closure's own state, since this needs to work whether or not that
+  // snapshot was ever actually restore()'d into memory first (e.g. hitting
+  // "Sit Down" straight past the resume banner never restores the old
+  // night at all). A no-op if there's no saved snapshot, or if it somehow
+  // already has a recorded cash-out.
+  function finalizeAbandonedSnapshot() {
+    let saved;
+    try {
+      saved = loadSnapshot();
+    } catch (err) {
+      return;
+    }
+    if (!saved || !Array.isArray(saved.players)) return;
+    const human = saved.players.find((p) => p.isHuman);
+    if (!human || !human.wallet || human.wallet.cashedOutDollars != null) return;
+    try {
+      const h = HistoryStore.load();
+      const savedNightId = saved.nightId;
+      const savedDate = saved.today;
+      const existing = savedNightId
+        ? h.days.find((d) => d.nightId === savedNightId)
+        : savedDate
+          ? h.days.find((d) => d.date === savedDate && !d.nightId)
+          : null;
+      if (!existing) return;
+      HistoryStore.upsertDay(h, {
+        ...existing,
+        cashedOutDollars: ChipEconomy.chipsToDollars(human.wallet.chips),
+        abandoned: true,
+        endedAtMs: Date.now(),
+      });
+    } catch (err) {
+      console.error("Failed to settle an abandoned night's history row", err);
+    }
+  }
+
   // Player objects (including AI seats' avatarSpec, a modest-sized embedded
   // SVG string) are persisted as plain data straight through -- an earlier
   // version of this tried to strip avatarSpec out and re-derive AI identity
@@ -221,6 +270,9 @@ const TableNight = (function () {
       players,
       seatOrder,
       settings,
+      nightId,
+      today,
+      nightStartedAtMs,
       dealerIndex,
       dealMode,
       handsWonByPlayerId,
@@ -247,7 +299,16 @@ const TableNight = (function () {
     dealMode = saved.dealMode;
     settings = saved.settings;
     history = HistoryStore.load();
-    today = HistoryStore.todayDateString();
+    // The sitting's own date/id, carried through from when it actually
+    // started -- NOT recomputed here. Recomputing used to split one
+    // sitting's history across two different date rows whenever it was
+    // resumed after midnight (a real bug, caught by live design review,
+    // not guessed at). Only a pre-migration snapshot (saved before
+    // nightId existed) falls back to a fresh value here, as a one-time
+    // best-effort for data already in flight when this shipped.
+    nightId = saved.nightId || HistoryStore.generateNightId();
+    today = saved.today || HistoryStore.todayDateString();
+    nightStartedAtMs = saved.nightStartedAtMs || Date.now();
 
     players = saved.players;
     seatOrder = saved.seatOrder;
@@ -309,6 +370,15 @@ const TableNight = (function () {
   }
 
   function init(config, updateCallback) {
+    // Settle any PREVIOUS sitting's saved snapshot before starting a new
+    // one over it -- whether the user explicitly discarded it or just hit
+    // "Sit Down" straight past the resume banner, that old night's history
+    // row used to stay stuck showing "(in progress)" forever (a real bug,
+    // caught by live design review). Reads raw localStorage directly, not
+    // this closure's own state, so it's correct regardless of whether the
+    // abandoned night was ever actually restore()'d first.
+    finalizeAbandonedSnapshot();
+
     nightActive = true;
     onUpdate = updateCallback || (() => {});
     dealMode = config.dealMode === "continuous" || config.dealMode === "humanChoice" ? config.dealMode : "dealersChoice";
@@ -320,7 +390,9 @@ const TableNight = (function () {
       rebuyCapDollars: config.rebuyCapDollars || 60,
     };
     history = HistoryStore.load();
+    nightId = HistoryStore.generateNightId();
     today = HistoryStore.todayDateString();
+    nightStartedAtMs = Date.now();
 
     const humanWallet = ChipEconomy.createWallet({
       initialBuyInDollars: settings.initialBuyInDollars,
@@ -776,7 +848,9 @@ const TableNight = (function () {
     const human = getHuman();
     const wallet = human.wallet;
     const day = {
+      nightId,
       date: today,
+      startedAtMs: nightStartedAtMs,
       initialBuyInDollars: wallet.initialBuyInDollars,
       rebuys: wallet.rebuys,
       currentChipsDollars: ChipEconomy.chipsToDollars(wallet.chips),
@@ -853,6 +927,7 @@ const TableNight = (function () {
     hasSavedSnapshot,
     loadSnapshot,
     clearSnapshot,
+    finalizeAbandonedSnapshot,
     beginCutForDeal,
     claimCutForDealSlot,
     autoClaimCutForDealSlot,
