@@ -5,8 +5,12 @@ on:
 
 jobs:
   screenshots:
-    runs-on: macos-15
-    timeout-minutes: 30
+    runs-on: xcode-27
+    # A real run confirmed the "iPhone Duo" simulator's cold install+launch
+    # alone took ~5.5 minutes (vs. under a minute for the iPhone/iPad
+    # devices) -- the original 30-minute budget left no margin and the run
+    # was cancelled mid-step, not failed on its own merits.
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,10 +32,13 @@ jobs:
           grep -o 'screenshot-automation' ios/App/App/public/index.html
 
       - name: Pin the Xcode version
-        run: sudo xcode-select -s /Applications/Xcode_26.2.app
+        run: sudo xcode-select -s /Applications/Xcode_27.1.app
 
       - name: List available simulator device types (diagnostic)
         run: xcrun simctl list devicetypes | grep -i "iphone 1\|ipad pro"
+
+      - name: List pre-created simulator device instances (diagnostic)
+        run: xcrun simctl list devices available | grep -i "iphone\|ipad pro"
 
       - name: Build for the simulator
         run: |
@@ -50,7 +57,18 @@ jobs:
 
       - name: Capture iPhone 6.3" screenshots (spray across the whole run)
         run: |
-          DEVICE="iPhone 16 Pro"
+          # "iPhone 16 Pro" (and every other device this project had already
+          # used) is no longer among the Xcode-27 image's pre-created
+          # simulator INSTANCES (simctl boot/install/launch need a named
+          # instance, not just a device TYPE -- confirmed directly via a
+          # live diagnostic run, not guessed at: the type still exists, no
+          # instance by that name does). "iPhone 17" is this image's base-
+          # model successor line, matching "16 Pro"'s rough 6.3" screenshot
+          # size class closely enough for this automation's purposes -- the
+          # exact Apple screenshot-size-class mapping for the newest device
+          # names is worth double-checking before these screenshots are
+          # actually submitted to App Store Connect.
+          DEVICE="iPhone 17"
           mkdir -p "$RUNNER_TEMP/screenshots/iphone-series"
           xcrun simctl boot "$DEVICE" || true
           xcrun simctl bootstatus "$DEVICE" -b
@@ -64,7 +82,11 @@ jobs:
 
       - name: Capture iPad 13" screenshots (spray across the whole run)
         run: |
-          DEVICE="iPad Pro 13-inch (M4)"
+          # Direct generational successor to the M4 model this used to name
+          # (same 13-inch display/resolution, confirmed pre-created on this
+          # image via the same diagnostic) -- a safe one-to-one swap, unlike
+          # the iPhone case above.
+          DEVICE="iPad Pro 13-inch (M5)"
           mkdir -p "$RUNNER_TEMP/screenshots/ipad-series"
           xcrun simctl boot "$DEVICE" || true
           xcrun simctl bootstatus "$DEVICE" -b
@@ -73,6 +95,42 @@ jobs:
           for i in $(seq -w 1 18); do
             sleep 3
             xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/screenshots/ipad-series/frame-$i.png"
+          done
+          xcrun simctl shutdown "$DEVICE" || true
+
+      - name: Capture an iPhone Duo screenshot (verifies the wide-screen CSS -- not an App Store asset)
+        run: |
+          # Not a submission asset -- Apple doesn't have a screenshot size
+          # class for this device yet. This is purely to directly verify,
+          # on Apple's own real foldable simulator, the two-pane wide-
+          # screen/foldable CSS landed earlier (gated on min-width + min-
+          # aspect-ratio, plus the horizontal-viewport-segments/env()
+          # enhancement for a device that reports real hinge geometry) --
+          # the actual payoff of this whole Xcode-27 SDK bump, which this
+          # project's own build toolchain had no way to render correctly
+          # under Xcode 26.2 regardless of CSS.
+          DEVICE="iPhone Duo"
+          mkdir -p "$RUNNER_TEMP/screenshots/duo-verification"
+          xcrun simctl boot "$DEVICE" || true
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcrun simctl install "$DEVICE" "$APP_PATH"
+          xcrun simctl launch "$DEVICE" com.luckofthedeal.app
+          sleep 5
+          # A real run showed this is a true dual-display device --
+          # "simctl io screenshot" refuses to guess which physical panel to
+          # capture (`Cannot choose between 2 displays`), reporting
+          # --display=1 (1398x2034, portrait) and --display=3 (2007x2853,
+          # portrait) as the two options. Which one represents the folded
+          # cover screen vs. the full unfolded/spanned view isn't yet known
+          # -- capturing both, a couple of frames apart in case anything
+          # settles after launch, rather than guessing and missing the one
+          # that actually shows the wide-screen CSS.
+          for display in 1 3; do
+            for i in 1 2; do
+              sleep 2
+              xcrun simctl io "$DEVICE" screenshot --display=$display \
+                "$RUNNER_TEMP/screenshots/duo-verification/display$display-frame$i.png" || true
+            done
           done
           xcrun simctl shutdown "$DEVICE" || true
 
