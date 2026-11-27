@@ -2945,6 +2945,121 @@ fieldset {
 }
 
 /* ============================================================================
+   Wide-Screen & Foldable Device Layout (2026-11-27)
+   An Opus-model review of foldable/dual-screen support found the table view
+   had no wide-screen layout at all -- it just stretched the same single
+   stacked column (stadium, then hand/action panel, then log) up to
+   #table-view's 1240px cap, leaving a tablet or an unfolded Pixel Fold/
+   Galaxy Fold/Fold-style device with large empty margins either side
+   instead of putting the extra width to use. Everything below is purely
+   ADDITIVE and gated well above every phone-width breakpoint already
+   proven correct elsewhere in this file (the forced-2-column #seats fix,
+   the portrait/landscape phone rules) -- none of those are touched, so a
+   real phone's layout can't regress from this.
+   ============================================================================ */
+
+/* #poker-table-stadium becomes a query container so #seats/#board-hand can
+   size themselves off the STADIUM PANE's own width rather than the full
+   viewport -- correct even once the two-pane split below puts the stadium
+   in a narrower-than-viewport column (e.g. a Surface Duo's single pane). */
+#poker-table-stadium {
+  container-type: inline-size;
+  container-name: stadium;
+}
+
+/* A genuinely wide, non-phone-shaped viewport (tablets, and a Fold/Flip-
+   style device's INNER screen once unfolded) gets a real two-pane layout:
+   the stadium on the left, a sticky hand/action-panel column on the
+   right, instead of three things stacked in a single centered column.
+   min-aspect-ratio excludes a tall narrow phone turned loose at 820px+
+   (none exist, but excludes a desktop window resized narrow-and-tall too)
+   while still matching an unfolded foldable's inner screen, which is
+   close to square or wider (Pixel Fold/Galaxy Fold ~ 1:1.1-1:1.2) and a
+   tablet in either orientation. */
+@media (min-width: 820px) and (min-aspect-ratio: 6/5) {
+  #table-main-stage {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  #poker-table-stadium {
+    flex: 1 1 60%;
+    min-width: 0;
+    margin-bottom: 0;
+  }
+
+  #human-cockpit {
+    flex: 0 0 360px;
+    position: sticky;
+    top: 0.6rem;
+    margin-bottom: 0;
+  }
+}
+
+/* A wide-enough stadium pane (not just a wide viewport -- the container
+   query means this also fires correctly inside the narrower of the two
+   panes above) gets a slightly roomier seat grid and bigger cards instead
+   of the same phone-tuned sizing stretched across empty space. */
+@container stadium (min-width: 560px) {
+  #seats {
+    grid-template-columns: repeat(auto-fit, minmax(156px, 1fr));
+    gap: 0.65rem;
+  }
+
+  #board-hand .card {
+    width: 58px;
+    height: 82px;
+  }
+}
+
+/* Real Android foldables/dual-screen devices spanning BOTH logical
+   screens (the browser window itself straddling the hinge, e.g. a Pixel
+   Fold, Galaxy Fold, or Surface Duo-style device in "spanned" mode) can
+   report the actual hinge geometry via the CSS Viewport Segments media
+   features/env() vars. Unsupported everywhere else -- these simply never
+   match, so this is a no-op on every browser that doesn't report them,
+   never a regression risk. Builds the two columns from the device's own
+   real segment widths/gap rather than guessing a fixed split. */
+@media (horizontal-viewport-segments: 2) {
+  #table-main-stage {
+    display: grid;
+    grid-template-columns: env(viewport-segment-width 0 0, 1fr) env(viewport-segment-width 1 0, 1fr);
+    column-gap: calc(env(viewport-segment-left 1 0, 0px) - env(viewport-segment-right 0 0, 0px));
+    align-items: start;
+  }
+
+  #poker-table-stadium {
+    grid-column: 1;
+    margin-bottom: 0;
+  }
+
+  #human-cockpit {
+    grid-column: 2;
+    position: sticky;
+    top: 0.6rem;
+    margin-bottom: 0;
+  }
+}
+
+/* A book-style foldable propped half-open ("tent"/"tabletop" posture) is
+   usually only comfortably viewed via its top half -- don't force the
+   side-by-side split above onto that posture even if the viewport
+   happens to also be wide. device-posture support is limited to a
+   handful of Android Chrome builds on real foldables; everywhere else
+   this rule simply never matches. */
+@media (device-posture: folded) {
+  #table-main-stage {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #human-cockpit {
+    position: static;
+  }
+}
+
+/* ============================================================================
    Cut-for-Deal Ceremony & Concept 3 Dealer's Choice Game Vault (#picker-view)
    ============================================================================ */
 
